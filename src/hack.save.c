@@ -511,10 +511,22 @@ int dorecover(int fd) {
   return (1);
 }
 
+/**
+ * MODERN ADDITION (2025): Safe object chain deserialization with bounds
+ * checking WHY: Original mread operations trusted save file data without
+ * validation, enabling buffer overflows via crafted xl values (e.g. xl =
+ * UINT_MAX) HOW: Validate xl is within reasonable bounds before allocation and
+ * read PRESERVES: Exact object chain restoration for legitimate save files
+ * ADDS: Protection against malicious save files with crafted object sizes
+ */
 struct obj *restobjchn(int fd) {
   struct obj *otmp, *otmp2;
   struct obj *first = 0;
   int xl;
+
+#define MAX_OEXTRA_SIZE 1024 /* Maximum reasonable size for object extra data  \
+                              */
+
 #ifdef lint
   /* suppress "used before set" warning from lint */
   otmp2 = 0;
@@ -523,12 +535,29 @@ struct obj *restobjchn(int fd) {
     mread(fd, (char *)&xl, sizeof(xl));
     if (xl == -1)
       break;
+
+    /* MODERN: Validate object extra data size to prevent integer overflow
+     * attacks */
+    if (xl < 0 || xl > MAX_OEXTRA_SIZE) {
+      impossible("Invalid object size in save file", xl, MAX_OEXTRA_SIZE);
+      break; /* Stop processing malformed chain */
+    }
+
+    /* MODERN: Check for integer overflow in read size calculation */
+    unsigned total_read_size = (unsigned)xl + sizeof(struct obj);
+    if (total_read_size < sizeof(struct obj) ||
+        total_read_size < (unsigned)xl) {
+      impossible("Object read size overflow", xl, (int)total_read_size);
+      break; /* Stop processing to prevent memory corruption */
+    }
+
     otmp = newobj(xl);
     if (!first)
       first = otmp;
     else
       otmp2->nobj = otmp;
-    mread(fd, (char *)otmp, (unsigned)xl + sizeof(struct obj));
+
+    mread(fd, (char *)otmp, total_read_size);
     if (!otmp->o_id)
       otmp->o_id = flags.ident++;
     otmp2 = otmp;
@@ -540,16 +569,33 @@ struct obj *restobjchn(int fd) {
   return (first);
 }
 
+/**
+ * MODERN ADDITION (2025): Safe monster chain deserialization with validation
+ * WHY: Same vulnerability as restobjchn - unchecked xl values and integer
+ * overflow in read size calculation, plus dangerous raw pointer arithmetic HOW:
+ * Validate xl bounds, check arithmetic overflow, verify pointer adjustments
+ * PRESERVES: Monster chain restoration including inventory recursion
+ * ADDS: Protection against save file attacks targeting monster data corruption
+ */
 struct monst *restmonchn(int fd) {
   struct monst *mtmp, *mtmp2;
   struct monst *first = 0;
   int xl;
+
+#define MAX_MEXTRA_SIZE 512 /* Maximum reasonable size for monster extra data  \
+                             */
 
   struct permonst *monbegin;
   long differ;
 
   mread(fd, (char *)&monbegin, sizeof(monbegin));
   differ = (char *)(&mons[0]) - (char *)(monbegin);
+
+  /* MODERN: Validate pointer difference is reasonable */
+  if (differ > 100000 || differ < -100000) {
+    impossible("Suspicious monster data pointer difference", (int)differ, 0);
+    return NULL; /* Refuse to process potentially corrupted data */
+  }
 
 #ifdef lint
   /* suppress "used before set" warning from lint */
@@ -559,15 +605,44 @@ struct monst *restmonchn(int fd) {
     mread(fd, (char *)&xl, sizeof(xl));
     if (xl == -1)
       break;
+
+    /* MODERN: Validate monster extra data size */
+    if (xl < 0 || xl > MAX_MEXTRA_SIZE) {
+      impossible("Invalid monster size in save file", xl, MAX_MEXTRA_SIZE);
+      break; /* Stop processing malformed chain */
+    }
+
+    /* MODERN: Check for integer overflow in read size calculation */
+    unsigned total_read_size = (unsigned)xl + sizeof(struct monst);
+    if (total_read_size < sizeof(struct monst) ||
+        total_read_size < (unsigned)xl) {
+      impossible("Monster read size overflow", xl, (int)total_read_size);
+      break; /* Stop processing to prevent memory corruption */
+    }
+
     mtmp = newmonst(xl);
     if (!first)
       first = mtmp;
     else
       mtmp2->nmon = mtmp;
-    mread(fd, (char *)mtmp, (unsigned)xl + sizeof(struct monst));
+
+    mread(fd, (char *)mtmp, total_read_size);
     if (!mtmp->m_id)
       mtmp->m_id = flags.ident++;
-    mtmp->data = (struct permonst *)((char *)mtmp->data + differ);
+
+    /* MODERN: Validate adjusted pointer is within reasonable bounds before
+     * using */
+    struct permonst *adjusted_data =
+        (struct permonst *)((char *)mtmp->data + differ);
+    /* Array size is CMNUM + 2 as defined in hack.main.c and hack.monst.c */
+    if (adjusted_data < &mons[0] || adjusted_data >= &mons[CMNUM + 2]) {
+      impossible("Monster data pointer out of bounds",
+                 (int)(adjusted_data - &mons[0]), CMNUM + 2);
+      mtmp->data = &mons[0]; /* Safe fallback to first monster type */
+    } else {
+      mtmp->data = adjusted_data;
+    }
+
     if (mtmp->minvent)
       mtmp->minvent = restobjchn(fd);
     mtmp2 = mtmp;

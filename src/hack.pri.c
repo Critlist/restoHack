@@ -7,6 +7,7 @@
 #include <curses.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <ctype.h>   /* MODERN ADDITION (2025): For isdigit() in format string validation */
 xchar scrlx, scrhx, scrly, scrhy; /* corners of new area on screen */
 
 /* MODERN: CONST-CORRECTNESS: match hu_stat[] definition (read-only string
@@ -37,6 +38,35 @@ void swallowed(void) {
 /*VARARGS1*/
 boolean panicking;
 
+/**
+ * MODERN ADDITION (2025): Format string protection for panic function
+ * WHY: Same vulnerability as error() - vprintf treats first param as format string  
+ * HOW: Use same validation logic to detect dangerous format specifiers
+ * PRESERVES: All existing panic() calls work identically (they use safe strings)
+ * ADDS: Protection against format string attacks from corrupted game state
+ */
+
+/* Forward declare format validator from hack.tty.c */
+static int check_format_specs(const char *fmt) {
+    const char *p = fmt;
+    while ((p = strchr(p, '%')) != NULL) {
+        p++; /* Skip the % */
+        if (*p == '%') {
+            p++; /* Skip literal %% */
+            continue;
+        }
+        /* Skip width/precision/flags */
+        while (*p && (isdigit(*p) || *p == '-' || *p == '+' || *p == ' ' || *p == '#' || *p == '.')) {
+            p++;
+        }
+        if (*p == 'n') {
+            return 1; /* %n writes to memory - very dangerous */
+        }
+        if (*p) p++; /* Move past conversion specifier */
+    }
+    return 0;
+}
+
 void
 /* MODERN: CONST-CORRECTNESS: panic message is read-only */
 panic(const char *str, ...) {
@@ -47,7 +77,16 @@ panic(const char *str, ...) {
   fputs(" ERROR:  ", stdout);
   va_list args;
   va_start(args, str);
-  vprintf(str, args);
+  
+  /* MODERN: Check for format string attack before using vprintf */
+  if (check_format_specs(str)) {
+    /* Dangerous format detected - print safely without interpretation */
+    printf("%s\n", str);
+    printf("(Note: Panic message sanitized for security)\n");
+  } else {
+    /* Safe to use as format string */
+    vprintf(str, args);
+  }
   va_end(args);
 #ifdef DEBUG
 #ifdef UNIX
@@ -728,7 +767,15 @@ void bot(void) {
     if (*nb)
       nb++;
   }
-  (void)strcpy(oldbot, newbot);
+  /**
+   * MODERN ADDITION (2025): Replace strcpy with safe string copy
+   * WHY: strcpy can overflow oldbot buffer if newbot is longer than 100 chars
+   * HOW: Use strncpy with explicit size limit and ensure null termination
+   * PRESERVES: String copying functionality with identical behavior for valid strings  
+   * ADDS: Buffer overflow protection when newbot exceeds oldbot capacity
+   */
+  (void)strncpy(oldbot, newbot, sizeof(oldbot) - 1);
+  oldbot[sizeof(oldbot) - 1] = '\0'; /* Ensure null termination */
 }
 
 #ifdef WAN_PROBING

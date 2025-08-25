@@ -183,3 +183,4 @@ dev/.venv/
 dev/gauntlet-logs/
 uv.lock  # optional; commit if you want exact locking
 release-notes-v1.1.0.md
+tests/

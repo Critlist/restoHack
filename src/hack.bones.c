@@ -29,6 +29,18 @@ void savebones(void) {
     return;
   if (!rn2(1 + dlevel / 2))
     return; /* not so many ghosts on low levels */
+    
+  /**
+   * MODERN ADDITION (2025): Defensive bounds checking for filename construction
+   * WHY: While dlevel should be controlled, add defense in depth for filename safety
+   * HOW: Ensure dlevel is within valid range for character arithmetic  
+   * PRESERVES: Original bones file naming scheme (bones_01, bones_02, etc.)
+   * ADDS: Protection against potential dlevel corruption causing invalid filenames
+   */
+  if (dlevel < 0 || dlevel > 99) {
+    impossible("Invalid dlevel for bones file", dlevel, MAXLEVEL);
+    return;
+  }
   bones[6] = '0' + (dlevel / 10);
   bones[7] = '0' + (dlevel % 10);
   if ((fd = open(bones, 0)) >= 0) {
@@ -94,6 +106,12 @@ int getbones(void) {
   int fd, x, y, ok;
   if (rn2(3))
     return (0); /* only once in three times do we find bones */
+    
+  /* MODERN: Same defensive bounds checking as savebones() */
+  if (dlevel < 0 || dlevel > 99) {
+    impossible("Invalid dlevel for bones lookup", dlevel, MAXLEVEL);
+    return (0);
+  }
   bones[6] = '0' + dlevel / 10;
   bones[7] = '0' + dlevel % 10;
   if ((fd = open(bones, 0)) < 0)
@@ -109,7 +127,14 @@ int getbones(void) {
   if (!wizard) /* duvel!frans: don't remove bones while debugging */
 #endif         /* WiZARD */
     if (unlink(bones) < 0) {
-      pline("Cannot unlink %s .", bones);
+      /**
+       * MODERN ADDITION (2025): Safe message formatting  
+       * WHY: pline with %s format string could be vulnerability if bones filename corrupted
+       * HOW: Use safe message without format specifiers
+       * PRESERVES: Error reporting functionality for debugging
+       * ADDS: Format string attack protection
+       */
+      pline("Cannot unlink bones file.");
       return (0);
     }
   return (ok);

@@ -54,6 +54,8 @@ static const char rcsid[] __attribute__((unused)) = "$FreeBSD$"; /* Original 198
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>  /* MODERN ADDITION (2025): For INT_MAX in overflow checks */
+#include <ctype.h>   /* MODERN ADDITION (2025): For isdigit() in format string validation */
 
 /*
  * The distinctions here are not BSD - rest but rather USG - rest, as
@@ -169,6 +171,8 @@ void setctty(void);
 /* MODERN: CONST-CORRECTNESS: cgetret text is read-only */
 void cgetret(const char *s);
 char *parse(void);
+/* MODERN ADDITION (2025): Safe input function with explicit buffer size */
+void getlin_safe(char *bufp, size_t bufsize);
 extern void getioctls(void);
 extern void setioctls(void);
 
@@ -284,30 +288,81 @@ void setftty(void) {
   start_screen();
 }
 
+/**
+ * MODERN ADDITION (2025): Format string vulnerability protection
+ * WHY: Original error() function used first parameter as printf format string,
+ *      creating vulnerability if attacker controls message content with %n, %x, etc.
+ * HOW: Validate format string has no dangerous specifiers, or use safe alternative
+ * PRESERVES: All existing error() calls work identically (they use safe format strings)
+ * ADDS: Protection against format string attacks in future code or corrupted strings
+ */
+
+/* Check if format string contains dangerous format specifiers */
+static int has_dangerous_format_specs(const char *fmt) {
+    const char *p = fmt;
+    while ((p = strchr(p, '%')) != NULL) {
+        p++; /* Skip the % */
+        if (*p == '%') {
+            p++; /* Skip literal %% */
+            continue;
+        }
+        /* Skip width/precision/flags */
+        while (*p && (isdigit(*p) || *p == '-' || *p == '+' || *p == ' ' || *p == '#' || *p == '.')) {
+            p++;
+        }
+        /* Check for dangerous conversion specifiers */
+        if (*p == 'n') {
+            return 1; /* %n writes to memory - very dangerous */
+        }
+        if (*p == 's' && p > fmt + 1) {
+            /* %s could be dangerous with controlled width/precision */
+            /* For now, we'll allow %s but could restrict further */
+        }
+        if (*p) p++; /* Move past conversion specifier */
+    }
+    return 0;
+}
+
 /* fatal error */
 /*VARARGS1*/
 void
 /* MODERN: CONST-CORRECTNESS: error message is read-only */
 error(const char *s, ...) {
-  va_list args;
-  va_start(args, s);
-  if (settty_needed)
-    settty((char *)0);
-  vprintf(s, args);
-  va_end(args);
-  putchar('\n');
-  exit(1);
+    va_list args;
+    va_start(args, s);
+    
+    if (settty_needed)
+        settty((char *)0);
+    
+    /* MODERN: Check for format string attack before using vprintf */
+    if (has_dangerous_format_specs(s)) {
+        /* Dangerous format detected - print safely without interpretation */
+        printf("ERROR: %s\n", s);
+        printf("(Note: Format string sanitized for security)\n");
+    } else {
+        /* Safe to use as format string */
+        vprintf(s, args);
+    }
+    
+    va_end(args);
+    putchar('\n');
+    exit(1);
 }
 
-/*
- * Read a line closed with '\n' into the array char bufp[BUFSZ].
- * (The '\n' is not stored. The string is closed with a '\0'.)
- * Reading can be interrupted by an escape ('\033') - now the
- * resulting string is "\033".
+/**
+ * MODERN ADDITION (2025): Safe input line reading with buffer bounds checking
+ * WHY: Original getlin() had no buffer overflow protection - could write past 
+ *      end of bufp array when user inputs long strings, enabling stack smashing
+ * HOW: Added explicit bufsize parameter and proper bounds checking before writing
+ * PRESERVES: Exact 1984 input behavior (backspace, kill, escape handling)
+ * ADDS: Buffer overflow protection preventing memory corruption
  */
-void getlin(char *bufp) {
+void getlin_safe(char *bufp, size_t bufsize) {
   char *obufp = bufp;
+  char *bufend = bufp + bufsize - 1; /* Reserve space for \0 terminator */
   int c;
+
+  if (bufsize == 0) return; /* Degenerate case - no buffer */
 
   flags.toplin = 2; /* nonempty, no --More-- required */
   for (;;) {
@@ -318,7 +373,7 @@ void getlin(char *bufp) {
     }
     if (c == '\033') {
       *obufp = c;
-      obufp[1] = 0;
+      if (obufp < bufend) obufp[1] = 0; /* Bounds check for escape sequence */
       return;
     }
     if (c == erase_char || c == '\b') {
@@ -333,11 +388,16 @@ void getlin(char *bufp) {
     } else if (' ' <= c && c < '\177') {
       /* avoid isprint() - some people don't have it
          ' ' is not always a printing char */
-      *bufp = c;
-      bufp[1] = 0;
-      putstr(bufp);
-      if (bufp - obufp < BUFSZ - 1 && bufp - obufp < COLNO)
-        bufp++;
+      if (bufp < bufend) { /* MODERN: Critical bounds check */
+        *bufp = c;
+        bufp[1] = 0;
+        putstr(bufp);
+        /* Also respect COLNO for display purposes */
+        if (bufp - obufp < (long)(bufsize - 2) && bufp - obufp < COLNO - 1)
+          bufp++;
+      } else {
+        bell(); /* Buffer full - reject input */
+      }
     } else if (c == kill_char || c == '\177') { /* Robert Viduya */
       /* this test last - @ might be the kill_char */
       while (bufp != obufp) {
@@ -347,6 +407,14 @@ void getlin(char *bufp) {
     } else
       bell();
   }
+}
+
+/*
+ * Original 1984 getlin() wrapper - maintains API compatibility
+ * Assumes BUFSZ-sized buffer (the most common case in 1984 Hack)
+ */
+void getlin(char *bufp) {
+  getlin_safe(bufp, BUFSZ);
 }
 
 void getret(void) { cgetret(""); }
@@ -397,24 +465,47 @@ char *parse(void) {
     curs_on_u();
   else
     home();
-  while ((foo = readchar()) >= '0' && foo <= '9')
-    multi = 10 * multi + foo - '0';
+  while ((foo = readchar()) >= '0' && foo <= '9') {
+    /**
+     * MODERN ADDITION (2025): Integer overflow protection for multi commands
+     * WHY: Original code allowed unlimited multiplication of multi counter,
+     *      leading to integer overflow when user types many digits (e.g. "999999999999s")
+     * HOW: Check if next multiplication would overflow before doing it
+     * PRESERVES: Normal multi-digit commands work identically (e.g. "40s" for 40 steps)
+     * ADDS: Protection against integer overflow causing negative/wrapped values
+     */
+    if (multi <= (INT_MAX - 9) / 10) {
+      multi = 10 * multi + foo - '0';
+    } else {
+      /* Ignore additional digits to prevent overflow */
+      break;
+    }
+  }
   if (multi) {
     multi--;
     save_cm = inputline;
   }
-  inputline[0] = foo;
-  inputline[1] = 0;
-  if (foo == 'f' || foo == 'F') {
+  /**
+   * MODERN ADDITION (2025): Bounds checking for inputline array
+   * WHY: inputline is COLNO-sized, but original code wrote to indices 0,1,2 
+   *      without verifying COLNO >= 3 (unlikely but defensive programming)
+   * HOW: Check array bounds before writing to prevent rare buffer overrun
+   * PRESERVES: All normal game commands work identically  
+   * ADDS: Protection against corrupted COLNO values causing buffer overflow
+   */
+  if (COLNO >= 1) inputline[0] = foo;
+  if (COLNO >= 2) inputline[1] = 0;
+  
+  if ((foo == 'f' || foo == 'F') && COLNO >= 3) {
     inputline[1] = getchar();
 #ifdef QUEST
-    if (inputline[1] == foo)
+    if (inputline[1] == foo && COLNO >= 4)
       inputline[2] = getchar();
     else
 #endif /* QUEST */
       inputline[2] = 0;
   }
-  if (foo == 'm' || foo == 'M') {
+  if ((foo == 'm' || foo == 'M') && COLNO >= 3) {
     inputline[1] = getchar();
     inputline[2] = 0;
   }

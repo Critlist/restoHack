@@ -226,8 +226,8 @@ const char *const ghostnames[] = {/* these names should have length < PL_NSIZ */
                                   "robert", "ron",     "tom",     "wilmar"};
 
 char *xmonnam(struct monst *mtmp, int vb) {
-  static char buf[BUFSZ]; /* MODERN: Static buffer reuse issue - overwrites on
-                             each call */
+  static char buf[BUFSZ]; /* MODERN: Static buffer reuse issue - overwrites on each call
+                             but needed for 1984 compatibility with callers expecting persistent string */
   extern char *shkname();
   if (mtmp->mnamelth && !vb) {
     (void)strncpy(buf, NAME(mtmp), BUFSZ - 1); /* MODERN: Safe copy */
@@ -291,8 +291,8 @@ char *Monnam(struct monst *mtmp) {
 
 char *amonnam(struct monst *mtmp, const char *adj) {
   char *bp = monnam(mtmp);
-  static char buf[BUFSZ + 64]; /* MODERN: Extra space for adj + static buffer
-                                  reuse issue */
+  static char buf[BUFSZ + 64]; /* MODERN: Extra space for adj + static buffer reuse issue
+                                  but needed for 1984 compatibility with callers expecting persistent string */
 
   if (!strncmp(bp, "the ", 4))
     bp += 4;

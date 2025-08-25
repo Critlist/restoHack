@@ -31,6 +31,9 @@ struct obj *otmp;
   boolean inuse[52];
   int i;
   struct obj *obj;
+  
+  /* MODERN: Defensive bounds check for lastinvnr corruption */
+  if (lastinvnr < 0 || lastinvnr >= 52) lastinvnr = 51;
 
   for (i = 0; i < 52; i++)
     inuse[i] = FALSE;

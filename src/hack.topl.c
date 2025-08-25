@@ -10,6 +10,7 @@
  */
 
 #include "hack.h"
+#include <limits.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -80,7 +81,8 @@ void
 /* MODERN: CONST-CORRECTNESS: addtopl message is read-only */
 addtopl(const char *s) {
   curs(tlx, tly);
-  if (tlx + (int)strlen(s) > CO)
+  size_t slen = strlen(s);
+  if (slen > INT_MAX || tlx + (int)slen > CO) /* MODERN: Prevent integer overflow */
     putsym('\n'); /* MODERN: Cast strlen to int for screen coordinate math */
   putstr(s);
   tlx = curx;
@@ -191,19 +193,22 @@ pline(const char *line, ...) {
   }
   remember_topl();
   toplines[0] = 0;
+  /* MODERN ADDITION (2025): Use clamped CO for 1984 compatibility in message wrapping */
+  int wrap_CO = CO > 80 ? 80 : CO;
+  
   while (n0) {
-    if (n0 >= CO) {
+    if (n0 >= wrap_CO) {
       /* look for appropriate cut point */
       n0 = 0;
-      for (n = 0; n < CO; n++)
+      for (n = 0; n < wrap_CO; n++)
         if (bp[n] == ' ')
           n0 = n;
       if (!n0)
-        for (n = 0; n < CO - 1; n++)
+        for (n = 0; n < wrap_CO - 1; n++)
           if (!letter(bp[n]))
             n0 = n;
       if (!n0)
-        n0 = CO - 2;
+        n0 = wrap_CO - 2;
     }
     tl = eos(toplines);
     /* MODERN: Bounds check before copying */

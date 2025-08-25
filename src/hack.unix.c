@@ -167,11 +167,11 @@ void gethdate(char *name) {
     error("Invalid executable name provided.");
     return;
   }
-  
+
   /* MODERN: Extract basename only - no directory traversal allowed */
   const char *basename = strrchr(name, '/');
   if (basename) {
-    name = (char *)(basename + 1);  /* Use only the executable name */
+    name = (char *)(basename + 1); /* Use only the executable name */
   }
 
 #if 0
@@ -190,7 +190,7 @@ void gethdate(char *name) {
 #define MAXPATHLEN 1024
 
   /* MODERN: Additional name validation after basename extraction */
-  if (strlen(name) > 64) {  /* Reasonable executable name limit */
+  if (strlen(name) > 64) { /* Reasonable executable name limit */
     error("Executable name too long.");
     return;
   }
@@ -213,19 +213,19 @@ void gethdate(char *name) {
       /* MODERN: Safe path construction with bounds checking */
       size_t path_len = np - path;
       size_t name_len = strlen(name);
-      
+
       /* Ensure we have space for path + '/' + name + '\0' */
       if (path_len + 1 + name_len + 1 > MAXPATHLEN) {
         continue; /* Skip this path entry if it would overflow */
       }
-      
+
       (void)strncpy(filename, path, path_len);
       filename[path_len] = '/';
-      filename[path_len + 1] = '\0';  /* MODERN: Ensure null termination */
-      
+      filename[path_len + 1] = '\0'; /* MODERN: Ensure null termination */
+
       /* MODERN: Use snprintf for final copy with bounds checking */
-      int ret = snprintf(filename + path_len + 1, 
-                        MAXPATHLEN - path_len - 1, "%s", name);
+      int ret = snprintf(filename + path_len + 1, MAXPATHLEN - path_len - 1,
+                         "%s", name);
       if (ret < 0 || ret >= (int)(MAXPATHLEN - path_len - 1)) {
         continue; /* Skip this path entry on truncation */
       }
@@ -236,7 +236,8 @@ void gethdate(char *name) {
       break;
     path = np + 1;
   }
-  error("Cannot get status of %s.", (np = rindex(name, '/')) ? np + 1 : name);
+  error("Cannot get file status."); /* MODERN: Safe message without format
+                                       string vulnerability */
 #endif
 }
 
@@ -344,7 +345,8 @@ void getlock(void) {
 #else
       (void)unlink(LLOCK);
 #endif
-      error("Cannot open %s", lock);
+      error("Cannot open lock file."); /* MODERN: Safe message without format
+                                          string vulnerability */
     }
 
     if (veryold(fd)) /* if true, this closes fd and unlinks lock */
@@ -365,7 +367,8 @@ gotlock:
   /* Modern locking doesn't need LLOCK cleanup */
 #else
   if (unlink(LLOCK) == -1)
-    error("Cannot unlink %s.", LLOCK);
+    error("Cannot unlink lock file."); /* MODERN: Safe message without format
+                                          string vulnerability */
 #endif
   if (fd == -1) {
     error("cannot creat lock file.");

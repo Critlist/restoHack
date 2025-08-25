@@ -12,6 +12,7 @@
 #include "hack.h"
 /* def.mkroom.h already included via hack.h */
 
+#include <limits.h>
 #include <unistd.h>
 extern struct monst *restmonchn();
 extern struct obj *restobjchn();
@@ -96,6 +97,10 @@ void saveobjchn(int fd, struct obj *otmp) {
   while (otmp) {
     otmp2 = otmp->nobj;
     xl = otmp->onamelth;
+    /* MODERN: Check for integer overflow in write size calculation */
+    if (xl > UINT_MAX - sizeof(struct obj)) {
+      error("Save file corrupted: object name length overflow");
+    }
     bwrite(fd, (char *)&xl, sizeof(int));
     bwrite(fd, (char *)otmp, xl + sizeof(struct obj));
     free((char *)otmp);
@@ -114,6 +119,11 @@ void savemonchn(int fd, struct monst *mtmp) {
 
   while (mtmp) {
     mtmp2 = mtmp->nmon;
+    /* MODERN: Check for integer overflow in length calculation */
+    if (mtmp->mxlth > UINT_MAX - mtmp->mnamelth ||
+        mtmp->mxlth + mtmp->mnamelth > UINT_MAX - sizeof(struct monst)) {
+      error("Save file corrupted: monster data length overflow");
+    }
     xl = mtmp->mxlth + mtmp->mnamelth;
     bwrite(fd, (char *)&xl, sizeof(int));
     bwrite(fd, (char *)mtmp, xl + sizeof(struct monst));
@@ -211,20 +221,30 @@ void getlev(int fd, int pid, xchar lev) {
   setgd();
   gold = newgold();
   mread(fd, (char *)gold, sizeof(struct gold));
-  while (gold->gx) {
+  int gold_count = 0; /* MODERN: Prevent infinite loop attack */
+  while (gold->gx && gold_count < 1000) { /* Reasonable limit */
+    gold_count++;
     gold->ngold = fgold;
     fgold = gold;
     gold = newgold();
     mread(fd, (char *)gold, sizeof(struct gold));
   }
+  if (gold_count >= 1000) {
+    error("Save file corrupted: too many gold objects");
+  }
   free((char *)gold);
   trap = newtrap();
   mread(fd, (char *)trap, sizeof(struct trap));
-  while (trap->tx) {
+  int trap_count = 0; /* MODERN: Prevent infinite loop attack */
+  while (trap->tx && trap_count < 1000) { /* Reasonable limit */
+    trap_count++;
     trap->ntrap = ftrap;
     ftrap = trap;
     trap = newtrap();
     mread(fd, (char *)trap, sizeof(struct trap));
+  }
+  if (trap_count >= 1000) {
+    error("Save file corrupted: too many traps");
   }
   free((char *)trap);
   fobj = restobjchn(fd);
@@ -239,12 +259,17 @@ void getlev(int fd, int pid, xchar lev) {
   for (tmp = 1; tmp < 32; tmp++)
     if (wsegs[tmp]) {
       wheads[tmp] = wsegs[tmp] = wtmp = newseg();
-      while (1) {
+      int seg_count = 0; /* MODERN: Prevent infinite loop attack */
+      while (seg_count < 500) { /* Reasonable segment limit */
         mread(fd, (char *)wtmp, sizeof(struct wseg));
         if (!wtmp->nseg)
           break;
+        seg_count++;
         wheads[tmp]->nseg = wtmp = newseg();
         wheads[tmp] = wtmp;
+      }
+      if (seg_count >= 500) {
+        error("Save file corrupted: too many worm segments");
       }
     }
   mread(fd, (char *)wgrowtime, sizeof(wgrowtime));
@@ -258,7 +283,7 @@ void mread(int fd, char *buf, unsigned len) {
   rlen = read(fd, buf, (int)len);
   if (rlen !=
       (int)len) { /* MODERN: Cast to int to match rlen type from read() */
-    pline("Read %d instead of %u bytes.\n", rlen, len);
+    pline("Read error: expected %u bytes, got %d bytes.", len, rlen); /* MODERN: Safe message format */
     if (restoring) {
       (void)unlink(SAVEF);
       error("Error restoring old game.");

@@ -114,12 +114,17 @@ static inline void force_ellipsis(char *dst, size_t cap) {
 extern char *eos(char *s);
 extern int bases[];
 
-char *strprepend(s, pref)
-char *s, *pref;
+/* MODERN: ANSI C function signature for type safety */
+char *strprepend(char *s, const char *pref)
 {
   int i = strlen(pref);
   if (i > PREFIX) {
     pline("WARNING: prefix too short.");
+    return (s);
+  }
+  /* MODERN: Add buffer underflow protection */
+  if ((uintptr_t)s < (uintptr_t)i + 0x1000) { /* Basic underflow check */
+    pline("WARNING: buffer underflow detected in strprepend.");
     return (s);
   }
   s -= i;
@@ -127,16 +132,16 @@ char *s, *pref;
   return (s);
 }
 
-char *sitoa(a)
-int a;
+/* MODERN: ANSI C function signature for type safety */
+char *sitoa(int a)
 {
   static char buf[13];
   (void)snprintf(buf, sizeof(buf), (a < 0) ? "%d" : "+%d", a);
   return (buf);
 }
 
-char *typename(otyp)
-int otyp;
+/* MODERN: ANSI C function signature for type safety */
+char *typename(int otyp)
 {
   static char buf[BUFSZ];
   /* MODERN: Add bounds checking for objects array access */
@@ -192,8 +197,8 @@ int otyp;
   return (buf);
 }
 
-char *xname(obj)
-struct obj *obj;
+/* MODERN: ANSI C function signature for type safety */
+char *xname(struct obj *obj)
 {
   static char bufr[BUFSZ];
   char *buf = &(bufr[PREFIX]); /* leave room for "17 -3 " */
@@ -366,8 +371,8 @@ nopl:
   return (buf);
 }
 
-char *doname(obj)
-struct obj *obj;
+/* MODERN: ANSI C function signature for type safety */
+char *doname(struct obj *obj)
 {
   char prefix[PREFIX];
   char *bp = xname(obj);
@@ -434,9 +439,8 @@ void setan(const char *str,
     Sprintf(buf, "a %s", str);
 }
 
-char *aobjnam(otmp, verb)
-struct obj *otmp;
-char *verb;
+/* MODERN: ANSI C function signature for type safety */
+char *aobjnam(struct obj *otmp, const char *verb)
 {
   char *bp = xname(otmp);
   char prefix[PREFIX];
@@ -460,8 +464,8 @@ char *verb;
   return (bp);
 }
 
-char *Doname(obj)
-struct obj *obj;
+/* MODERN: ANSI C function signature for type safety */
+char *Doname(struct obj *obj)
 {
   char *s = doname(obj);
 
@@ -474,8 +478,8 @@ struct obj *obj;
 const char *const wrp[] = {"wand", "ring", "potion", "scroll", "gem"};
 char wrpsym[] = {WAND_SYM, RING_SYM, POTION_SYM, SCROLL_SYM, GEM_SYM};
 
-struct obj *readobjnam(bp)
-char *bp;
+/* MODERN: ANSI C function signature for type safety */
+struct obj *readobjnam(char *bp)
 {
   char *p;
   int i;
@@ -503,6 +507,7 @@ char *bp;
   }
   if (!cnt && digit(*bp)) {
     cnt = atoi(bp);
+    if (cnt < 0 || cnt > 32767) cnt = 1; /* MODERN: Validate count bounds */
     while (digit(*bp))
       bp++;
     while (*bp == ' ')
@@ -514,6 +519,7 @@ char *bp;
   if (*bp == '+' || *bp == '-') {
     spesgn = (*bp++ == '+') ? 1 : -1;
     spe = atoi(bp);
+    if (spe < -32767 || spe > 32767) spe = 0; /* MODERN: Validate spe bounds */
     while (digit(*bp))
       bp++;
     while (*bp == ' ')
@@ -527,6 +533,7 @@ char *bp;
         *p = 0;
       p++;
       spe = atoi(p);
+      if (spe < -32767 || spe > 32767) spe = 0; /* MODERN: Validate spe bounds */
       while (digit(*p))
         p++;
       if (strcmp(p, ")"))

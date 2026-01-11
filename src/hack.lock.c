@@ -37,6 +37,11 @@ static int record_lock_fd = -1;
  * Returns: 1 on success, 0 on failure
  */
 int modern_lock_game(void) {
+#ifdef _WIN32
+  /* Modern: Windows uses LockFileEx - see win32.c */
+  return win32_lock_game();
+#else
+  /* Unix: Use flock() for file locking */
   int fd;
   int attempts = 0;
 
@@ -75,6 +80,7 @@ int modern_lock_game(void) {
   printf("If no other game is running, try: rm %s\n", GAME_LOCK_FILE);
   close(fd);
   return 0;
+#endif /* _WIN32 */
 }
 
 /*
@@ -82,6 +88,11 @@ int modern_lock_game(void) {
  * Replaces unlink(LLOCK) mechanism
  */
 void modern_unlock_game(void) {
+#ifdef _WIN32
+  /* Modern: Windows uses UnlockFileEx - see win32.c */
+  win32_unlock_game();
+#else
+  /* Unix: Release flock() */
   if (game_lock_fd != -1) {
     /* Verify fd is still valid before using it */
     if (fcntl(game_lock_fd, F_GETFD) != -1) {
@@ -92,6 +103,7 @@ void modern_unlock_game(void) {
     /* Note: We keep the lock file for reuse - flock() doesn't require deletion
      */
   }
+#endif /* _WIN32 */
 }
 
 /*

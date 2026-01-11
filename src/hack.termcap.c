@@ -2,6 +2,12 @@
 /* hack.termcap.c - version 1.0.3 */
 /* $FreeBSD$ */
 
+/*
+ * Modern: On Windows (PDCURSES), termcap functions (tgetent, tgetstr, etc.)
+ * are provided by win32.c PDCurses shim, not Unix termcap library.
+ * See win32.c for Windows implementation details.
+ */
+
 #include "hack.h" /* for function prototypes - includes def.flag.h */
 #include "generated/config.h"
 #include <curses.h>

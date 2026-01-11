@@ -3,21 +3,27 @@ project(restoHack VERSION 1.1.1 LANGUAGES C)
 
 # --- Supported build types: Debug | Release | RelWithDebInfo ---
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
 endif()
+
 set(_RESTOHACK_BUILD_TYPES "Debug;Release;RelWithDebInfo")
 list(FIND _RESTOHACK_BUILD_TYPES "${CMAKE_BUILD_TYPE}" _ix)
+
 if(_ix EQUAL -1)
-  message(FATAL_ERROR "Unknown CMAKE_BUILD_TYPE='${CMAKE_BUILD_TYPE}'. Use one of: ${_RESTOHACK_BUILD_TYPES}")
+    message(FATAL_ERROR "Unknown CMAKE_BUILD_TYPE='${CMAKE_BUILD_TYPE}'. Use one of: ${_RESTOHACK_BUILD_TYPES}")
 endif()
+
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 # Set C standard
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# Ensure binaries carry a build-id for coredumpctl/gdb symbolication
-add_link_options(-Wl,--build-id)
+# Modern: Guard GCC/Clang-specific linker flags for cross-platform compatibility
+if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+    # Ensure binaries carry a build-id for coredumpctl/gdb symbolication
+    add_link_options(-Wl,--build-id)
+endif()
 
 # makepkg compatibility: Remove -Werror flags that cause packaging failures
 # This handles system-injected CFLAGS from makepkg.conf that include -Werror=format-security
@@ -28,9 +34,18 @@ string(STRIP "${CMAKE_C_FLAGS}" CMAKE_C_FLAGS)
 # Modern CMake: Will use target_include_directories for better scoping
 # Removed global include_directories() - using target-specific includes instead
 
-# Find required libraries - modern curses detection for NetBSD/pkgsrc compatibility
-if(NOT DEFINED CURSES_FOUND)
-    find_package(Curses REQUIRED)
+# Modern: Conditional curses library - PDCurses on Windows, ncurses on Unix
+if(WIN32)
+    # Windows: Use PDCurses for console support
+    find_package(PDCurses REQUIRED)
+    message(STATUS "Using PDCurses for Windows console")
+else()
+    # Unix: Use standard curses/ncurses
+    if(NOT DEFINED CURSES_FOUND)
+        find_package(Curses REQUIRED)
+    endif()
+
+    message(STATUS "Using ncurses for Unix terminal")
 endif()
 
 # Check for compat library (BSD-specific, might not exist on Linux)
@@ -49,10 +64,11 @@ check_symbol_exists(arc4random_buf "stdlib.h" HAVE_ARC4RANDOM_BUF_IN_STDLIB)
 check_symbol_exists(arc4random_buf "bsd/stdlib.h" HAVE_ARC4RANDOM_BUF_IN_BSD_STDLIB)
 
 # Consolidated capability flags
-if (HAVE_ARC4RANDOM_IN_STDLIB OR HAVE_ARC4RANDOM_IN_BSD_STDLIB)
+if(HAVE_ARC4RANDOM_IN_STDLIB OR HAVE_ARC4RANDOM_IN_BSD_STDLIB)
     set(HAVE_ARC4RANDOM 1)
 endif()
-if (HAVE_ARC4RANDOM_BUF_IN_STDLIB OR HAVE_ARC4RANDOM_BUF_IN_BSD_STDLIB)
+
+if(HAVE_ARC4RANDOM_BUF_IN_STDLIB OR HAVE_ARC4RANDOM_BUF_IN_BSD_STDLIB)
     set(HAVE_ARC4RANDOM_BUF 1)
 endif()
 
@@ -61,9 +77,10 @@ check_symbol_exists(srandomdev "stdlib.h" HAVE_SRANDOMDEV)
 check_symbol_exists(getentropy "unistd.h;sys/random.h" HAVE_GETENTROPY)
 
 # If we need libbsd for arc4random, link it
-if (HAVE_BSD_STDLIB_H AND NOT HAVE_ARC4RANDOM_IN_STDLIB AND HAVE_ARC4RANDOM)
+if(HAVE_BSD_STDLIB_H AND NOT HAVE_ARC4RANDOM_IN_STDLIB AND HAVE_ARC4RANDOM)
     check_library_exists(bsd arc4random "" HAVE_LIBBSD_ARC4)
-    if (HAVE_LIBBSD_ARC4)
+
+    if(HAVE_LIBBSD_ARC4)
         set(HAVE_LIBBSD 1)
         message(STATUS "Linking libbsd for arc4random support")
     endif()
@@ -84,67 +101,71 @@ else()
     message(FATAL_ERROR "config.h.in not found at ${CMAKE_CURRENT_SOURCE_DIR}/config.h.in")
 endif()
 
-
 set(HACK_SOURCES
     src/alloc.c
-    src/hack.Decl.c  
-    src/hack.main.c    
-    src/hack.mkobj.c   
-    src/hack.invent.c  
-    src/hack.lock.c    
-    src/hack.worn.c    
-    src/hack.mklev.c   
-    src/hack.lev.c     
-    src/hack.pri.c    
-    src/hack.topl.c   
-    src/hack.termcap.c 
-    src/hack.objnam.c  
-    src/hack.o_init.c  
-    src/hack.pager.c   
-    src/hack.makemon.c 
-    src/hack.tty.c     
-    src/hack.fight.c   
-    src/hack.mon.c     
-    src/hack.eat.c     
-    src/hack.end.c     
-    src/hack.do_name.c 
-    src/hack.search.c  
-    src/hack.monst.c   
-    src/hack.cmd.c     
-    src/hack.c         
-    src/hack.do.c      
-    src/hack.wield.c   
-    src/hack.engrave.c 
-    src/hack.potion.c  
-    src/hack.read.c    
-    src/hack.zap.c     
-    src/hack.trap.c    
-    src/hack.apply.c   
-    src/hack.dog.c     
-    src/hack.shk.c    
-    src/hack.unix.c   
-    src/hack.save.c   
-    src/hack.vault.c  
-    src/hack.worm.c   
-    src/hack.mkmaze.c 
-    src/hack.bones.c   
-    src/hack.mhitu.c   
-    src/hack.steal.c   
-    src/hack.wizard.c  
-    src/hack.do_wear.c 
-    src/hack.ioctl.c   
-    src/hack.mkshop.c  
-    src/hack.rumors.c  
-    src/hack.rip.c     
-    src/hack.shknam.c  
-    src/hack.options.c 
+    src/hack.Decl.c
+    src/hack.main.c
+    src/hack.mkobj.c
+    src/hack.invent.c
+    src/hack.lock.c
+    src/hack.worn.c
+    src/hack.mklev.c
+    src/hack.lev.c
+    src/hack.pri.c
+    src/hack.topl.c
+    src/hack.termcap.c
+    src/hack.objnam.c
+    src/hack.o_init.c
+    src/hack.pager.c
+    src/hack.makemon.c
+    src/hack.tty.c
+    src/hack.fight.c
+    src/hack.mon.c
+    src/hack.eat.c
+    src/hack.end.c
+    src/hack.do_name.c
+    src/hack.search.c
+    src/hack.monst.c
+    src/hack.cmd.c
+    src/hack.c
+    src/hack.do.c
+    src/hack.wield.c
+    src/hack.engrave.c
+    src/hack.potion.c
+    src/hack.read.c
+    src/hack.zap.c
+    src/hack.trap.c
+    src/hack.apply.c
+    src/hack.dog.c
+    src/hack.shk.c
+    src/hack.unix.c
+    src/hack.save.c
+    src/hack.vault.c
+    src/hack.worm.c
+    src/hack.mkmaze.c
+    src/hack.bones.c
+    src/hack.mhitu.c
+    src/hack.steal.c
+    src/hack.wizard.c
+    src/hack.do_wear.c
+    src/hack.ioctl.c
+    src/hack.mkshop.c
+    src/hack.rumors.c
+    src/hack.rip.c
+    src/hack.shknam.c
+    src/hack.options.c
     src/hack.timeout.c
     src/hack.track.c
     src/hack.u_init.c
-    src/hack.version.c   
-    src/rnd.c           
-    
+    src/hack.version.c
+    src/rnd.c
 )
+
+# Modern: Windows injection - add win32.c on Windows platforms only
+if(WIN32)
+    list(APPEND HACK_SOURCES src/win32.c)
+    message(STATUS "Windows support injected via win32.c")
+endif()
 
 # Build makedefs utility first
 add_executable(makedefs src/makedefs.c)
@@ -172,26 +193,30 @@ target_include_directories(hack PRIVATE
 
 # Enhanced Debug profile for better postmortem analysis
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  target_compile_options(hack PRIVATE -fno-omit-frame-pointer)
-  target_link_options(hack PRIVATE -rdynamic)
+    target_compile_options(hack PRIVATE -fno-omit-frame-pointer)
+    target_link_options(hack PRIVATE -rdynamic)
 endif()
 
 # Compiler flags
-target_compile_options(hack PRIVATE 
+target_compile_options(hack PRIVATE
     $<$<C_COMPILER_ID:GNU>:-Wno-stringop-truncation>
     $<$<C_COMPILER_ID:Clang>:-Wno-string-plus-int>
+
     # Packaging compatibility: Suppress warnings that might be treated as errors
     -Wno-error=format-security
     -Wno-error
+
     # K&R vintage code compatibility: Suppress warnings for 1984 heritage code
     -Wno-deprecated-non-prototype
     -Wno-parentheses
     -Wno-unused-variable
     -Wno-misleading-indentation
     $<$<C_COMPILER_ID:Clang>:-Wno-knr-promoted-parameter>
+
     # Buffer overflow protection for save system safety
     $<$<C_COMPILER_ID:GNU>:-fstack-protector-strong>
     $<$<C_COMPILER_ID:Clang>:-fstack-protector-strong>
+
     # Enable debugging symbols for crash analysis
     -g3
 )
@@ -224,12 +249,12 @@ endif()
 
 # Runtime path configuration - inject absolute paths to prevent hardcoded path issues
 if(DEFINED HACKDIR_OVERRIDE)
-    target_compile_definitions(hack PRIVATE 
+    target_compile_definitions(hack PRIVATE
         HACKDIR="${HACKDIR_OVERRIDE}"
         SAVE_VERSION="${PROJECT_VERSION}"
     )
 else()
-    target_compile_definitions(hack PRIVATE 
+    target_compile_definitions(hack PRIVATE
         HACKDIR="${CMAKE_BINARY_DIR}/hackdir"
         SAVE_VERSION="${PROJECT_VERSION}"
     )
@@ -237,6 +262,7 @@ endif()
 
 # Struct packing control for save system consistency
 option(ENABLE_STRUCT_PACKING "Enable struct packing for save system compatibility" ON)
+
 if(ENABLE_STRUCT_PACKING)
     # Check if compiler supports pragma pack
     include(CheckCSourceCompiles)
@@ -246,7 +272,7 @@ if(ENABLE_STRUCT_PACKING)
         #pragma pack()
         int main() { return sizeof(struct test); }
     " HAVE_PRAGMA_PACK)
-    
+
     if(HAVE_PRAGMA_PACK)
         target_compile_definitions(hack PRIVATE HAVE_PRAGMA_PACK=1)
         message(STATUS "Struct packing enabled for save system consistency")
@@ -257,12 +283,14 @@ endif()
 
 # Save system build options and debugging
 option(ENABLE_SAVE_DEBUG "Enable save system debug logging" OFF)
+
 if(ENABLE_SAVE_DEBUG)
     target_compile_definitions(hack PRIVATE SAVE_DEBUG=1)
     message(STATUS "Save system debug logging enabled")
 endif()
 
 option(ENABLE_SAVE_VALIDATION "Enable save file integrity checks" ON)
+
 if(ENABLE_SAVE_VALIDATION)
     target_compile_definitions(hack PRIVATE SAVE_VALIDATION=1)
     message(STATUS "Save file validation enabled")
@@ -272,32 +300,52 @@ endif()
 option(ENABLE_SANITIZERS "Address/UB sanitizers in Debug" OFF)
 option(ENABLE_FUZZING "libFuzzer targets (Clang only)" OFF)
 
-# Common hardening flags
-target_compile_options(hack PRIVATE -Wall -Wextra -fstack-protector-strong)
-
-# Stack clash protection (GCC feature)
-include(CheckCCompilerFlag)
-check_c_compiler_flag("-fstack-clash-protection" HAS_SCP)
-if(HAS_SCP)
-    target_compile_options(hack PRIVATE -fstack-clash-protection)
-    message(STATUS "Stack clash protection enabled")
+# Modern: Platform-specific compiler flags
+if(MSVC)
+    # MSVC hardening and warning flags
+    target_compile_options(hack PRIVATE
+        /W3 # Warning level 3
+        /sdl # Security Development Lifecycle checks
+        /guard:cf # Control Flow Guard
+    )
+    target_link_options(hack PRIVATE
+        /DYNAMICBASE # Address Space Layout Randomization
+        /NXCOMPAT # Data Execution Prevention
+    )
+    message(STATUS "Using MSVC hardening flags")
+else()
+    # GCC/Clang hardening flags
+    target_compile_options(hack PRIVATE -Wall -Wextra -fstack-protector-strong)
+    message(STATUS "Using GCC/Clang hardening flags")
 endif()
 
-# Optimized configs: O2, PIE, Fortify (3 if available, else 2)
-target_compile_options(hack PRIVATE 
-    $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>:-O2 -fPIE>
-)
-target_link_options(hack PRIVATE 
-    $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>:-pie -Wl,-z,relro,-z,now -Wl,-z,noexecstack>
-)
+# Modern: GCC/Clang-specific hardening (not applicable to MSVC)
+if(NOT MSVC)
+    # Stack clash protection (GCC feature)
+    include(CheckCCompilerFlag)
+    check_c_compiler_flag("-fstack-clash-protection" HAS_SCP)
+
+    if(HAS_SCP)
+        target_compile_options(hack PRIVATE -fstack-clash-protection)
+        message(STATUS "Stack clash protection enabled")
+    endif()
+
+    # Optimized configs: O2, PIE, Fortify (3 if available, else 2)
+    target_compile_options(hack PRIVATE
+        $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>:-O2 -fPIE>
+    )
+    target_link_options(hack PRIVATE
+        $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>:-pie -Wl,-z,relro,-z,now -Wl,-z,noexecstack>
+    )
+endif()
 
 # Apply FORTIFY_SOURCE based on detection
 if(HAS_FORTIFY3)
-    target_compile_definitions(hack PRIVATE 
+    target_compile_definitions(hack PRIVATE
         $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>:_FORTIFY_SOURCE=3>
     )
 else()
-    target_compile_definitions(hack PRIVATE 
+    target_compile_definitions(hack PRIVATE
         $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>:_FORTIFY_SOURCE=2>
     )
 endif()
@@ -305,18 +353,20 @@ endif()
 # Debug builds:
 if(ENABLE_SANITIZERS)
     # With sanitizers: use -O1 for better detection + FORTIFY_SOURCE compatibility
-    target_compile_options(hack PRIVATE 
+    target_compile_options(hack PRIVATE
         $<$<CONFIG:Debug>:-O1 -g3 -fsanitize=address,undefined -fno-omit-frame-pointer>
     )
-    target_link_options(hack PRIVATE 
+    target_link_options(hack PRIVATE
         $<$<CONFIG:Debug>:-fsanitize=address,undefined>
     )
+
     # Enable FORTIFY_SOURCE=2 in Debug with sanitizers (has -O1)
     target_compile_definitions(hack PRIVATE $<$<CONFIG:Debug>:_FORTIFY_SOURCE=2>)
     message(STATUS "Sanitizers enabled - run with: ASAN_OPTIONS=detect_stack_use_after_return=1 ./hack")
 else()
     # Pure debugging: -O0 to avoid <optimized_out> in coredumps, disable FORTIFY_SOURCE
     target_compile_options(hack PRIVATE $<$<CONFIG:Debug>:-O0 -g3>)
+
     # Modern: Explicitly undefine FORTIFY_SOURCE first to override system CFLAGS
     target_compile_definitions(hack PRIVATE $<$<CONFIG:Debug>:_FORTIFY_SOURCE=0>)
     target_compile_options(hack PRIVATE $<$<CONFIG:Debug>:-U_FORTIFY_SOURCE>)
@@ -332,6 +382,7 @@ endif()
 
 # Enhanced memory sanitizers specifically for save/load operations
 option(ENABLE_SAVE_SANITIZERS "Enable memory sanitizers for save/load debugging" OFF)
+
 if(ENABLE_SAVE_SANITIZERS)
     target_compile_options(hack PRIVATE -fsanitize=memory -fsanitize-memory-track-origins -g)
     target_link_options(hack PRIVATE -fsanitize=memory)
@@ -340,71 +391,85 @@ endif()
 
 # --- RelWithDebInfo profile (for production servers) ---
 if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-  message(STATUS "Configuring RelWithDebInfo build (optimized with debug symbols)")
+    message(STATUS "Configuring RelWithDebInfo build (optimized with debug symbols)")
 
-  # Perf + debuggable backtraces
-  target_compile_options(hack PRIVATE -O2 -fno-omit-frame-pointer)
+    # Perf + debuggable backtraces
+    target_compile_options(hack PRIVATE -O2 -fno-omit-frame-pointer)
 
-  # PIE + RELRO/NOW + NX (noexecstack) — production-ready with symbols for debugging
-  target_compile_options(hack PRIVATE -fPIE)
-  target_link_options(hack PRIVATE -pie -Wl,-z,relro,-z,now -Wl,-z,noexecstack)
+    # PIE + RELRO/NOW + NX (noexecstack) — production-ready with symbols for debugging
+    target_compile_options(hack PRIVATE -fPIE)
+    target_link_options(hack PRIVATE -pie -Wl,-z,relro,-z,now -Wl,-z,noexecstack)
 
-  # Fortify: prefer =3 when available (fallback to 2)
-  if(HAS_FORTIFY3)
-    target_compile_definitions(hack PRIVATE _FORTIFY_SOURCE=3)
-  else()
-    target_compile_definitions(hack PRIVATE _FORTIFY_SOURCE=2)
-  endif()
+    # Fortify: prefer =3 when available (fallback to 2)
+    if(HAS_FORTIFY3)
+        target_compile_definitions(hack PRIVATE _FORTIFY_SOURCE=3)
+    else()
+        target_compile_definitions(hack PRIVATE _FORTIFY_SOURCE=2)
+    endif()
 
-  # Slightly stricter but sane warnings
-  target_compile_options(hack PRIVATE -Wall -Wextra -Wswitch -Wwrite-strings -Wformat=2)
+    # Slightly stricter but sane warnings
+    target_compile_options(hack PRIVATE -Wall -Wextra -Wswitch -Wwrite-strings -Wformat=2)
 endif()
 
-# Link libraries
-target_link_libraries(hack ${CURSES_LIBRARIES})
+# Modern: Conditional curses library linking
+if(WIN32)
+    # Windows: Link PDCurses and add PDCURSES compile definition
+    target_link_libraries(hack ${PDCURSES_LIBRARIES})
+    target_compile_definitions(hack PRIVATE PDCURSES)
+    message(STATUS "Linking PDCurses for Windows")
+else()
+    # Unix: Link standard curses
+    target_link_libraries(hack ${CURSES_LIBRARIES})
+    message(STATUS "Linking ncurses for Unix")
+endif()
+
 if(COMPAT_LIBRARY)
     target_link_libraries(hack ${COMPAT_LIBRARY})
 endif()
+
 if(HAVE_LIBBSD)
     target_link_libraries(hack bsd)
 endif()
+
 # Always handy to inspect flags locally
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Common warnings for all builds (sane, not noisy)
 target_compile_options(hack PRIVATE
-  -Wall -Wextra -Wformat=2
-  -Wno-missing-field-initializers
-  -Wno-old-style-definition
-  -fno-common
+    -Wall -Wextra -Wformat=2
+    -Wno-missing-field-initializers
+    -Wno-old-style-definition
+    -fno-common
 )
 
 # === Profiles ===
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
-  # General build = ship it
-  target_compile_options(hack PRIVATE -O2 -DNDEBUG)
+    # General build = ship it
+    target_compile_options(hack PRIVATE -O2 -DNDEBUG)
 elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  # Dev build = symbols + easy backtraces, warnings don’t kill flow
-  target_compile_options(hack PRIVATE -O0 -g3 -fno-omit-frame-pointer -Wwrite-strings -Wno-error)
-  target_link_options(hack PRIVATE -rdynamic)
+    # Dev build = symbols + easy backtraces, warnings don’t kill flow
+    target_compile_options(hack PRIVATE -O0 -g3 -fno-omit-frame-pointer -Wwrite-strings -Wno-error)
+    target_link_options(hack PRIVATE -rdynamic)
 elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-  # safe, strict, but do NOT fail on warnings
-  target_compile_options(hack PRIVATE
-    -O2 -fno-omit-frame-pointer -fPIE
-    -Wwrite-strings
-    -Wno-error
-  )
-  # Fortify (3 if toolchain supports it; harmless if ignored)
-  target_compile_definitions(hack PRIVATE _FORTIFY_SOURCE=3)
-  target_link_options(hack PRIVATE
-    -pie
-    -Wl,-z,relro,-z,now
-    -Wl,-z,noexecstack
-  )
-  # Quiet a recent Clang nit, only if relevant
-  if(CMAKE_C_COMPILER_ID STREQUAL "Clang" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 18)
-    target_compile_options(hack PRIVATE -Wno-deprecated-non-prototype)
-  endif()
+    # safe, strict, but do NOT fail on warnings
+    target_compile_options(hack PRIVATE
+        -O2 -fno-omit-frame-pointer -fPIE
+        -Wwrite-strings
+        -Wno-error
+    )
+
+    # Fortify (3 if toolchain supports it; harmless if ignored)
+    target_compile_definitions(hack PRIVATE _FORTIFY_SOURCE=3)
+    target_link_options(hack PRIVATE
+        -pie
+        -Wl,-z,relro,-z,now
+        -Wl,-z,noexecstack
+    )
+
+    # Quiet a recent Clang nit, only if relevant
+    if(CMAKE_C_COMPILER_ID STREQUAL "Clang" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 18)
+        target_compile_options(hack PRIVATE -Wno-deprecated-non-prototype)
+    endif()
 endif()
 
 # REMOVED: Conflicting sanitizer configuration that was overriding ENABLE_SANITIZERS
@@ -412,7 +477,6 @@ endif()
 
 # Data files
 set(DATA_FILES rumors help hh data)
-
 
 # Versioned save system configuration
 set(HACK_VERSION "${PROJECT_VERSION}")
@@ -423,17 +487,22 @@ set(BACKUP_SAVE_DIR "${SAVE_DIR}/backup")
 option(RESTOHACK_COPY_ASSETS "Copy asset directories into build tree" ON)
 
 add_custom_target(setup_hackdir ALL
+
     # Copy hackdir structure and ensure write permissions on record file
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/hackdir ${CMAKE_BINARY_DIR}/hackdir
+
     # Create required directories and lock files
     COMMAND ${CMAKE_COMMAND} -E make_directory ${SAVE_DIR}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${VERSIONED_SAVE_DIR}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${BACKUP_SAVE_DIR}
     COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_BINARY_DIR}/hackdir/perm
+
     # Ensure record file exists and is writable (game checks this at startup)
     COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_BINARY_DIR}/hackdir/record
+
     # Also copy files to build root for pre-chdir access (legacy compatibility)
     COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_BINARY_DIR}/perm
+
     # Clean all possible lock files (HLOCK, LLOCK, record_lock in all locations)
     COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/record_lock ${CMAKE_BINARY_DIR}/safelock ${CMAKE_BINARY_DIR}/hackdir/record_lock ${CMAKE_BINARY_DIR}/hackdir/safelock
     COMMAND ${CMAKE_COMMAND} -E remove -f ${SAVE_DIR}/* ${VERSIONED_SAVE_DIR}/* ${BACKUP_SAVE_DIR}/*
@@ -448,11 +517,11 @@ if(RESTOHACK_COPY_ASSETS)
         if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${_asset})
             add_custom_command(TARGET setup_hackdir POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                        ${CMAKE_CURRENT_SOURCE_DIR}/${_asset}
-                        ${CMAKE_BINARY_DIR}/hackdir/${_asset}
+                ${CMAKE_CURRENT_SOURCE_DIR}/${_asset}
+                ${CMAKE_BINARY_DIR}/hackdir/${_asset}
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                        ${CMAKE_CURRENT_SOURCE_DIR}/${_asset}
-                        ${CMAKE_BINARY_DIR}/${_asset})
+                ${CMAKE_CURRENT_SOURCE_DIR}/${_asset}
+                ${CMAKE_BINARY_DIR}/${_asset})
         else()
             message(WARNING "Asset '${_asset}' missing in source tree.")
         endif()
@@ -461,7 +530,6 @@ endif()
 
 # Ensure hack depends on the setup
 add_dependencies(hack setup_hackdir)
-
 
 # Custom clean target to remove all generated files and lock files
 add_custom_target(clean-all
@@ -478,12 +546,13 @@ install(FILES man/hack.6 DESTINATION share/man/man6)
 
 # ---- Security Options ----
 option(CLANG_STRICT "Enable draconian warnings under Clang" OFF)
+
 if(CLANG_STRICT AND CMAKE_C_COMPILER_ID MATCHES "Clang")
-  target_compile_options(hack PRIVATE 
-    -Weverything -Werror
-    -Wno-poison-system-directories
-    -Wno-padded -Wno-cast-align -Wno-disabled-macro-expansion
-  )
+    target_compile_options(hack PRIVATE
+        -Weverything -Werror
+        -Wno-poison-system-directories
+        -Wno-padded -Wno-cast-align -Wno-disabled-macro-expansion
+    )
 endif()
 
 # ---- Packaging (optional) ----
@@ -535,15 +604,15 @@ elseif(APPLE)
 else()
     # Linux packages (DEB, RPM, tar.gz)
     set(CPACK_GENERATOR "DEB;RPM;TGZ")
-    
+
     # Debian package configuration
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "restoHack Project <noreply@example.com>")
     set(CPACK_DEBIAN_PACKAGE_SECTION "games")
     set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libncurses5 | libncurses6")
     set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
-    
-    # RPM package configuration  
+
+    # RPM package configuration
     set(CPACK_RPM_PACKAGE_GROUP "Amusements/Games")
     set(CPACK_RPM_PACKAGE_LICENSE "BSD-3-Clause")
     set(CPACK_RPM_PACKAGE_REQUIRES "glibc, ncurses")

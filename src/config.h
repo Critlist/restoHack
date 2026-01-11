@@ -69,6 +69,11 @@
 #endif          /* BSD */
 #endif          /* UNIX */
 
+/* Modern: Disable Unix-only features on Windows */
+#ifdef _WIN32
+#undef SUSPEND    /* No job control (Ctrl+Z) on Windows */
+#endif
+
 #ifdef CHDIR
 /*
  * If you define HACKDIR, then this will be the default playground;

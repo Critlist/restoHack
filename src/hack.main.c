@@ -95,6 +95,11 @@ int main(int argc, char *argv[]) {
   hname = argv[0];
   hackpid = getpid();
 
+#ifdef _WIN32
+  /* Modern: Initialize Windows console (UTF-8, control handlers) */
+  win32_init_console();
+#endif
+
 #ifdef CHDIR /* otherwise no chdir() */
   /*
    * See if we must change directory to the playground.

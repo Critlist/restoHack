@@ -29,4 +29,9 @@
 #define random  rand
 #endif
 
+/* Modern: Windows compatibility layer injection */
+#ifdef _WIN32
+#include "win32.h"
+#endif
+
 #endif /* RESTOHACK_COMPAT_H */

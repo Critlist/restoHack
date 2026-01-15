@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
 }
 
 char line[LINSZ], *lp = line, *lp0 = line, *lpe = line;
-int eof;
+int at_eof; /* Modern: renamed from 'eof' to avoid collision with MinGW io.h eof() */
 
 int readline(void) {
   ptrdiff_t buffer_space = (line + LINSZ) - lp0; /* MODERN: safe pointer arithmetic */
@@ -82,7 +82,7 @@ int readline(void) {
     exit(1);
   }
   if (n == 0)
-    eof++;
+    at_eof++;
   lpe = lp0 + n;
   
   if (n > INT_MAX) { /* MODERN: validate range before int conversion */
@@ -104,7 +104,7 @@ int skipuntil(char *s) {
   char *sp0, *sp1;
 loop:
   while (*s != nextchar())
-    if (eof) {
+    if (at_eof) {
       printf("Cannot skipuntil %s\n", s);
       exit(1);
     }

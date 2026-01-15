@@ -51,25 +51,25 @@ if(WIN32)
 
     # Modern (2026): Build PDCursesMod from vendored submodule
     # WHY: Static linking for portable .exe (matches Alpine static build)
-    # HOW: wincon port, static library, exclude from install
+    # HOW: Compile wincon port sources directly (bypasses PDCursesMod's CMake)
     # PRESERVES: Unix builds use find_package(Curses) unchanged
     # ADDS: Vendored PDCursesMod static build
     # TODO: Credit PDCursesMod project (https://github.com/Bill-Gray/PDCursesMod)
     #       in README and release notes when Windows port is complete
-    set(PDC_BUILD_SHARED OFF CACHE BOOL "Build PDCurses as static library" FORCE)
-    set(PDCURSES_SRCDIR "${CMAKE_CURRENT_SOURCE_DIR}/windows/pdcurses" CACHE PATH "PDCurses source directory" FORCE)
 
-    # Build wincon port (Windows Console API)
-    # PDCursesMod's wincon/CMakeLists.txt expects project_common.cmake from parent
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/windows/pdcurses")
-    add_subdirectory(windows/pdcurses/wincon pdcurses-build EXCLUDE_FROM_ALL)
+    # PDCurses core sources (curses API implementation)
+    file(GLOB PDCURSES_CORE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/windows/pdcurses/pdcurses/*.c")
+    # PDCurses wincon backend (Windows Console API)
+    file(GLOB PDCURSES_WINCON_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/windows/pdcurses/wincon/*.c")
 
-    # Set variables for compatibility with existing build logic
+    # Build static PDCurses library
+    add_library(pdcurses STATIC ${PDCURSES_CORE_SOURCES} ${PDCURSES_WINCON_SOURCES})
+    target_include_directories(pdcurses PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/windows/pdcurses")
+    target_compile_definitions(pdcurses PRIVATE PDC_WIDE PDC_FORCE_UTF8)
+
+    # Set variables for linking
     set(PDCURSES_LIBRARIES pdcurses)
-    set(PDCURSES_INCLUDE_DIRS
-        "${CMAKE_CURRENT_SOURCE_DIR}/windows/pdcurses"
-        "${CMAKE_CURRENT_BINARY_DIR}/pdcurses-build"
-    )
+    set(PDCURSES_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/windows/pdcurses")
 
     message(STATUS "Using vendored PDCursesMod 4.5.4 (wincon port, static)")
 else()

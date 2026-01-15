@@ -60,6 +60,8 @@ if(WIN32)
     set(PDCURSES_SRCDIR "${CMAKE_CURRENT_SOURCE_DIR}/windows/pdcurses" CACHE PATH "PDCurses source directory" FORCE)
 
     # Build wincon port (Windows Console API)
+    # PDCursesMod's wincon/CMakeLists.txt expects project_common.cmake from parent
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/windows/pdcurses")
     add_subdirectory(windows/pdcurses/wincon pdcurses-build EXCLUDE_FROM_ALL)
 
     # Set variables for compatibility with existing build logic

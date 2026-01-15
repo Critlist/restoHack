@@ -156,24 +156,6 @@ Fenlason's high school was near Maynard, where DEC headquarters were located. Hi
 
 Even decades later, Fenlason remained a purist about gaming and technology. In the 2000 Linux.com interview, he expressed concerns about modern graphical gaming: *"No special effects in the movies will ever live up to those in your head."* He kept his children away from computers, believing they needed to learn *"more about how the world works, like climbing and building towers out of blocks and all the basic physics things that we take for granted."*
 
-### Technical Architecture
-
-Early Hack introduced object-oriented concepts in pure C:
-
-```c
-// Revolutionary data structures for 1982
-struct monst {
-    struct monst *nmon;     // Linked list architecture
-    struct permonst *data;  // Polymorphic type system
-    xchar mx, my;           // Position in world
-    uchar mhp, mhpmax;      // Health management
-    struct obj *minvent;    // Dynamic inventory
-    // Bitfield optimizations for memory efficiency
-    Bitfield(mimic,1);      // Can mimic objects
-    Bitfield(mtame,1);      // Player relationship
-};
-```
-
 ### Cultural Explosion and USENIX Distribution
 
 Fenlason submitted Hack to a USENIX conference tape collection. As he recalls: *"Usenix had biannual meetings, Unix users would get together and swap war stories. For each meeting they'd put together a tape of some of the contributed software. I put [Hack] on the tape and forgot about it until someone I know mentioned that the two most popular pieces of software on that particular tape were my silly game and my friend Jonathon's text editor."*

@@ -5,6 +5,35 @@ All notable changes to restoHack will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - Windows Port
+
+### Added
+
+- **Windows Support**: Native Windows builds via PDCursesMod integration
+  - Vendored PDCursesMod 4.5.4 as git submodule at `windows/pdcurses/`
+  - PDCurses termcap shim for Windows Console API compatibility
+  - File locking via Windows LockFileEx (replaces Unix flock)
+  - Console control handler for Ctrl+C and window close events
+  - UTF-8 console setup for box-drawing character rendering
+  - POSIX compatibility shims (getuid, getpid, usleep)
+
+### Changed
+
+- **Build System**: Isolated Windows code into dedicated `windows/` directory
+  - `windows/win32.c` - PDCurses termcap shim + file locking implementation
+  - `windows/win32.h` - Windows API declarations and POSIX shims
+  - `windows/pdcurses/` - Vendored PDCursesMod 4.5.4 (git submodule)
+  - All Windows code guarded with `#ifdef _WIN32` or `if(WIN32)`
+- **Static Linking**: Windows builds produce portable .exe with minimal dependencies
+  - MSVC: Static runtime (/MT) eliminates vcruntime140.dll dependency
+  - MinGW: Selective static linking (-static-libgcc -static-libstdc++)
+
+### Technical
+
+- CMake conditional compilation ensures Unix builds unaffected
+- Generator expressions for platform-specific include paths and linking
+- Submodule initialization check with clear error message and instructions
+
 ## [1.1.5] 2025-12-12
 
 ### Changed

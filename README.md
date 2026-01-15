@@ -80,6 +80,28 @@ cd build && ./hack
 cmake --preset=release && cmake --build build
 ```
 
+### Windows
+
+Requires git submodule initialization (one-time):
+
+```bash
+git submodule update --init --recursive
+```
+
+**Visual Studio 2022:**
+```bash
+cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+cmake --build build --config Release
+```
+
+**MinGW:**
+```bash
+cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+```
+
+Binary location: `build/Release/hack.exe` (MSVC) or `build/hack.exe` (MinGW)
+
 ---
 
 ### Download Pre-built Binary (Linux)

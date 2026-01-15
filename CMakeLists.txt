@@ -36,9 +36,40 @@ string(STRIP "${CMAKE_C_FLAGS}" CMAKE_C_FLAGS)
 
 # Modern: Conditional curses library - PDCurses on Windows, ncurses on Unix
 if(WIN32)
-    # Windows: Use PDCurses for console support
-    find_package(PDCurses REQUIRED)
-    message(STATUS "Using PDCurses for Windows console")
+    # Modern (2026): Check PDCursesMod submodule initialized
+    # WHY: Windows builds require vendored PDCursesMod for static linking
+    # HOW: Fail gracefully with instructions if submodule missing
+    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/windows/pdcurses/CMakeLists.txt")
+        message(FATAL_ERROR
+            "PDCursesMod submodule not initialized!\n"
+            "\n"
+            "To initialize:\n"
+            "    git submodule update --init --recursive\n"
+            "\n"
+            "Then re-run CMake.\n")
+    endif()
+
+    # Modern (2026): Build PDCursesMod from vendored submodule
+    # WHY: Static linking for portable .exe (matches Alpine static build)
+    # HOW: wincon port, static library, exclude from install
+    # PRESERVES: Unix builds use find_package(Curses) unchanged
+    # ADDS: Vendored PDCursesMod static build
+    # TODO: Credit PDCursesMod project (https://github.com/Bill-Gray/PDCursesMod)
+    #       in README and release notes when Windows port is complete
+    set(PDC_BUILD_SHARED OFF CACHE BOOL "Build PDCurses as static library" FORCE)
+    set(PDCURSES_SRCDIR "${CMAKE_CURRENT_SOURCE_DIR}/windows/pdcurses" CACHE PATH "PDCurses source directory" FORCE)
+
+    # Build wincon port (Windows Console API)
+    add_subdirectory(windows/pdcurses/wincon pdcurses-build EXCLUDE_FROM_ALL)
+
+    # Set variables for compatibility with existing build logic
+    set(PDCURSES_LIBRARIES pdcurses)
+    set(PDCURSES_INCLUDE_DIRS
+        "${CMAKE_CURRENT_SOURCE_DIR}/windows/pdcurses"
+        "${CMAKE_CURRENT_BINARY_DIR}/pdcurses-build"
+    )
+
+    message(STATUS "Using vendored PDCursesMod 4.5.4 (wincon port, static)")
 else()
     # Unix: Use standard curses/ncurses
     if(NOT DEFINED CURSES_FOUND)
@@ -78,7 +109,7 @@ check_symbol_exists(getentropy "unistd.h;sys/random.h" HAVE_GETENTROPY)
 
 # If we need libbsd for arc4random, link it
 if(HAVE_BSD_STDLIB_H AND NOT HAVE_ARC4RANDOM_IN_STDLIB AND HAVE_ARC4RANDOM)
-    check_library_exists(bsd arc4random "" HAVE_LIBBSD_ARC4)
+    check_library_eqxists(bsd arc4random "" HAVE_LIBBSD_ARC4)
 
     if(HAVE_LIBBSD_ARC4)
         set(HAVE_LIBBSD 1)
@@ -163,8 +194,8 @@ set(HACK_SOURCES
 
 # Modern: Windows injection - add win32.c on Windows platforms only
 if(WIN32)
-    list(APPEND HACK_SOURCES src/win32.c)
-    message(STATUS "Windows support injected via win32.c")
+    list(APPEND HACK_SOURCES windows/win32.c)
+    message(STATUS "Windows support injected via windows/win32.c")
 endif()
 
 # Build makedefs utility first
@@ -183,12 +214,16 @@ add_custom_command(
 add_executable(hack ${HACK_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/hack.onames.h)
 
 # Modern CMake: Target-specific include directories (better than global includes)
+# Modern (2026): Conditional include paths - PDCursesMod on Windows, ncurses on Unix
+# Generator expressions ensure correct headers at build time
 target_include_directories(hack PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_BINARY_DIR}
     ${CMAKE_BINARY_DIR}/generated
-    ${CURSES_INCLUDE_DIR}
+    $<$<PLATFORM_ID:Windows>:${CMAKE_CURRENT_SOURCE_DIR}/windows>
+    $<$<PLATFORM_ID:Windows>:${PDCURSES_INCLUDE_DIRS}>
+    $<$<NOT:$<PLATFORM_ID:Windows>>:${CURSES_INCLUDE_DIR}>
 )
 
 # Enhanced Debug profile for better postmortem analysis
@@ -413,10 +448,35 @@ endif()
 
 # Modern: Conditional curses library linking
 if(WIN32)
-    # Windows: Link PDCurses and add PDCURSES compile definition
-    target_link_libraries(hack ${PDCURSES_LIBRARIES})
+    # Modern (2026): Windows static linking configuration
+    # WHY: Portable .exe with zero DLL dependencies
+    # HOW: Static PDCurses + compiler-specific runtime flags
+    # PRESERVES: Unix dynamic linking unchanged
+    # ADDS: Static flags for MSVC and MinGW
+    target_link_libraries(hack PRIVATE ${PDCURSES_LIBRARIES})
     target_compile_definitions(hack PRIVATE PDCURSES)
-    message(STATUS "Linking PDCurses for Windows")
+
+    if(MSVC)
+        # MSVC: Static runtime library (eliminates vcruntime140.dll dependency)
+        target_link_options(hack PRIVATE
+            /SUBSYSTEM:CONSOLE
+            /INCREMENTAL:NO
+        )
+        set_property(TARGET hack PROPERTY
+            MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+        message(STATUS "Configured MSVC static linking (/MT runtime)")
+    else()
+        # MinGW/GCC: Selectively static-link GCC runtime only
+        # WHY: Full -static can break Windows system library linking
+        # HOW: Link libgcc/libstdc++ statically, Windows APIs dynamically
+        target_link_options(hack PRIVATE
+            -static-libgcc
+            -static-libstdc++
+        )
+        message(STATUS "Configured MinGW selective static linking (GCC runtime only)")
+    endif()
+
+    message(STATUS "Linking vendored PDCursesMod (static)")
 else()
     # Unix: Link standard curses
     target_link_libraries(hack ${CURSES_LIBRARIES})

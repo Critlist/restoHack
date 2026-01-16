@@ -19,7 +19,7 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# Modern: Guard GCC/Clang-specific linker flags for cross-platform compatibility
+# Guard GCC/Clang-specific linker flags for cross-platform compatibility
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
     # Ensure binaries carry a build-id for coredumpctl/gdb symbolication
     add_link_options(-Wl,--build-id)
@@ -31,14 +31,9 @@ string(REPLACE "-Werror=format-security" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 string(REGEX REPLACE "-Werror[^ ]*" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 string(STRIP "${CMAKE_C_FLAGS}" CMAKE_C_FLAGS)
 
-# Modern CMake: Will use target_include_directories for better scoping
-# Removed global include_directories() - using target-specific includes instead
-
-# Modern: Conditional curses library - PDCurses on Windows, ncurses on Unix
+# Conditional curses library - PDCurses on Windows, ncurses on Unix
 if(WIN32)
-    # Modern (2026): Check PDCursesMod submodule initialized
-    # WHY: Windows builds require vendored PDCursesMod for static linking
-    # HOW: Fail gracefully with instructions if submodule missing
+    # Check PDCursesMod submodule initialized
     if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/windows/pdcurses/CMakeLists.txt")
         message(FATAL_ERROR
             "PDCursesMod submodule not initialized!\n"
@@ -49,17 +44,10 @@ if(WIN32)
             "Then re-run CMake.\n")
     endif()
 
-    # Modern (2026): Build PDCursesMod from vendored submodule
-    # WHY: Static linking for portable .exe (matches Alpine static build)
-    # HOW: Compile wincon port sources directly (bypasses PDCursesMod's CMake)
-    # PRESERVES: Unix builds use find_package(Curses) unchanged
-    # ADDS: Vendored PDCursesMod static build
+    # Build PDCursesMod from vendored submodule
     # TODO: Credit PDCursesMod project (https://github.com/Bill-Gray/PDCursesMod)
     #       in README and release notes when Windows port is complete
-
-    # PDCurses core sources (curses API implementation)
     file(GLOB PDCURSES_CORE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/windows/pdcurses/pdcurses/*.c")
-    # PDCurses wincon backend (Windows Console API)
     file(GLOB PDCURSES_WINCON_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/windows/pdcurses/wincon/*.c")
 
     # Build static PDCurses library
@@ -194,30 +182,41 @@ set(HACK_SOURCES
     src/rnd.c
 )
 
-# Modern: Windows injection - add win32.c on Windows platforms only
+# Windows: add win32.c shim
 if(WIN32)
     list(APPEND HACK_SOURCES windows/win32.c)
     message(STATUS "Windows support injected via windows/win32.c")
+
+    # Force-include win32.h for all source files (POSIX shims for rnd.c, etc.)
+    set(WIN32_SHIM_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/windows/win32.h")
 endif()
 
-# Build makedefs utility first
-add_executable(makedefs src/makedefs.c)
+# Cross-compilation handling for hack.onames.h
+if(CMAKE_CROSSCOMPILING AND WIN32)
+    # Cross-compiling for Windows: use pre-generated hack.onames.h
+    message(STATUS "Cross-compiling: using pre-generated windows/hack.onames.h")
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/windows/hack.onames.h
+        ${CMAKE_CURRENT_BINARY_DIR}/hack.onames.h
+        COPYONLY
+    )
+else()
+    # Native build: generate hack.onames.h using makedefs
+    add_executable(makedefs src/makedefs.c)
 
-# Modern CMake: Generate hack.onames.h using makedefs with proper paths
-add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hack.onames.h
-    COMMAND makedefs ${CMAKE_CURRENT_SOURCE_DIR}/src/def.objects.h > ${CMAKE_CURRENT_BINARY_DIR}/hack.onames.h
-    DEPENDS makedefs ${CMAKE_CURRENT_SOURCE_DIR}/src/def.objects.h
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Generating hack.onames.h with authentic 1984 object definitions"
-)
+    add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hack.onames.h
+        COMMAND makedefs ${CMAKE_CURRENT_SOURCE_DIR}/src/def.objects.h > ${CMAKE_CURRENT_BINARY_DIR}/hack.onames.h
+        DEPENDS makedefs ${CMAKE_CURRENT_SOURCE_DIR}/src/def.objects.h
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating hack.onames.h with authentic 1984 object definitions"
+    )
+endif()
 
 # Main hack executable
 add_executable(hack ${HACK_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/hack.onames.h)
 
-# Modern CMake: Target-specific include directories (better than global includes)
-# Modern (2026): Conditional include paths - PDCursesMod on Windows, ncurses on Unix
-# Generator expressions ensure correct headers at build time
+# Target-specific include directories
 target_include_directories(hack PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -228,10 +227,23 @@ target_include_directories(hack PRIVATE
     $<$<NOT:$<PLATFORM_ID:Windows>>:${CURSES_INCLUDE_DIR}>
 )
 
+# Force-include win32.h on Windows for POSIX shims
+if(WIN32)
+    if(MSVC)
+        target_compile_options(hack PRIVATE /FI"${WIN32_SHIM_HEADER}")
+    else()
+        target_compile_options(hack PRIVATE -include "${WIN32_SHIM_HEADER}")
+    endif()
+    message(STATUS "Force-including win32.h for POSIX compatibility shims")
+endif()
+
 # Enhanced Debug profile for better postmortem analysis
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(hack PRIVATE -fno-omit-frame-pointer)
-    target_link_options(hack PRIVATE -rdynamic)
+    # ELF-specific: -rdynamic for symbol export (not applicable to Windows PE)
+    if(NOT WIN32)
+        target_link_options(hack PRIVATE -rdynamic)
+    endif()
 endif()
 
 # Compiler flags
@@ -337,7 +349,7 @@ endif()
 option(ENABLE_SANITIZERS "Address/UB sanitizers in Debug" OFF)
 option(ENABLE_FUZZING "libFuzzer targets (Clang only)" OFF)
 
-# Modern: Platform-specific compiler flags
+# Platform-specific compiler flags
 if(MSVC)
     # MSVC hardening and warning flags
     target_compile_options(hack PRIVATE
@@ -356,7 +368,7 @@ else()
     message(STATUS "Using GCC/Clang hardening flags")
 endif()
 
-# Modern: GCC/Clang-specific hardening (not applicable to MSVC)
+# GCC/Clang-specific hardening (not applicable to MSVC)
 if(NOT MSVC)
     # Stack clash protection (GCC feature)
     include(CheckCCompilerFlag)
@@ -367,13 +379,20 @@ if(NOT MSVC)
         message(STATUS "Stack clash protection enabled")
     endif()
 
-    # Optimized configs: O2, PIE, Fortify (3 if available, else 2)
+    # Optimized configs: O2
     target_compile_options(hack PRIVATE
-        $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>:-O2 -fPIE>
+        $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>:-O2>
     )
-    target_link_options(hack PRIVATE
-        $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>:-pie -Wl,-z,relro,-z,now -Wl,-z,noexecstack>
-    )
+
+    # ELF-specific hardening (not applicable to Windows PE format)
+    if(NOT WIN32)
+        target_compile_options(hack PRIVATE
+            $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>:-fPIE>
+        )
+        target_link_options(hack PRIVATE
+            $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>:-pie -Wl,-z,relro,-z,now -Wl,-z,noexecstack>
+        )
+    endif()
 endif()
 
 # Apply FORTIFY_SOURCE based on detection
@@ -404,7 +423,7 @@ else()
     # Pure debugging: -O0 to avoid <optimized_out> in coredumps, disable FORTIFY_SOURCE
     target_compile_options(hack PRIVATE $<$<CONFIG:Debug>:-O0 -g3>)
 
-    # Modern: Explicitly undefine FORTIFY_SOURCE first to override system CFLAGS
+    # Explicitly undefine FORTIFY_SOURCE first to override system CFLAGS
     target_compile_definitions(hack PRIVATE $<$<CONFIG:Debug>:_FORTIFY_SOURCE=0>)
     target_compile_options(hack PRIVATE $<$<CONFIG:Debug>:-U_FORTIFY_SOURCE>)
     message(STATUS "Debug build optimized for debugging (no <optimized_out>)")
@@ -433,9 +452,11 @@ if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     # Perf + debuggable backtraces
     target_compile_options(hack PRIVATE -O2 -fno-omit-frame-pointer)
 
-    # PIE + RELRO/NOW + NX (noexecstack) — production-ready with symbols for debugging
-    target_compile_options(hack PRIVATE -fPIE)
-    target_link_options(hack PRIVATE -pie -Wl,-z,relro,-z,now -Wl,-z,noexecstack)
+    # ELF-specific: PIE + RELRO/NOW + NX (not applicable to Windows PE)
+    if(NOT WIN32)
+        target_compile_options(hack PRIVATE -fPIE)
+        target_link_options(hack PRIVATE -pie -Wl,-z,relro,-z,now -Wl,-z,noexecstack)
+    endif()
 
     # Fortify: prefer =3 when available (fallback to 2)
     if(HAS_FORTIFY3)
@@ -448,15 +469,14 @@ if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     target_compile_options(hack PRIVATE -Wall -Wextra -Wswitch -Wwrite-strings -Wformat=2)
 endif()
 
-# Modern: Conditional curses library linking
+# Conditional curses library linking
 if(WIN32)
-    # Modern (2026): Windows static linking configuration
-    # WHY: Portable .exe with zero DLL dependencies
-    # HOW: Static PDCurses + compiler-specific runtime flags
-    # PRESERVES: Unix dynamic linking unchanged
-    # ADDS: Static flags for MSVC and MinGW
-    target_link_libraries(hack PRIVATE ${PDCURSES_LIBRARIES})
-    target_compile_definitions(hack PRIVATE PDCURSES)
+    # Windows static linking configuration
+    # Link PDCurses and required Windows system libraries
+    target_link_libraries(hack PRIVATE ${PDCURSES_LIBRARIES} winmm)
+    # PDCurses compile definitions must match those used to build libpdcurses
+    target_compile_definitions(hack PRIVATE PDCURSES PDC_WIDE PDC_FORCE_UTF8)
+
 
     if(MSVC)
         # MSVC: Static runtime library (eliminates vcruntime140.dll dependency)
@@ -509,24 +529,32 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     # General build = ship it
     target_compile_options(hack PRIVATE -O2 -DNDEBUG)
 elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    # Dev build = symbols + easy backtraces, warnings don’t kill flow
+    # Dev build = symbols + easy backtraces, warnings don't kill flow
     target_compile_options(hack PRIVATE -O0 -g3 -fno-omit-frame-pointer -Wwrite-strings -Wno-error)
-    target_link_options(hack PRIVATE -rdynamic)
+    # ELF-specific: -rdynamic for symbol export (not applicable to Windows PE)
+    if(NOT WIN32)
+        target_link_options(hack PRIVATE -rdynamic)
+    endif()
 elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     # safe, strict, but do NOT fail on warnings
     target_compile_options(hack PRIVATE
-        -O2 -fno-omit-frame-pointer -fPIE
+        -O2 -fno-omit-frame-pointer
         -Wwrite-strings
         -Wno-error
     )
 
     # Fortify (3 if toolchain supports it; harmless if ignored)
     target_compile_definitions(hack PRIVATE _FORTIFY_SOURCE=3)
-    target_link_options(hack PRIVATE
-        -pie
-        -Wl,-z,relro,-z,now
-        -Wl,-z,noexecstack
-    )
+
+    # ELF-specific hardening (not applicable to Windows PE)
+    if(NOT WIN32)
+        target_compile_options(hack PRIVATE -fPIE)
+        target_link_options(hack PRIVATE
+            -pie
+            -Wl,-z,relro,-z,now
+            -Wl,-z,noexecstack
+        )
+    endif()
 
     # Quiet a recent Clang nit, only if relevant
     if(CMAKE_C_COMPILER_ID STREQUAL "Clang" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 18)
@@ -620,7 +648,7 @@ endif()
 # ---- Packaging (optional) ----
 option(RESTOHACK_ENABLE_PACKAGE "Enable CPack packaging" ON)
 
-# Modern CMake: CPack configuration for professional distribution
+# CPack configuration for distribution
 set(CPACK_PACKAGE_NAME "restohack")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Authentic 1984 Hack game restoration - modernized for contemporary systems")

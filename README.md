@@ -49,10 +49,8 @@ Featured in the official GitHub Blog:
 ---
 
 **Development Status:**  
-After a brief pause, active development is gearing back up. The upcoming work will focus heavily on strengthening safety guards throughout the codebase and continuing the long-term mission of cleaning up undefined behavior while keeping the original 1984 
+After a brief pause, active development is gearing back up. The upcoming work will focus heavily on strengthening safety guards throughout the codebase and continuing the long-term mission of cleaning up undefined behavior while keeping the original 1984
 spirit intact.
-
-
 
 ## Installation
 
@@ -89,12 +87,14 @@ git submodule update --init --recursive
 ```
 
 **Visual Studio 2022:**
+
 ```bash
 cmake -S . -B build -G "Visual Studio 17 2022" -A x64
 cmake --build build --config Release
 ```
 
 **MinGW:**
+
 ```bash
 cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
 cmake --build build
@@ -119,7 +119,7 @@ tar -xzf restoHack-*-linux-x86_64-static.tar.gz
 
 *(static binary, no dependencies required)*
 
-**For BSD systems, development builds, IDE integration, and troubleshooting:** see [**Build Instructions**](docs/BUILD.md)
+**For BSD systems, development builds, and troubleshooting:** see [**Build Instructions**](docs/BUILD.md)
 
 ---
 

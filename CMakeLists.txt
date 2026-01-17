@@ -46,7 +46,7 @@ if(WIN32)
 
     # Build PDCursesMod from vendored submodule
     # TODO: Credit PDCursesMod project (https://github.com/Bill-Gray/PDCursesMod)
-    #       in README and release notes when Windows port is complete
+    # in README and release notes when Windows port is complete
     file(GLOB PDCURSES_CORE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/windows/pdcurses/pdcurses/*.c")
     file(GLOB PDCURSES_WINCON_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/windows/pdcurses/wincon/*.c")
 
@@ -234,12 +234,14 @@ if(WIN32)
     else()
         target_compile_options(hack PRIVATE -include "${WIN32_SHIM_HEADER}")
     endif()
+
     message(STATUS "Force-including win32.h for POSIX compatibility shims")
 endif()
 
 # Enhanced Debug profile for better postmortem analysis
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(hack PRIVATE -fno-omit-frame-pointer)
+
     # ELF-specific: -rdynamic for symbol export (not applicable to Windows PE)
     if(NOT WIN32)
         target_link_options(hack PRIVATE -rdynamic)
@@ -474,9 +476,9 @@ if(WIN32)
     # Windows static linking configuration
     # Link PDCurses and required Windows system libraries
     target_link_libraries(hack PRIVATE ${PDCURSES_LIBRARIES} winmm)
+
     # PDCurses compile definitions must match those used to build libpdcurses
     target_compile_definitions(hack PRIVATE PDCURSES PDC_WIDE PDC_FORCE_UTF8)
-
 
     if(MSVC)
         # MSVC: Static runtime library (eliminates vcruntime140.dll dependency)
@@ -489,8 +491,6 @@ if(WIN32)
         message(STATUS "Configured MSVC static linking (/MT runtime)")
     else()
         # MinGW/GCC: Selectively static-link GCC runtime only
-        # WHY: Full -static can break Windows system library linking
-        # HOW: Link libgcc/libstdc++ statically, Windows APIs dynamically
         target_link_options(hack PRIVATE
             -static-libgcc
             -static-libstdc++
@@ -531,6 +531,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
     # Dev build = symbols + easy backtraces, warnings don't kill flow
     target_compile_options(hack PRIVATE -O0 -g3 -fno-omit-frame-pointer -Wwrite-strings -Wno-error)
+
     # ELF-specific: -rdynamic for symbol export (not applicable to Windows PE)
     if(NOT WIN32)
         target_link_options(hack PRIVATE -rdynamic)

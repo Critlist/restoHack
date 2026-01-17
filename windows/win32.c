@@ -7,9 +7,10 @@
 #include <stdlib.h>
 #include <io.h>
 
-/* Restore PDCurses' move/delay_output (renamed by win32.h to avoid Hack conflicts) */
+/* Restore PDCurses symbols (renamed/defined by win32.h or windows.h) */
 #undef move
 #undef delay_output
+#undef MOUSE_MOVED  /* Defined by wincontypes.h, redefined by PDCurses */
 #include <curses.h>
 #include <stdio.h>
 #include <string.h>

@@ -36,8 +36,9 @@ static inline pid_t waitpid(pid_t pid, int *status, int options) {
 #define WNOHANG   1
 #define WUNTRACED 2
 
-/* fork() - doesn't exist on Windows, return error */
-static inline pid_t fork(void) {
+/* fork() - doesn't exist on Windows, return error
+ * Note: Use int return type to match GCC built-in expectation */
+static inline int fork(void) {
   return -1;  /* Always fails - no fork on Windows */
 }
 

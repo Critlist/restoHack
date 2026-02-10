@@ -17,7 +17,10 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Ensure binaries carry a build-id for coredumpctl/gdb symbolication
-add_link_options(-Wl,--build-id)
+# Apple's linker does not support --build-id
+if(NOT APPLE)
+  add_link_options(-Wl,--build-id)
+endif()
 
 # makepkg compatibility: Remove -Werror flags that cause packaging failures
 # This handles system-injected CFLAGS from makepkg.conf that include -Werror=format-security
@@ -287,9 +290,12 @@ endif()
 target_compile_options(hack PRIVATE 
     $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>:-O2 -fPIE>
 )
-target_link_options(hack PRIVATE 
-    $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>:-pie -Wl,-z,relro,-z,now -Wl,-z,noexecstack>
-)
+# ELF hardening: RELRO, BIND_NOW, noexecstack (not supported by Apple's linker)
+if(NOT APPLE)
+  target_link_options(hack PRIVATE
+      $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>:-pie -Wl,-z,relro,-z,now -Wl,-z,noexecstack>
+  )
+endif()
 
 # Apply FORTIFY_SOURCE based on detection
 if(HAS_FORTIFY3)
@@ -347,7 +353,10 @@ if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
 
   # PIE + RELRO/NOW + NX (noexecstack) — production-ready with symbols for debugging
   target_compile_options(hack PRIVATE -fPIE)
-  target_link_options(hack PRIVATE -pie -Wl,-z,relro,-z,now -Wl,-z,noexecstack)
+  # ELF hardening (not supported by Apple's linker)
+  if(NOT APPLE)
+    target_link_options(hack PRIVATE -pie -Wl,-z,relro,-z,now -Wl,-z,noexecstack)
+  endif()
 
   # Fortify: prefer =3 when available (fallback to 2)
   if(HAS_FORTIFY3)
@@ -396,11 +405,14 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
   )
   # Fortify (3 if toolchain supports it; harmless if ignored)
   target_compile_definitions(hack PRIVATE _FORTIFY_SOURCE=3)
-  target_link_options(hack PRIVATE
-    -pie
-    -Wl,-z,relro,-z,now
-    -Wl,-z,noexecstack
-  )
+  # ELF hardening (not supported by Apple's linker)
+  if(NOT APPLE)
+    target_link_options(hack PRIVATE
+      -pie
+      -Wl,-z,relro,-z,now
+      -Wl,-z,noexecstack
+    )
+  endif()
   # Quiet a recent Clang nit, only if relevant
   if(CMAKE_C_COMPILER_ID STREQUAL "Clang" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 18)
     target_compile_options(hack PRIVATE -Wno-deprecated-non-prototype)

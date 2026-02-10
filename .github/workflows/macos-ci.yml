@@ -36,9 +36,11 @@ jobs:
         cd build
         export TERM=vt100
 
-        echo "Verifying hack binary exists and is executable..."
+        echo "Verifying hack binary and data files exist..."
         test -x ./hack || { echo "hack binary not found"; exit 1; }
-        test -x ./hackdir/mklev || { echo "mklev not found in hackdir"; exit 1; }
+        test -d ./hackdir || { echo "hackdir not found"; exit 1; }
+        test -f ./hackdir/data || { echo "data file not found in hackdir"; exit 1; }
+        test -f ./hackdir/rumors || { echo "rumors file not found in hackdir"; exit 1; }
 
         echo "Running quick startup test (expect it to time out after 3s)..."
         # macOS has no GNU timeout; use perl alarm as a portable substitute

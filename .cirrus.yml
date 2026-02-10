@@ -28,7 +28,9 @@ freebsd_build_task:
 
     echo "Verifying hack binary exists and is executable..."
     test -x ./hack || { echo "hack binary not found"; exit 1; }
-    test -x ./hackdir/mklev || { echo "mklev not found in hackdir"; exit 1; }
+    test -d ./hackdir || { echo "hackdir not found"; exit 1; }
+    test -f ./hackdir/data || { echo "data file not found in hackdir"; exit 1; }
+    test -f ./hackdir/rumors || { echo "rumors file not found in hackdir"; exit 1; }
 
     echo "Running interactive expect test..."
     # Outer safety timeout (60s) in case expect itself hangs

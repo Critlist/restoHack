@@ -401,7 +401,8 @@ if(NOT MSVC)
     include(CheckCCompilerFlag)
     check_c_compiler_flag("-fstack-clash-protection" HAS_SCP)
 
-    if(HAS_SCP)
+    # AppleClang accepts the flag but warns on every file; skip on macOS
+    if(HAS_SCP AND NOT APPLE)
         target_compile_options(hack PRIVATE -fstack-clash-protection)
         message(STATUS "Stack clash protection enabled")
     endif()

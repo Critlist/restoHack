@@ -79,7 +79,8 @@ static const char rcsid[] __attribute__((unused)) = "$FreeBSD$"; /* Original 198
 #ifdef _WIN32
 /* Modern: Windows uses PDCurses - no POSIX terminal interface needed */
 #define WIN32_TTY
-#elif defined(__linux__) || defined(__unix__) || defined(_POSIX_VERSION)
+/* Modern: macOS (__APPLE__) is POSIX-compliant and uses termios.h */
+#elif defined(__linux__) || defined(__unix__) || defined(_POSIX_VERSION) || defined(__APPLE__)
 #define MODERN_TERMIOS
 #else
 #ifdef BSD

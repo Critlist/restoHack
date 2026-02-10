@@ -1,0 +1,94 @@
+name: macOS CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build-and-interactive-test:
+    runs-on: macos-latest # Apple silicon only
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # macOS runners have cmake, make, ncurses, and expect out of the box via Xcode CLT.
+    # No brew installs needed.
+
+    - name: Configure CMake
+      run: |
+        cmake -B build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_C_COMPILER=clang
+
+    - name: Build
+      run: |
+        cmake --build build --parallel
+
+    # Yes we use perl here, no apologies :-)
+    - name: Basic smoke test (startup does not crash)
+      shell: bash
+      run: |
+        set -Eeuo pipefail
+
+        cd build
+        export TERM=vt100
+
+        echo "Verifying hack binary exists and is executable..."
+        test -x ./hack || { echo "hack binary not found"; exit 1; }
+        test -x ./hackdir/mklev || { echo "mklev not found in hackdir"; exit 1; }
+
+        echo "Running quick startup test (expect it to time out after 3s)..."
+        # macOS has no GNU timeout; use perl alarm as a portable substitute
+        set +e
+        out="$(perl -e 'alarm 3; exec @ARGV' ./hack 2>&1 | head -40)"
+        rc=$?
+        set -e
+        echo "$out" | sed 's/^/| /'
+
+        if echo "$out" | grep -q "Cannot cd"; then
+          echo "FAILED: hack could not chdir to HACKDIR"
+          exit 1
+        fi
+        echo "Basic startup smoke test passed (rc=$rc)"
+
+    - name: Interactive map rendering test (expect)
+      shell: bash
+      run: |
+        set -Eeuo pipefail
+
+        cd build
+        export TERM=vt100
+
+        SCRIPT="${GITHUB_WORKSPACE}/.github/scripts/smoke-test.exp"
+
+        echo "Running interactive expect test..."
+        # Outer safety timeout (60s) in case expect itself hangs
+        set +e
+        perl -e 'alarm 60; exec @ARGV' expect -f "$SCRIPT"
+        EXPECT_RC=$?
+        set -e
+
+        echo ""
+        echo "===== Expect session log ====="
+        if [ -f /tmp/hack-expect.log ]; then
+          cat /tmp/hack-expect.log
+        else
+          echo "(no log file found)"
+        fi
+        echo "===== End log ====="
+        echo ""
+
+        if [ "$EXPECT_RC" -ne 0 ]; then
+          echo "Interactive test failed (expect exit code: $EXPECT_RC)"
+          exit 1
+        fi
+
+        echo "Interactive test: game started successfully"
+
+    - name: Verify map was rendered
+      shell: bash
+      run: |
+        bash "${GITHUB_WORKSPACE}/.github/scripts/verify-map.sh" /tmp/hack-expect.log

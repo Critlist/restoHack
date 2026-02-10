@@ -1,0 +1,127 @@
+#!/usr/bin/expect -f
+#
+# Interactive smoke test for restoHack
+#
+# restoHack startup flow:
+#   1. "Are you an experienced player? [ny]"  -> send "n"
+#   2. "Hit space to continue:"  (character assignment) -> send space
+#   3. "--More--"  (version/welcome splash) -> send space
+#   4. Map renders with player "@"
+#   5. "Q" -> "Really quit?" -> "y" -> clean exit
+#
+# Usage: expect -f smoke-test.exp
+# Expects to be run from the build directory with ./hack available.
+# Writes session log to /tmp/hack-expect.log for post-hoc verification.
+#
+
+set timeout 30
+log_file -noappend /tmp/hack-expect.log
+match_max 50000
+
+spawn ./hack
+
+# Step 1: Answer the experience question
+expect {
+    "experienced player" {
+        send_log "\n>>> Found experience prompt, answering 'n'...\n"
+    }
+    timeout {
+        send_log "\n>>> TIMEOUT waiting for experience prompt\n"
+        exit 1
+    }
+    eof {
+        send_log "\n>>> EOF before experience prompt -- game crashed?\n"
+        exit 2
+    }
+}
+
+send "n"
+
+# Step 2: Character assignment screen -> hit space
+expect {
+    "Hit space to continue" {
+        send_log "\n>>> Found character assignment, sending space...\n"
+    }
+    timeout {
+        send_log "\n>>> TIMEOUT waiting for character assignment\n"
+        exit 3
+    }
+    eof {
+        send_log "\n>>> EOF during character assignment -- game crashed?\n"
+        exit 4
+    }
+}
+
+send " "
+
+# Step 3: Version/welcome splash with --More-- pager
+expect {
+    "--More--" {
+        send_log "\n>>> Found version splash pager, sending space...\n"
+    }
+    timeout {
+        send_log "\n>>> TIMEOUT waiting for version splash\n"
+        exit 5
+    }
+    eof {
+        send_log "\n>>> EOF during version splash -- game crashed?\n"
+        exit 6
+    }
+}
+
+send " "
+
+# Step 4: Map should render with player @ visible
+expect {
+    "@" {
+        send_log "\n>>> Found player @ on map!\n"
+    }
+    timeout {
+        send_log "\n>>> TIMEOUT waiting for map to render\n"
+        exit 7
+    }
+    eof {
+        send_log "\n>>> EOF during map render -- game crashed after welcome?\n"
+        exit 8
+    }
+}
+
+sleep 1
+
+# Step 5: Quit the game cleanly
+send "Q"
+
+expect {
+    "Really quit?" {
+        send_log "\n>>> Got quit confirmation prompt\n"
+    }
+    timeout {
+        send_log "\n>>> TIMEOUT waiting for quit prompt\n"
+        exit 9
+    }
+    eof {
+        send_log "\n>>> EOF after sending Q -- unexpected exit\n"
+        exit 10
+    }
+}
+
+send "y"
+
+expect {
+    eof {
+        send_log "\n>>> Game exited cleanly\n"
+    }
+    timeout {
+        send_log "\n>>> TIMEOUT waiting for game to exit after quit\n"
+        exit 11
+    }
+}
+
+lassign [wait] pid spawnid os_error value
+if {$os_error != 0} {
+    send_log "\n>>> Game exited with OS error: $os_error\n"
+    exit 12
+}
+
+send_log "\n>>> All interactive checks passed!\n"
+exit 0

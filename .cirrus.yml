@@ -9,7 +9,7 @@ freebsd_build_task:
   install_script: |
     set -euxo pipefail
     pkg update -f
-    pkg install -y cmake ninja pkgconf ncurses
+    pkg install -y cmake ninja pkgconf ncurses expect perl5
   build_script: |
     set -euxo pipefail
     cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
@@ -21,6 +21,35 @@ freebsd_build_task:
     printf '#include <curses.h>\nint main(){initscr(); endwin(); return 0;}\n' > /tmp/t.c
     cc /tmp/t.c -lcurses -o /tmp/t
     /tmp/t
+  interactive_test_script: |
+    set -euxo pipefail
+    cd build
+    export TERM=vt100
+
+    echo "Verifying hack binary exists and is executable..."
+    test -x ./hack || { echo "hack binary not found"; exit 1; }
+    test -x ./hackdir/mklev || { echo "mklev not found in hackdir"; exit 1; }
+
+    echo "Running interactive expect test..."
+    # Outer safety timeout (60s) in case expect itself hangs
+    # Using perl alarm -- portable across macOS/Linux/BSD
+    perl -e 'alarm 60; exec @ARGV' expect -f ../.github/scripts/smoke-test.exp || {
+      echo "Interactive test failed (expect exit code: $?)"
+      echo "===== Expect session log ====="
+      cat /tmp/hack-expect.log 2>/dev/null || echo "(no log file found)"
+      echo "===== End log ====="
+      exit 1
+    }
+
+    echo ""
+    echo "===== Expect session log ====="
+    cat /tmp/hack-expect.log 2>/dev/null || echo "(no log file found)"
+    echo "===== End log ====="
+    echo ""
+    echo "Interactive test: game started successfully"
+  verify_map_script: |
+    set -euxo pipefail
+    bash .github/scripts/verify-map.sh /tmp/hack-expect.log
   always:
     artifacts:
       build_logs:

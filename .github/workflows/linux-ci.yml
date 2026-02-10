@@ -9,14 +9,14 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
         # Test both compilers to catch different issues
         compiler: [gcc, clang]
         # Test both build types
         build_type: [Debug, Release]
-        
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -24,7 +24,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake ninja-build ${{ matrix.compiler }} 
+        sudo apt-get install -y cmake ninja-build ${{ matrix.compiler }} expect
         sudo apt-get install -y libncurses5-dev libncursesw5-dev
         # For clang static analysis
         if [ "${{ matrix.compiler }}" = "clang" ]; then
@@ -53,7 +53,7 @@ jobs:
         echo "== Runtime smoke tests =="
         cd "build-${{ matrix.compiler }}-${{ matrix.build_type }}"
         FULLPATH="$(pwd)/hack"
-        
+
         # Set up minimal terminal environment to get past initialization
         export TERM=vt100
         export HACKDIR=/tmp/hack-test-$$
@@ -75,17 +75,17 @@ jobs:
           rc=$?
           set -e
 
-          echo "$out" | sed 's/^/│ /'
+          echo "$out" | sed 's/^/| /'
 
           if echo "$out" | grep -q "Cannot get status of"; then
-            echo "❌ FAILED: detected 'Cannot get status of' in output"
+            echo "FAILED: detected 'Cannot get status of' in output"
             exit 1
           fi
 
           if [ $rc -eq 124 ]; then
-            echo "✓ Started successfully (timed out as expected)"
+            echo "Started successfully (timed out as expected)"
           else
-            echo "✓ Executed with rc=$rc"
+            echo "Executed with rc=$rc"
           fi
           echo "::endgroup::"
         }
@@ -116,7 +116,51 @@ jobs:
         ln -sf "$FULLPATH" "$TMPBIN/hack.bin"
         run_case "Test 5: different basename via PATH" hack.bin
 
-        echo "✅ All runtime smoke tests passed."
+        echo "All runtime smoke tests passed."
+
+    - name: Interactive map rendering test (expect)
+      shell: bash
+      run: |
+        set -Eeuo pipefail
+
+        cd "build-${{ matrix.compiler }}-${{ matrix.build_type }}"
+        export TERM=vt100
+
+        SCRIPT="${GITHUB_WORKSPACE}/.github/scripts/smoke-test.exp"
+
+        echo "Verifying hack binary exists and is executable..."
+        test -x ./hack || { echo "hack binary not found"; exit 1; }
+        test -x ./hackdir/mklev || { echo "mklev not found in hackdir"; exit 1; }
+
+        echo "Running interactive expect test..."
+        # Outer safety timeout (60s) in case expect itself hangs
+        # Using perl alarm for portability with macOS/BSD workflows
+        set +e
+        perl -e 'alarm 60; exec @ARGV' expect -f "$SCRIPT"
+        EXPECT_RC=$?
+        set -e
+
+        echo ""
+        echo "===== Expect session log ====="
+        if [ -f /tmp/hack-expect.log ]; then
+          cat /tmp/hack-expect.log
+        else
+          echo "(no log file found)"
+        fi
+        echo "===== End log ====="
+        echo ""
+
+        if [ "$EXPECT_RC" -ne 0 ]; then
+          echo "Interactive test failed (expect exit code: $EXPECT_RC)"
+          exit 1
+        fi
+
+        echo "Interactive test: game started successfully"
+
+    - name: Verify map was rendered
+      shell: bash
+      run: |
+        bash "${GITHUB_WORKSPACE}/.github/scripts/verify-map.sh" /tmp/hack-expect.log
 
     - name: Check for Security Warnings
       if: matrix.compiler == 'clang' && matrix.build_type == 'Debug'
@@ -126,41 +170,41 @@ jobs:
         # Rebuild with extra warnings to check our security work
         cmake .. -DCMAKE_C_FLAGS="-Wall -Wextra -Wformat-security -Werror=format-security"
         ninja 2>&1 | tee build.log
-        
+
         # Check that we don't have regressions in warning count
         if grep -E "(warning:|error:)" build.log; then
-          echo "⚠️  Build warnings/errors detected - review needed"
+          echo "Build warnings/errors detected - review needed"
           # Don't fail the build, just warn (since you're actively fixing warnings)
         else
-          echo "✓ Clean build - no warnings detected"
+          echo "Clean build - no warnings detected"
         fi
 
   static-analysis:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'  # Only run on PRs to save resources
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Install clang tools
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y clang clang-tools cmake ninja-build
-        sudo apt-get install -y libncurses5-dev libncursesw5-dev 
-        
-  # Special RelWithDebInfo build to test production-ready builds with debug symbols
-  security-hardened:
-    runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Install dependencies  
+    - name: Install clang tools
       run: |
         sudo apt-get update
-        sudo apt-get install -y clang cmake ninja-build
+        sudo apt-get install -y clang clang-tools cmake ninja-build
+        sudo apt-get install -y libncurses5-dev libncursesw5-dev
+
+  # Special RelWithDebInfo build to test production-ready builds with debug symbols
+  security-hardened:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang cmake ninja-build expect
         sudo apt-get install -y libncurses5-dev libncursesw5-dev
 
     - name: Build with Security Hardening
@@ -170,8 +214,47 @@ jobs:
           -DCMAKE_BUILD_TYPE=RelWithDebInfo \
           -DCMAKE_C_COMPILER=clang \
           -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fstack-protector-strong -D_FORTIFY_SOURCE=3 -Werror=format-security"
-        
+
         cmake --build build-relwithdebinfo --parallel
-        
 
+    - name: Interactive smoke test (ASAN-enabled)
+      shell: bash
+      run: |
+        set -Eeuo pipefail
 
+        cd build-relwithdebinfo
+        export TERM=vt100
+
+        SCRIPT="${GITHUB_WORKSPACE}/.github/scripts/smoke-test.exp"
+
+        echo "Verifying hack binary exists and is executable..."
+        test -x ./hack || { echo "hack binary not found"; exit 1; }
+
+        echo "Running interactive expect test under ASAN/UBSAN..."
+        # Outer safety timeout (90s) -- ASAN builds run slower
+        set +e
+        perl -e 'alarm 90; exec @ARGV' expect -f "$SCRIPT"
+        EXPECT_RC=$?
+        set -e
+
+        echo ""
+        echo "===== Expect session log ====="
+        if [ -f /tmp/hack-expect.log ]; then
+          cat /tmp/hack-expect.log
+        else
+          echo "(no log file found)"
+        fi
+        echo "===== End log ====="
+        echo ""
+
+        if [ "$EXPECT_RC" -ne 0 ]; then
+          echo "Interactive test failed under ASAN (expect exit code: $EXPECT_RC)"
+          exit 1
+        fi
+
+        echo "Interactive test passed under ASAN/UBSAN"
+
+    - name: Verify map was rendered
+      shell: bash
+      run: |
+        bash "${GITHUB_WORKSPACE}/.github/scripts/verify-map.sh" /tmp/hack-expect.log

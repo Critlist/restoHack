@@ -76,7 +76,8 @@ static const char rcsid[] __attribute__((unused)) = "$FreeBSD$"; /* Original 198
  * PRESERVES: All original terminal functionality and behavior
  * ADDS: POSIX compliance and modern system compatibility
  */
-#if defined(__linux__) || defined(__unix__) || defined(_POSIX_VERSION)
+/* Modern: macOS (__APPLE__) is POSIX-compliant and uses termios.h */
+#if defined(__linux__) || defined(__unix__) || defined(_POSIX_VERSION) || defined(__APPLE__)
 #define MODERN_TERMIOS
 #else
 #ifdef BSD

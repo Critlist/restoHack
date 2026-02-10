@@ -166,12 +166,10 @@ test_tarball/
 # Miscellaneous
 hackdir/game.lock
 hackdir/record.lock
-static-build.sh
 test.sh
 tools/build-matrix.sh
 restoHack-static-*-linux-x86_64.tar.gz.sha256
 CLAUDE.md
-verify-release.sh
 gh-release-notes.txt
 linux-debug
 sha256sums
@@ -189,10 +187,8 @@ ctest/
 docs/messagebug.txt
 sumlogs.sh
 release-v*/
-prepare-release.sh
 __pycache__/
 review_diffs/
 test/
-release.sh
 .gdbinit
 CMakeLists.txt

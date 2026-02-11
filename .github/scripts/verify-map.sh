@@ -1,13 +1,15 @@
-#!/usr/bin/env bash
+#!/bin/sh
 #
 # Verify that the expect smoke test log contains evidence of map rendering.
 # Checks for: experience prompt, character assignment, player character,
 #              walls, floor/corridors, quit prompt.
 #
+# POSIX sh compatible -- no bash required (works on FreeBSD, Alpine, etc.)
+#
 # Usage: verify-map.sh [logfile]
 #   logfile defaults to /tmp/hack-expect.log
 #
-set -Eeuo pipefail
+set -eu
 
 LOGFILE="${1:-/tmp/hack-expect.log}"
 

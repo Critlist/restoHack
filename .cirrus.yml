@@ -51,7 +51,7 @@ freebsd_build_task:
     echo "Interactive test: game started successfully"
   verify_map_script: |
     set -euxo pipefail
-    bash .github/scripts/verify-map.sh /tmp/hack-expect.log
+    sh .github/scripts/verify-map.sh /tmp/hack-expect.log
   always:
     artifacts:
       build_logs:

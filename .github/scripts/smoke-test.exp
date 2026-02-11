@@ -56,7 +56,7 @@ send " "
 
 # Step 3: Version/welcome splash with --More-- pager
 expect {
-    "--More--" {
+    -exact "--More--" {
         send_log "\n>>> Found version splash pager, sending space...\n"
     }
     timeout {

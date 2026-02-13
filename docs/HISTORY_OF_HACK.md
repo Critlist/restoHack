@@ -1,43 +1,51 @@
 # The Complete History of Hack
 
-*From 1984 to 2025: How Hack survived digital decay*
+*From 1982 to 2026: How Hack survived digital decay*
+
+*This document reflects the current best historical reconstruction based on primary sources recovered as of 2025-2026. Where earlier secondary accounts conflicted with newly recovered source code and contemporaneous documentation, those discrepancies have been corrected and cited. For the underlying evidence, see [TIMELINE.md](research/TIMELINE.md) and [COMPARISON.md](research/COMPARISON.md).*
 
 ## Timeline at a Glance
 
 ```text
-1980 ████ ROGUE
-     │    ∘ Created by Toy, Wichman (UCSC) and Arnold (UC Berkeley)
-     │    ∘ Establishes procedural generation + permadeath
-     │    ∘ ASCII graphics, turn-based gameplay
-     │
-~1981-1984 ░░░ HACK DEVELOPMENT (Fenlason Era)  
-     │    ∘ Jay Fenlason creates Hack as high school student (timeline uncertain)
-     │    ∘ Adds shops, complex inventory, rule-driven monster behaviors
-     │    ∘ Distributed on USENIX tape (most popular alongside JOVE editor)
-     │    ∘ Development began after UC Berkeley visit, inspired by Rogue
-     │
-1984 ████ HACK 1.0 (Brouwer Takes Control)
-     │    ∘ Andries Brouwer assumes development (December 1984)
-     │    ∘ Mathematical approach to game balance
-     │    ∘ 58 monster types with rule-driven behaviors
-     │    ∘ First known reference to Wizard Mode found in config.h 
-     │
-1985 ████ HACK 1.0.2 (April 1985)
-     │    ∘ Female adventurer option added
-     │    ∘ Moon phase effects introduced  
-     │    ∘ New monsters: Wizard of Yendor, giant eel, hell hound
-     │    ∘ Pools, swamps, beehives, crypts added
-     │
-1985 ████ HACK 1.0.3 (The Final Release)
-     │    ∘ Brouwer's final version
-     │    ∘ 19,239 lines of optimized C code (verified from source)
-     │    ∘ Direct template for NetHack development
-     │
-1987 ████ NETHACK SPLITS OFF
-     │    ∘ Mike Stephenson organizes NetHack DevTeam
-     │    ∘ "More everything" philosophy wins popularity
-     │    ∘ Hack development effectively stops
-     │
+1980  ████ ROGUE
+      │    ∘ Created by Toy, Wichman (UCSC) and Arnold (UC Berkeley)
+      │    ∘ Establishes procedural generation + permadeath
+      │    ∘ ASCII graphics, turn-based gameplay
+      │
+~1980-81 ░░░ HACK PROTOTYPE (Logo on Apple II)
+      │    ∘ Fenlason plays Rogue at UC Berkeley, decides to build his own
+      │    ∘ First version written in Logo (Turtle Graphics) on Apple II
+      │
+1981-82 ████ HACK DEVELOPMENT (Fenlason Era, Lincoln-Sudbury)
+      │    ∘ Fenlason ports from Logo to C on PDP-11/70 running V7 Unix
+      │    ∘ 57 monsters, 15 potions, 15 scrolls, 16 wands, 17 rings
+      │    ∘ Collaborators: Woodland (mazes), Thome (chameleon), Payne (CURS/locks)
+      │    ∘ Brian Harvey submits to USENIX 82-1 distribution tape
+      │
+1982  ████ USENIX DISTRIBUTION
+      │    ∘ ;login: (June 1982) confirms tape completed before Boston conference
+      │    ∘ Hack and JOVE are the most popular items on the tape
+      │
+~1983-84 ░░░ VU AMSTERDAM BRANCH
+      │    ∘ Huisjes & de Wilde produce PDP-11 Hack at Vrije Universiteit
+      │    ∘ Add zoos, graveyards, swamps, vaults
+      │
+1984  ████ HACK 1.0 (Brouwer Takes Control)
+      │    ∘ Andries Brouwer distributes Hack 1.0 (Dec 17, 1984)
+      │    ∘ Near-complete rewrite: adds shops, pets, long worms
+      │    ∘ Renames Amulet of Frobozz to Amulet of Yendor
+      │    ∘ 61 monster types, expanded food/armor/item systems
+      │
+1985  ████ HACK 1.0.2 / 1.0.3
+      │    ∘ 1.0.2 (April): female adventurer, moon phases, pools
+      │    ∘ 1.0.3 (July): Brouwer's final version, 19,239 lines
+      │    ∘ Direct template for NetHack development
+      │
+1987  ████ NETHACK SPLITS OFF
+      │    ∘ Stephenson, Miller, and Walz fork Hack 1.0.3
+      │    ∘ "More everything" philosophy wins popularity
+      │    ∘ Hack development effectively stops
+      │
 1990s ░░░ THE DARK AGES
       │   ∘ K&R C becomes obsolete, builds fail
       │   ∘ NetHack dominates, Hack largely overshadowed
@@ -50,15 +58,22 @@
       │
 2025  ████ RESTOHACK RESURRECTION
       │    ∘ K&R → ANSI C conversion (250+ functions)
-      │    ∘ Memory safety without behavior changes  
+      │    ∘ Memory safety without behavior changes
       │    ∘ CMake build system, cross-platform support
       │    ∘ Authentic 1984 gameplay preserved (verified by testing)
+      │
+2025  ████ PROTOHACK: THE LOST SOURCE RECOVERED
+      │    ∘ Brian Harvey provides preserved PDP-11 backups from LSRHS
+      │    ∘ Fenlason's original 1981-82 source code restored to run on modern Linux
+      │    ∘ Primary-source research resolves 40+ years of timeline uncertainty
 
 Key: ████ = Active Development    ░░░ = Dormancy/Preservation
 ```
 
-**Project Status:** **Complete** - Authentic 1984 Hack running on 2025 systems  
-**Code Provenance:** [FreeBSD 4.10 Games Collection](historical/original-source/download_hack.sh)  
+**[protoHack](https://github.com/Critlist/protoHack)** = original source recovery + research. **restoHack** = stabilized restoration + curated history. **[docs/research/](research/)** = shared evidence base.
+
+**Project Status:** **Complete** - Authentic 1984 Hack running on modern systems
+**Code Provenance:** [FreeBSD 4.10 Games Collection](historical/original-source/download_hack.sh)
 **Documentation:** [CODING_STANDARDS.md](CODING_STANDARDS.md) | [CHANGELOG.md](CHANGELOG.md)
 
 ---
@@ -66,13 +81,15 @@ Key: ████ = Active Development    ░░░ = Dormancy/Preservation
 ## Table of Contents
 
 1. [The Genesis: Rogue and the Birth of a Genre (1980)](#the-genesis-rogue-and-the-birth-of-a-genre-1980)
-2. [Enter the Hack: Fenlason's Revolution (~1981-1984)](#enter-the-hack-fenlasons-revolution-1981-1984)
-3. [The Brouwer Era: Hack's Golden Age (1984-1985)](#the-brouwer-era-hacks-golden-age-1984-1985)
-4. [The Great Schism: NetHack's Rise (1985-1987)](#the-great-schism-nethacks-rise-1985-1987)
-5. [The Dark Ages: Abandonment and Decay (1990s-2000s)](#the-dark-ages-abandonment-and-decay-1990s-2000s)
-6. [Digital Archaeology: Preservation Efforts (2010s)](#digital-archaeology-preservation-efforts-2010s)
-7. [The Resurrection: restoHack (2025)](#the-resurrection-restohack-2025)
-8. [Technical Legacy and Cultural Impact](#technical-legacy-and-cultural-impact)
+2. [Enter the Hack: Fenlason's Revolution (1981-1982)](#enter-the-hack-fenlasons-revolution-1981-1982)
+3. [The VU Amsterdam Branch (1983-1985)](#the-vu-amsterdam-branch-1983-1985)
+4. [The Brouwer Era: Hack's Golden Age (1984-1985)](#the-brouwer-era-hacks-golden-age-1984-1985)
+5. [The Great Schism: NetHack's Rise (1985-1987)](#the-great-schism-nethacks-rise-1985-1987)
+6. [The Dark Ages: Abandonment and Decay (1990s-2000s)](#the-dark-ages-abandonment-and-decay-1990s-2000s)
+7. [Digital Archaeology: Preservation Efforts (2010s)](#digital-archaeology-preservation-efforts-2010s)
+8. [The Lost Source: Rediscovery (2025)](#the-lost-source-rediscovery-2025)
+9. [The Resurrection: restoHack (2025)](#the-resurrection-restohack-2025)
+10. [Technical Legacy and Cultural Impact](#technical-legacy-and-cultural-impact)
 
 ---
 
@@ -104,159 +121,152 @@ Rogue emerged during the golden age of Unix development at universities. It spre
 
 ---
 
-## Enter the Hack: Fenlason's Revolution (~1981-1984)
+## Enter the Hack: Fenlason's Revolution (1981-1982)
 
 ### The Visionary High School Student
 
-**Jay Fenlason** was a junior at a high school in a small suburb outside of Boston when he visited UC Berkeley and was introduced to Rogue. As he recounts in a 2000 Linux.com interview with Julie Bresnick: *"I was curious about some of the game play issues involved in designing it, things like how the rooms and corridors were generated, so I started hacking up some random level generators and stuff to try things out."*
+The timeline was previously uncertain; this has now been resolved through the recovery of original 1981-82 source code and contemporaneous documentation (see [TIMELINE.md](research/TIMELINE.md)).
 
-When someone looked over his shoulder and asked what he was working on, they said *"oh, that's cool; when do we get to play it?"* - and Hack was born. Working with **Kenny Woodland**, **Mike Thome**, and **Jonathan Payne** (creator of the JOVE text editor), Fenlason developed Hack under the guise of work for his advanced computer class.
+In the summer of 1980, **Brian Harvey** — Computer Director at Lincoln-Sudbury Regional High School in Sudbury, Massachusetts — invited students to California for a summer class he was teaching at San Francisco State University. During the trip, **Jay Fenlason** visited UC Berkeley and played *Rogue* for the first time: *"I think I got a little bit obsessed then, and like any obsessed person who'd been cut off, I decided to build my own."* (Craddock, p. 92)
 
-**The exact timeline remains uncertain** - Fenlason was working almost 20 years before the 2000 interview, placing initial development around 1981-1982, though multiple variants existed and "the exact content of the original Hack is not known for sure" (NetHack Wiki).
+Fenlason first created Hack in **Logo** (Turtle Graphics) on an **Apple II**. Once satisfied with the prototype, he migrated the game to C on the PDP-11/70 at Lincoln-Sudbury (Craddock, p. 94). As he recounts in a 2000 Linux.com interview with Julie Bresnick: *"I was curious about some of the game play issues involved in designing it, things like how the rooms and corridors were generated, so I started hacking up some random level generators and stuff to try things out."*
 
-### Revolutionary Innovations
+When someone looked over his shoulder and asked what he was working on, they said *"oh, that's cool; when do we get to play it?"* — and Hack was born.
 
-Fenlason's team didn't just expand Rogue—they reimagined it:
+### Collaborators
 
-#### **Complex Inventory System**
+Fenlason developed Hack as his "first semester programming project" (READ_Me) on a PDP-11/70 running V7 Unix (alpha test site for 2.9BSD), administered by a student-run Computer Center Users Society with ~50 members who had keys and unsupervised access. Harvey, whose background was in the MIT and Stanford AI labs, had built the school's computing environment to resemble those labs: *"a powerful computer system, with lots of software tools, an informal community spirit, and not much formal curriculum."*
 
-* **Multiple item types**: weapons, armor, rings, amulets, wands, scrolls, potions
+Working with three collaborators:
 
-* **Item identification mechanics**: requiring experimentation and risk
-* **Blessed/cursed states**: items could help or hinder unpredictably
-* **Item interactions**: scrolls could enhance or destroy other items
+* **Kenny Woodland** (KW) — Maze-generating code for the bottom level, the original BUZZ() function, and "general random things" (READ_Me). Also contributed code for a game called *Bombs*. (Craddock, p. 94)
+* **Mike Thome** (MT) — Invented the chameleon, a monster that *"could take on the appearance and abilities of other types of monsters"* (Craddock, p. 94). Credited in READ_Me as "The original chamelian" [sic].
+* **Jonathan Payne** (JP) — The lock file system and "the massive CURS()" (READ_Me). Also the author of JOVE (Jonathan's Own Version of Emacs). Payne and Fenlason had *"a friendly rivalry going on as to whose program, JOVE or Hack, could update the screen most efficiently"* (Craddock, p. 94). Both programs shipped on the same USENIX 82-1 tape.
 
-#### **Economic Revolution: Shops**
+### What Fenlason Actually Built
 
-* **Shopkeepers** with distinct personalities and pricing strategies
+The exact content of Fenlason's original was long unknown; a detailed comparison is now possible thanks to the 2025 source recovery (see [COMPARISON.md](research/COMPARISON.md)). The recovered code reveals a leaner, more focused game than later versions:
 
-* **Gold as currency** (not just score) with meaningful economic choices
-* **Theft mechanics** and consequences for criminal behavior
-* **Credit systems** and complex shop interactions
+#### **Monster System**
 
-#### **Advanced Monster Ecology**
+* **57 monsters** (56 in an 8x7 array + vampire bat) — vs. Rogue's 26
+* Unique creatures found in no other variant: **displacer beast**, **wumpus**, **ugod**, **xerp**, **zelomp**
+* Polymorphic **chameleon** (Thome's contribution)
+* The **Amulet of Frobozz** (Brouwer later renamed it to the Amulet of Yendor)
 
-* **Polymorphic creatures** that could change form dynamically
+#### **Item System**
 
-* **Spell-casting monsters** with magical abilities
-* **Pet system** (especially dogs) with loyalty and training mechanics
-* **Monster equipment**: creatures could wield weapons and wear armor
+* **15 potions** (including "alcohol" — later variants changed this to "booze")
+* **15 scrolls** (including unique "rust armor" scroll and original incantation names: "Andova Begarin", "Velox Neb", "Foobie Bletch", "Elbib Yloh")
+* **16 wands**, **17 ring types** (including unique "increase hit points" ring)
+* **6 armor types** (suits only: leather through plate)
+* **2 food types** (food ration and fruit)
 
-#### **Developer Tools: Wizard Mode**
+#### **What Was NOT in Fenlason's Original**
 
-* **Debug access** for developers and power users
+Several features commonly attributed to early Hack were actually added by later developers:
 
-* **Object creation** and level manipulation capabilities
-* **Teleportation** and exploration tools
-* **Monster summoning** and behavioral control
-
-### The Hardware and Philosophy  
-
-Fenlason's high school was near Maynard, where DEC headquarters were located. His ninth-grade teacher convinced DEC to sell him a PDP-11 at a 75% discount. Instead of loading DEC's operating system, he loaded Unix, then significantly discounted for the education community. This Unix environment became the foundation for Hack's development.
-
-Even decades later, Fenlason remained a purist about gaming and technology. In the 2000 Linux.com interview, he expressed concerns about modern graphical gaming: *"No special effects in the movies will ever live up to those in your head."* He kept his children away from computers, believing they needed to learn *"more about how the world works, like climbing and building towers out of blocks and all the basic physics things that we take for granted."*
+* **No shops or shopkeepers** — Brouwer's own README confirms these were his addition
+* **No pet/dog system** — the `struct monst` has no `mtame` field; Brouwer added pets
+* **No long worms** — Hack 1.0's `#ifdef NOWORM` conditional preserves the transition
+* **No special room types** (zoos, vaults, graveyards) — added by Huisjes & de Wilde
+* **No pools or water** — location types were limited to wall, door, corridor, room
 
 ### Technical Architecture
 
-Early Hack introduced object-oriented concepts in pure C:
+Fenlason's `struct monst` was notably simpler than later versions, using a combined 2-bit `mstat` field for flee/sleep/frozen states and including `sinv` (see invisible) and `mstuck` fields not present in any other variant:
 
 ```c
-// Revolutionary data structures for 1982
+/* Fenlason's original struct monst (original/hack.h:70-82) */
 struct monst {
-    struct monst *nmon;     // Linked list architecture
-    struct permonst *data;  // Polymorphic type system
-    xchar mx, my;           // Position in world
-    uchar mhp, mhpmax;      // Health management
-    struct obj *minvent;    // Dynamic inventory
-    // Bitfield optimizations for memory efficiency
-    Bitfield(mimic,1);      // Can mimic objects
-    Bitfield(mtame,1);      // Player relationship
+    struct monst *nmon;
+    struct permonst *data;
+    xchar mx, my;
+    char mhp, orig_hp;      /* char, not int — PDP-11 economy */
+    char invis, cham;
+    char mspeed, mcan;
+    char mstuck;             /* unique to Fenlason */
+    char sinv;               /* unique to Fenlason */
+    char mstat;              /* 2-bit combined state field */
 };
 ```
 
-### Cultural Explosion and USENIX Distribution
+### The Hardware and Philosophy
 
-Fenlason submitted Hack to a USENIX conference tape collection. As he recalls: *"Usenix had biannual meetings, Unix users would get together and swap war stories. For each meeting they'd put together a tape of some of the contributed software. I put [Hack] on the tape and forgot about it until someone I know mentioned that the two most popular pieces of software on that particular tape were my silly game and my friend Jonathon's text editor."*
+Lincoln-Sudbury was near Maynard, Massachusetts, where DEC headquarters were located. The school's PDP-11 ran Unix in an environment that Harvey had deliberately modeled on the university computing culture he knew from MIT and Stanford.
 
-From there, Hack spread through:
+Even decades later, Fenlason remained a purist about gaming and technology. In the 2000 Linux.com interview, he expressed concerns about modern graphical gaming: *"No special effects in the movies will ever live up to those in your head."* He kept his children away from computers, believing they needed to learn *"more about how the world works, like climbing and building towers out of blocks and all the basic physics things that we take for granted."*
 
-* **USENIX conference tapes**
-* **University computer labs**
-* **USENET newsgroups** (comp.sources.games)
-* **Source code sharing** that encouraged variants and modifications
+### USENIX Distribution
 
-By the early-to-mid 1980s, Hack had become a prominent roguelike experience, with **Fenlason voluntarily avoiding participation** in further development after spawning the original almost 20 years before NetHack's rise.
+In the first half of 1982, Brian Harvey submitted student projects — including Hack and JOVE — for inclusion on the USENIX distribution tapes (82-1). *;login:* Vol. 7, No. 3 (June 1982) reports that the tape had been completed, noting the Lincoln-Sudbury submission containing "quite a few games." The tapes were distributed at the Boston USENIX conference in July 1982 — the same conference where Toy and Arnold presented their Rogue talk.
+
+Fenlason later recalled: *"Usenix had biannual meetings, Unix users would get together and swap war stories. For each meeting they'd put together a tape of some of the contributed software. I put [Hack] on the tape and forgot about it until someone I know mentioned that the two most popular pieces of software on that particular tape were my silly game and my friend Jonathon's text editor."*
+
+From there, Hack spread through USENIX conference tapes, university computer labs, and USENET newsgroups. By the early-to-mid 1980s, Hack had become a prominent roguelike experience, with **Fenlason voluntarily avoiding participation** in further development after spawning the original.
+
+---
+
+## The VU Amsterdam Branch (1983-1985)
+
+Around 1983-84, **Michiel Huisjes** and **Fred de Wilde** at Vrije Universiteit (VU), Amsterdam, produced their own PDP-11 version based on pre-1.0 Hack. Andries Brouwer later described it (in an April 1985 Usenet reply) as copied from his directory without permission while Hack 1.0 was still in development; he noted it was not in shape for distribution and lacked many features present in 1.0.
+
+The VU Amsterdam developers made substantial additions of their own, documented in their README:
+
+> *"Some additions we (Fred de Wilde and Michiel Huisjes) made are — The Vault / The Swamp / The Zoo / The Graveyard"*
+
+They also replaced Fenlason's scroll of confuse monster with a "losing" scroll (drops all inventory), converted simple teleportation into a level-jumping elevator system, replaced the wand of striking with "exhaustion", and added wands of confusion and door closing. Their version inflated hit dice for the dragon (10 → 20hd), purple worm (15 → 20hd), and demon (10 → 14hd).
+
+Huisjes published the PDP-11 Hack to Usenet (`net.sources`) in February 1985 as five shar parts. In May 1985, a **PC/IX port** adapted it for IBM PC UNIX.
 
 ---
 
 ## The Brouwer Era: Hack's Golden Age (1984-1985)
 
-### The Master Takes Control
+### The Near-Complete Rewrite
 
-In late 1984, **Andries Brouwer**, a Dutch mathematician and programmer, assumed development of Hack, releasing version 1.0 to Usenet in December 1984. This marked the beginning of Hack's most productive and innovative period.
+On **December 17, 1984**, **Andries Brouwer** at Stichting Mathematisch Centrum (CWI), Amsterdam, distributed **Hack 1.0** to `net.sources` in 15 shar parts (sender: `play@mcvax.UUCP`). The announcement promised 10 parts but there were actually 15, all sent on the same day. The volume of Hack traffic on Usenet prompted Gene Spafford to create the `net.games.hack` newsgroup.
 
-### Mathematical Precision Meets Game Design
+Brouwer later wrote that Hack 1.0.3 *"contains very little if anything from the original sources."* This was a near-complete rewrite, not merely an expansion.
 
-Brouwer approached Hack like a complex system requiring mathematical rigor:
+### What Brouwer Added
 
-#### **Massive Content Expansion**  
+The [source comparison](research/COMPARISON.md) makes clear the scale of Brouwer's transformation:
 
-* **Monster variety**: Expanded to 58 distinct creature types (verified from source)
+#### **New Game Systems**
 
-* **Dungeon features**: Altars, fountains, thrones, sinks with complex interactions
-* **Magic system**: Dozens of spells, wands, and magical effects
-* **Environmental storytelling**: Every room could tell a story
+* **Shops and shopkeepers** — an entire economic layer with pricing, theft mechanics, and consequences
+* **Pet/dog system** — three dog types (li_dog, dog, la_dog) with full movement AI, loyalty, and training (`hack.dog.c`, 400+ lines)
+* **Long worm segments** — multi-tile creatures with segment tracking
+* **Amulet of Yendor** — renamed from Fenlason's Amulet of Frobozz
 
-#### **Architectural Revolution**
+#### **Content Expansion**
 
-* **Memory management**: Sophisticated allocation and cleanup routines
+* **61 monster types** (up from Fenlason's 57), including shopkeeper, minotaur, nurse, unicorn
+* **16 food types** (up from 2): tripe ration, pancake, dead lizard, fortune cookie, fruits, egg, carrot, tin, garlic, corpse
+* **12 armor types** (up from 6): added banded mail, studded leather, elven cloak, helmet, shield, gloves
+* **Wand of wishing** and **wand of make invisible** — powerful new magic items
 
-* **Save/restore system**: Robust character persistence across sessions
-* **Error handling**: Graceful failure modes and recovery mechanisms
-* **Platform portability**: Support for various Unix variants
+#### **Mathematical Precision**
 
-#### **Game Balance as Science**
+Brouwer brought his mathematical and coding theory background to bear on game design: tight probability distributions, carefully structured data tables, and algorithmic approaches to balance that went beyond Fenlason's more experimental groundwork.
 
-Brouwer brought his mathematical and coding theory background to bear on game design. Signs of this expertise can be seen throughout the codebase: tight probability distributions, carefully structured data tables, and algorithmic approaches to balance that go beyond Fenlason's more experimental groundwork.
+### Quest (Undistributed)
 
-### Hack 1.0.2 (April 1985)
+Brouwer also wrote **Quest**, a game sharing most of Hack's source but using its own level generator (`quest.mklev.c`) that produced more interesting cave shapes instead of "boring rectangles." Quest was never officially distributed but leaked — a copy appeared at Vrije Universiteit, and it was listed among evidence seized in the 1990 Secret Service raids documented in Bruce Sterling's *The Hacker Crackdown*. Brouwer's own copy was lost when an email transfer from Amsterdam to Denmark was silently discarded by a gateway for exceeding 100 KB.
 
-Third public release to net.sources.games:
+### Release History
 
-* Female adventurer option
-* Moon phase effects (luck, dog behavior, cockatrice danger)  
-* Pools, swamps, beehives, crypts
-* Wizard of Yendor, giant eels, hell hounds
-* Level 30+ requires fire resistance
-
-### The Final Release: Hack 1.0.3 (1985)
-
-Brouwer's final version represented the pinnacle of 1980s game design:
-
-#### **Technical Excellence**  
-
-* **19,239 lines** of meticulously crafted C code (exact count from preserved source)
-
-* **Semi-Modular architecture** with clean separation of concerns
-* **Custom data structures** optimized for limited hardware
-* **Memory efficiency** enabling complex gameplay in 64KB RAM
-
-#### **Gameplay Sophistication**
-
-* **Emergent complexity**: Simple rules creating infinite scenarios
-
-* **Balanced probability systems**: Every random event carefully tuned
-* **Deep strategic choices**: No single optimal strategy
-* **Authentic challenge**: Difficult but always fair
+* **Hack 1.0** (Dec 17, 1984) — Initial distribution, 15 shar parts
+* **Hack 1.0.1** (Jan 1985) — Patch adding a few features (sender: `play@turing.UUCP`)
+* **Hack 1.0.2** (Apr 1-14, 1985) — Full source redistribution over two weeks. The 1.0 single-day dump had overwhelmed many sites, and 1.0.1 required the `patch` utility which was not universally available. Female adventurer option, moon phase effects, pools, swamps.
+* **Hack 1.0.3** (Jul 23, 1985) — Brouwer's final version, distributed as an ed script against 1.0.2. **19,239 lines** of meticulously crafted C code. Direct template for NetHack.
 
 ### Cultural Phenomenon
 
 By 1985, Hack had gained significant influence in academic computing environments:
 
-#### **Community Development**
-
 * **Strategy guides** circulated through academic networks
-
 * **Variant development**: Hack+, UHack, and dozens of modifications
 * **Spoiler databases** documenting every game mechanic
 * **Source code analysis** treated like literary criticism
@@ -267,7 +277,7 @@ By 1985, Hack had gained significant influence in academic computing environment
 
 ### The DevTeam Revolution
 
-As Hack's popularity exploded, **Mike Stephenson** organized the **NetHack DevTeam**—a distributed group of programmers who wanted to modernize and expand Hack for a broader audience.
+On **July 28, 1987**, **Mike Stephenson**, **Izchak Miller**, and **Janet Walz** forked Hack 1.0.3 and released **NetHack 1.3d** — beginning independent development by a distributed group of programmers who wanted to modernize and expand Hack for a broader audience.
 
 ### Philosophical Divergence
 
@@ -407,6 +417,57 @@ Every "successful" preservation changed the experience:
 
 ---
 
+## The Lost Source: Rediscovery (2025)
+
+### Fenlason's Code Resurfaces After 40 Years
+
+Jay Fenlason's original source code was widely considered lost. By the time he [spoke to Julie Bresnick in 2000](https://www.linux.com/news/train-life-nethacks-papa/), he had long since moved on; he still played his original version at home, but had *"voluntarily avoided participation pretty much since spawning the original Hack almost 20 years ago."* Brouwer's near-total rewrite as Hack 1.0 became the version the world knew, and Fenlason's original largely dropped out of the historical record.
+
+It resurfaced in 2025 when **Brian Harvey**, who had been Computer Director at Lincoln-Sudbury during Hack's development, provided his preserved copy of the school's PDP-11 backups to **Dan Stormont** for the [Snap!Hack](https://github.com/Sustainable-Games/snaphack) educational project. Dan published the complete original working tree at [Sustainable-Games/fenlason-hack](https://github.com/Sustainable-Games/fenlason-hack).
+
+**Chain of custody:**
+
+1. **Jay Fenlason** — original author, 1981-82 (with Woodland, Thome, and Payne)
+2. **Brian Harvey** — preserved from LSRHS PDP-11 backups, 1982-2024
+3. **Dan Stormont** — Snap!Hack project, 2024-present
+
+### What the Recovery Revealed
+
+The [protoHack](https://github.com/Critlist/protoHack) project restored Fenlason's original code to run on modern Linux and conducted a [detailed source comparison](research/COMPARISON.md) against all known Hack derivatives. Key findings:
+
+* **The timeline is now resolved**: *;login:* (June 1982) confirms the code was complete and submitted for the USENIX 82-1 distribution tape before the Boston conference that July.
+* **Attribution corrections**: Shops, pets, long worms, and special rooms were NOT in Fenlason's original — they were added by Brouwer and the VU Amsterdam developers. Earlier secondary accounts that attributed these features to Fenlason have been corrected throughout this document.
+* **Unique artifacts**: The recovered source contains items found in no other variant — the displacer beast, "alcohol" potion, "rust armor" scroll, and original incantation names. It also preserves personal development files (.cshrc, .login), Zork reference material, and experimental branches showing code evolution.
+* **Structural evidence**: Fenlason's `struct monst` is simpler than all derivatives, with unique fields (`sinv`, `mstuck`, combined `mstat`) and missing fields (`mtame`, `wormno`, `mxlth`) that prove the pet and worm systems were later additions.
+
+### Lineage
+
+```
+Rogue (1980, Toy/Wichman/Arnold)
+  |
+  v
+Hack in Logo (~1980-81, Apple II, Fenlason)
+  |
+  v
+Fenlason Hack in C (1981-82, PDP-11/70, Lincoln-Sudbury)
+  |
+  +---> PDP-11 Hack (~1983, Huisjes & de Wilde, VU Amsterdam)
+  |       |
+  |       +---> PC/IX Hack (1985, IBM PC UNIX port)
+  |
+  +---> Hack 1.0 (Dec 1984, Brouwer, CWI Amsterdam)
+  |       |
+  |       +---> Hack 1.0.1 (Jan 1985)
+  |       +---> Hack 1.0.2 (Apr 1985)
+  |       +---> Hack 1.0.3 (Jul 1985)  <-- restoHack source
+  |               |
+  |               +---> NetHack 1.3d (Jul 1987, Stephenson/Miller/Walz)
+  |
+  +---> Quest (Brouwer, undistributed — lost)
+```
+
+---
+
 ## The Resurrection: restoHack (2025)
 
 ### Modern Preservation
@@ -517,31 +578,36 @@ It demonstrates how digital archaeology should work: respect the past, serve the
 
 ### **Primary Sources**
 
-* **[Original 1984 Source Code](docs/historical/original-source/)** - Complete preserved codebase
-* **[Jay Fenlason Interview (2000)](https://www.linux.com/news/train-life-nethacks-papa/)** - Julie Bresnick, Linux.com - Creator's firsthand account
-* **[Jay Fenlason Interview (NewsForge Archive)](https://web.archive.org/web/20030512112023/http://newsforge.com/article.pl?sid=00/12/03/2052246)** - Archived copy of the Linux.com article
-* **[Source Retrieval Script](docs/historical/original-source/download_hack.sh)** - Automated provenance documentation
-* **[FreeBSD Games Collection](https://cgit.freebsd.org/src/tree/games/hack?h=releng/4.10)** - Canonical preservation
+* **David L. Craddock**, *Dungeon Hacks: How NetHack, Angband, and Other Roguelikes Changed the Course of Video Games* (Press Start Press, 2015) — Contains interview quotes from Jay Fenlason conducted via email in 2014. Pages 92 and 94 detail the origin of Hack.
+* ***;login:* Vol. 7, No. 3 (June 1982)** — USENIX distribution tape announcement — [Archive.org scan](https://archive.org/details/login_june-1982/page/n13/mode/2up) | [Full text](https://archive.org/stream/login_june-1982/login_june-1982_djvu.txt)
+* **[Jay Fenlason Interview (2000)](https://www.linux.com/news/train-life-nethacks-papa/)** — Julie Bresnick, Linux.com — Creator's firsthand account ([NewsForge archive](https://web.archive.org/web/20030512112023/http://newsforge.com/article.pl?sid=00/12/03/2052246))
+* **Brian Harvey**, ["Computer Hacking and Ethics" — A Case Study: The Lincoln-Sudbury Regional High School](https://people.eecs.berkeley.edu/~bh/lsrhs.html) (appendix to ACM Select Panel on Hacking position paper, 1985)
+* **Andries Brouwer's** [Hack history page](https://homepages.cwi.nl/~aeb/games/hack/hack.html)
+* **[Original 1984 Source Code](historical/original-source/)** — Hack 1.0.3 preserved codebase (restoHack base)
+* **[FreeBSD Games Collection](https://cgit.freebsd.org/src/tree/games/hack?h=releng/4.10)** — Canonical preservation
+
+### **Research Documents**
+
+* **[TIMELINE.md](research/TIMELINE.md)** — Corrected chronology with primary source citations
+* **[COMPARISON.md](research/COMPARISON.md)** — Evidentiary comparison of all known Hack source variants
+* **[protoHack](https://github.com/Critlist/protoHack)** — Restoration of Fenlason's original 1981-82 source code
 
 ### **restoHack Project Documentation**
 
-* **[README.md](../README.md)** - Quick start and installation guide
-* **[CODING_STANDARDS.md](CODING_STANDARDS.md)** - Complete modernization methodology
-* **[CHANGELOG.md](CHANGELOG.md)** - Version history and technical changes
-* **[C_LEARNING_LOG.md](C_LEARNING_LOG.md)** - Development notes and insights
+* **[README.md](../README.md)** — Quick start and installation guide
+* **[CODING_STANDARDS.md](CODING_STANDARDS.md)** — Complete modernization methodology
+* **[CHANGELOG.md](CHANGELOG.md)** — Version history and technical changes
 
 ### **Academic and Historical Context**
 
-* **[Original READ_ME](docs/historical/original-source/Original_READ_ME)** - Brouwer's 1985 documentation
-* **[BSD Games History](https://en.wikipedia.org/wiki/BSD_games)** - Unix gaming preservation
-* **[Roguelike Development Community](https://www.roguebasin.com/)** - Modern roguelike evolution
+* **[Original READ_ME](historical/original-source/Original_READ_ME)** — Brouwer's 1985 documentation
+* **[BSD Games History](https://en.wikipedia.org/wiki/BSD_games)** — Unix gaming preservation
+* **[Roguelike Development Community](https://www.roguebasin.com/)** — Modern roguelike evolution
 
 ### **Technical Implementation**
 
-* **[CMakeLists.txt](../CMakeLists.txt)** - Modern build system implementation
-
-* **[Source Code](../src/)** - Complete modernized codebase with documentation
-* **[Test Scripts](../test.sh)** - Verification and validation methodology
+* **[CMakeLists.txt](../CMakeLists.txt)** — Modern build system implementation
+* **[Source Code](../src/)** — Complete modernized codebase with documentation
 
 ---
 
@@ -558,4 +624,4 @@ Please submit improvements via pull request to the [restoHack repository](https:
 
 ---
 
-*This document is maintained as part of the restoHack software preservation project. Last updated: August 2025.*
+*This document is maintained as part of the restoHack software preservation project. Last updated: February 2026.*

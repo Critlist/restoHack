@@ -134,6 +134,12 @@ Full history: [HISTORY_OF_HACK.md](docs/HISTORY_OF_HACK.md)
 
 ---
 
+## Historical Research
+
+**[protoHack](https://github.com/Critlist/protoHack)** recovers and restores Jay Fenlason's original 1981-82 source code and conducts primary-source research into Hack's origins. **restoHack** is the stabilized restoration of Brouwer's Hack 1.0.3 with curated history. The [`docs/research/`](docs/research/) directory is the shared evidence base maintained across both projects.
+
+---
+
 ## Gameplay
 
 You’re the `@`, diving into the Mazes of Menace to steal the Amulet of Yendor.

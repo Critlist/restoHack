@@ -18,8 +18,10 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#ifndef _WIN32
 #include <sys/file.h>
 #include <unistd.h>
+#endif
 /* File descriptors for locked files - must persist while locks are held */
 static int game_lock_fd = -1;
 static int record_lock_fd = -1;

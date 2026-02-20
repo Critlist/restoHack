@@ -16,7 +16,9 @@
 #include <fcntl.h> /* for open */
 #include <stdlib.h>
 #include <sys/stat.h> /* for umask */
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 /* MODERN ADDITION (2025): Terminal size globals for resize protection */
 extern int CO, LI;         /* Defined in hack.termcap.c */

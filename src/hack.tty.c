@@ -76,7 +76,10 @@ static const char rcsid[] __attribute__((unused)) = "$FreeBSD$"; /* Original 198
  * PRESERVES: All original terminal functionality and behavior
  * ADDS: POSIX compliance and modern system compatibility
  */
-#if defined(__linux__) || defined(__unix__) || defined(_POSIX_VERSION)
+#ifdef _WIN32
+/* Modern: Windows uses PDCurses - no POSIX terminal interface needed */
+#define WIN32_TTY
+#elif defined(__linux__) || defined(__unix__) || defined(_POSIX_VERSION)
 #define MODERN_TERMIOS
 #else
 #ifdef BSD
@@ -94,7 +97,21 @@ static const char rcsid[] __attribute__((unused)) = "$FreeBSD$"; /* Original 198
 #define NR_OF_EOFS 20
 #endif /* BSD */
 
-#ifdef MODERN_TERMIOS
+#ifdef WIN32_TTY
+
+/* Modern: PDCurses handles terminal on Windows - provide stub definitions */
+typedef unsigned int tcflag_t;
+struct win32_termstub { char erase_sym; char kill_sym; int tabflgs; int echoflgs; int cbrkflgs; };
+#define termstruct win32_termstub
+#define EXTABS 0
+#define CBRKMASK 0
+#define CBRKON !/* reverse condition */
+#define ECHO 1
+#define OSPEED(x) 0
+#define GTTY(x) (memset(x, 0, sizeof(*(x))), 0)
+#define STTY(x) (0)
+
+#elif defined(MODERN_TERMIOS)
 
 #include <string.h>
 #include <sys/ioctl.h>

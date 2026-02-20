@@ -17,11 +17,26 @@
 #include "config.h"
 #include <signal.h>
 #include <stdio.h>
+#ifndef _WIN32
 #include <sys/ioctl.h>
+#endif
 
 /* Forward declarations for functions not properly visible */
 /* MODERN: CONST-CORRECTNESS: settty message is read-only */
 extern void settty(const char *s);
+
+#ifdef _WIN32
+/* Modern: Windows uses PDCurses - no ioctl terminal control needed */
+
+void getioctls(void) {
+  /* No-op: PDCurses handles terminal on Windows */
+}
+
+void setioctls(void) {
+  /* No-op: PDCurses handles terminal on Windows */
+}
+
+#else /* !_WIN32 */
 
 #ifdef BSD
 /**
@@ -101,6 +116,8 @@ void setioctls(void) {
   (void)ioctl(fileno(stdin), (int)TCSETA, &termio);
 #endif /* BSD */
 }
+
+#endif /* _WIN32 */
 
 #ifdef SUSPEND /* implies BSD */
 int dosuspend(void) {

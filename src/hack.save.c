@@ -11,7 +11,9 @@ extern char fut_geno[60];  /* idem */
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 /* MODERN ADDITION (2025): Versioned save file format
  *

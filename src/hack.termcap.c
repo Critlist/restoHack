@@ -13,8 +13,10 @@
 #include <curses.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifndef _WIN32
 #include <termcap.h>
 #include <unistd.h>
+#endif
 
 static char tbuf[512];
 static char *HO, *CL, *CE, *hack_UP, *CM, *ND, *XD, *hack_BC, *SO, *SE, *TI,

@@ -27,7 +27,9 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 extern int CO, LI; /* usually COLNO and ROWNO+2 */
 extern char *CD;
 extern char quitchars[];
@@ -422,11 +424,13 @@ union wait { /* used only for the cast  (union wait *) 0  */
 
 #else
 
+#ifndef _WIN32
 #ifdef BSD
 #include <sys/wait.h>
 #else
 #include <wait.h>
 #endif /* BSD */
+#endif /* _WIN32 */
 #endif /* NOWAITINCLUDE */
 
 int child(int wt) {

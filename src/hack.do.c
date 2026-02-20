@@ -13,7 +13,9 @@
 #include "hack.h"
 /* MODERN ADDITION (2025): Added for POSIX file operations compatibility */
 #include <fcntl.h>  /* for open() function */
+#ifndef _WIN32
 #include <unistd.h> /* for close() function */
+#endif
 
 extern struct obj *splitobj(), *addinv();
 extern boolean hmon();

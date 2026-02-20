@@ -12,7 +12,9 @@
 #include "hack.h"
 #include <signal.h>
 #include <stdio.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 /* MODERN ADDITION (2025): Added for stale lock detection - stat() and time() */
 #include <sys/stat.h>
 #include <time.h>

@@ -12,7 +12,9 @@
 #include "hack.h"
 /* def.mkroom.h already included via hack.h */
 
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 extern struct monst *restmonchn();
 extern struct obj *restobjchn();
 extern struct obj *billobjs;

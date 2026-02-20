@@ -27,7 +27,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #if defined(HAVE_GETENTROPY)
 #include <sys/random.h>
 #endif

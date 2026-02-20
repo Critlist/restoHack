@@ -11,7 +11,9 @@
 
 #include "hack.h"
 #include <fcntl.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 extern char plname[PL_NSIZ];
 extern long somegold();
 extern struct monst *makemon();

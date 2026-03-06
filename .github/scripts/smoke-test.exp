@@ -86,6 +86,22 @@ expect {
     }
 }
 
+
+# Step 4.5: Dismiss any trailing --More-- that appears with the welcome message
+#           after the map renders.  Not always present (timing/terminal-width
+#           dependent), so a timeout here is not a failure.
+set timeout 5
+expect {
+    -exact "--More--" {
+        send_log "\n>>> Found post-map --More--, dismissing...\n"
+        send " "
+    }
+    timeout {
+        send_log "\n>>> No post-map --More-- (OK)\n"
+    }
+}
+set timeout 30
+
 sleep 1
 
 # Step 5: Quit the game cleanly

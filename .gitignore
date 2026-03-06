@@ -183,7 +183,6 @@ dev/.venv/
 dev/gauntlet-logs/
 uv.lock
 fuzz*/
-dev/README-modular.md
 *.pyc
 ctest/
 docs/messagebug.txt

@@ -141,7 +141,7 @@ Examples:
         fuzz_args = ['--duration', str(args.fuzz_duration)]
         if args.debug:
             fuzz_args.append('--debug')
-        success = run_script("run-fuzz.py", fuzz_args, "libFuzzer")
+        success = run_script("standalone-fuzzer.py", fuzz_args, "libFuzzer")
         results.append(("Fuzzer", success))
     
     # Summary

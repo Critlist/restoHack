@@ -12,10 +12,11 @@ the Summer 1982 USENIX conference took place.
 
 ### Timeline
 
-- **1980** — **Rogue** released for Unix by Michael Toy and Glenn Wichman at
-  UC Santa Cruz, with later contributions by Ken Arnold.
+- **Fall 1980** — **Rogue** created for Unix by Michael Toy and Glenn Wichman
+  at UC Santa Cruz. Wichman: "It caught on immediately, like wildfire." (USENET,
+  1984-04-06)
 
-- **~Summer 1980** — Brian Harvey invites Lincoln-Sudbury students to
+- **Summer 1981** — Brian Harvey invites Lincoln-Sudbury students to
   California for a summer class he is teaching at San Francisco State
   University. During the trip, Jay Fenlason visits UC Berkeley and plays
   *Rogue* for the first time: "The summer between my sophomore and junior
@@ -27,12 +28,12 @@ the Summer 1982 USENIX conference took place.
   obsessed person who'd been cut off, I decided to build my own." (Craddock,
   pp. 92)
 
-- **~1980–81** — Fenlason creates the earliest version of Hack in **Logo**
-  (Turtle Graphics) on an **Apple II**. Once satisfied with the Logo
+- **Summer 1981** — **Jay Fenlason** creates the earliest version of Hack
+  in **Logo** (Turtle Graphics) on an **Apple II**. Once satisfied with the Logo
   prototype, he migrates the game to C on the PDP-11/70 at Lincoln-Sudbury.
   (Craddock, p. 94)
 
-- **1981–82** — **Jay Fenlason** develops Hack in C at Lincoln-Sudbury
+- **Fall/Winter 1981** — Fenlason develops Hack in C at Lincoln-Sudbury
   Regional High School — his "first semester programming project" (READ_Me).
   The development environment is a PDP-11/70 running V7 Unix (alpha test site
   for 2.9BSD), administered by a student-run Computer Center Users Society
@@ -168,17 +169,22 @@ Full license texts preserved in Brouwer's published account.
 - Neozeed, "While hunting for Hack 1.0 in usenet" (reproduces Brouwer's 1985
   Usenet response about the PDP-11 version)
 - Usenet archives via SuperGlobalMegaCorp Altavista Archive
+- Glenn Wichman, ["Rogue History: Information
+  Desired"](https://groups.google.com/groups?selm=2980@fortune.UUCP) (posted
+  1984-04-06 to the USENET newsgroup net.sources.games)
+- Lincoln-Sudbury Regional High School, "Dyad: 1982" (yearbook that shows
+  Jay Fenlason finished his junior year in 1982)
 
 ## Lineage
 
 ```
-Rogue (1980, Toy/Wichman/Arnold)
+Rogue (Fall 1980, Toy/Wichman)
   |
   v
-Hack in Logo (~1980-81, Apple II, Fenlason)
+Hack in Logo (Summer 1981, Apple II, Fenlason)
   |
   v
-Fenlason Hack in C (1981-82, PDP-11/70, Lincoln-Sudbury)
+Fenlason Hack in C (Fall/Winter 1981, PDP-11/70, Lincoln-Sudbury)
   |
   +---> PDP-11 Hack (~1983, Huisjes & de Wilde, VU Amsterdam)
   |       |

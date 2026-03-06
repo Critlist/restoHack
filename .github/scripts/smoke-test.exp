@@ -87,17 +87,23 @@ expect {
 }
 
 
-# Step 4.5: Dismiss any trailing --More-- that appears with the welcome message
-#           after the map renders.  Not always present (timing/terminal-width
-#           dependent), so a timeout here is not a failure.
+# Step 4.5: Drain all queued --More-- prompts before quitting.
+#           The game may display several messages after map render (welcome,
+#           moon phase, nearby monster actions, etc.), each needing a space.
+#           Loop until no --More-- appears within 5 seconds.
+set more_count 0
 set timeout 5
-expect {
-    -exact "--More--" {
-        send_log "\n>>> Found post-map --More--, dismissing...\n"
-        send " "
-    }
-    timeout {
-        send_log "\n>>> No post-map --More-- (OK)\n"
+while 1 {
+    expect {
+        -exact "--More--" {
+            incr more_count
+            send_log "\n>>> Found post-map --More-- ($more_count), dismissing...\n"
+            send " "
+        }
+        timeout {
+            send_log "\n>>> No more --More-- prompts ($more_count dismissed)\n"
+            break
+        }
     }
 }
 set timeout 30

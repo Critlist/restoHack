@@ -2,6 +2,7 @@
 
 freebsd_build_task:
   name: FreeBSD build (curses sanity)
+  skip: "changesIncludeOnly('docs/**', '**.md')"
   freebsd_instance:
     image_family: freebsd-14-3
   env:

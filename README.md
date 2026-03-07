@@ -68,6 +68,22 @@ Hardfought also lets you watch games in progress (`w` from the main menu).
 
 ---
 
+## Play Online (Hardfought)
+
+restoHack is now available on [Hardfought](https://www.hardfought.org/) — no installation required.
+
+```
+ssh nethack@us.hardfought.org
+```
+
+1. Login or register (`l` / `r`)
+2. Select `5) Miscellaneous games`
+3. Select `$) Hack 1.0.3`
+
+Hardfought also lets you watch games in progress (`w` from the main menu).
+
+---
+
 ## Installation
 
 ### Arch Linux (AUR)

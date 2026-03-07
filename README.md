@@ -54,6 +54,22 @@ spirit intact.
 
 
 
+## Play Online (Hardfought)
+
+restoHack is now available on [Hardfought](https://www.hardfought.org/) — no installation required.
+
+```
+ssh nethack@us.hardfought.org
+```
+
+1. Login or register (`l` / `r`)
+2. Select `5) Miscellaneous games`
+3. Select `$) Hack 1.0.3`
+
+Hardfought also lets you watch games in progress (`w` from the main menu).
+
+---
+
 ## Installation
 
 ### Arch Linux (AUR)
@@ -151,6 +167,12 @@ Expect monsters, magic, cursed loot, and permadeath. Controls are Vi-style (`hjk
 
 Bug fixes, portability patches, packaging help—welcome.
 Want to port to Plan 9? Go for it. Just document changes and respect the code.
+
+---
+
+## Acknowledgments
+
+Thanks to **K2** for hosting restoHack on [Hardfought](https://www.hardfought.org/) and keeping the roguelike public server tradition alive.
 
 ---
 

@@ -37,7 +37,7 @@ Think resto-mod: the soul stays vintage, the internals get a precision rebuild.
 * **Cross-Platform Verified** – Works on Linux (glibc/musl) & FreeBSD; CI-tested.
 
 > **Tested on:** Arch, Alpine, FreeBSD 14.3 and WSL.
-> macOS support pending. Arch users can install via the AUR.
+> macOS support verified via runner. Arch users can install via the AUR.
 
 ---
 

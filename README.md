@@ -3,7 +3,7 @@
 **restoHack** is a full-blooded resurrection of *Hack*, the 1984 roguelike that spawned *NetHack*.
 Not a remake. Not a reboot. This is *software preservation with a blowtorch and a scalpel*.
 
-The goal: make the original code compile, run, and dungeon-crawl exactly as it did when floppy was King.
+The goal: make the original code compile, run, and dungeon-crawl exactly as it did when floppies were king.
 
 Think resto-mod: the soul stays vintage, the internals get a precision rebuild.
 
@@ -41,16 +41,12 @@ Think resto-mod: the soul stays vintage, the internals get a precision rebuild.
 
 ---
 
- **Recognition:**  
+**Recognition:**  
 RestoHack was recognized by **GitHub** as a *For the Love of Code* category winner (2025).  
 Featured in the official GitHub Blog:  
 [From Karaoke Terminals to AI Resumes — The Winners of GitHub’s For the Love of Code Challenge](https://github.blog/open-source/from-karaoke-terminals-to-ai-resumes-the-winners-of-githubs-for-the-love-of-code-challenge/)
 
 ---
-
-**Development Status:**  
-After a brief pause, active development is gearing back up. The upcoming work will focus heavily on strengthening safety guards throughout the codebase and continuing the long-term mission of cleaning up undefined behavior while keeping the original 1984
-spirit intact.
 
 ## Play Online (Hardfought)
 
@@ -76,7 +72,24 @@ Hardfought also lets you watch games in progress (`w` from the main menu).
 yay -S restohack
 ```
 
-## Build from Source (Pre-release)
+### Download Pre-built Binary (Linux)
+
+Download the static binary from [Releases](https://github.com/Critlist/restoHack/releases):
+
+```bash
+mkdir -p ~/Games/restohack
+cd ~/Games/restohack
+tar -xzf restoHack-*-linux-x86_64-static.tar.gz
+./run-hack.sh
+```
+
+*Note: As of v1.1.1, we provide separate binary and source tarballs instead of hybrid packages.*
+
+*(static binary, no dependencies required)*
+
+Also available on [itch.io](https://critlist.itch.io/restohack) — no compiling required.
+
+### Build from Source
 
 **Requirements:** `git`, `cmake`, a C compiler, `ncurses`
 
@@ -94,24 +107,18 @@ cd build && ./hack
 cmake --preset=release && cmake --build build
 ```
 
----
-
-### Download Pre-built Binary (Linux)
-
-Download the static binary from [Releases](https://github.com/Critlist/restoHack/releases):
-
-```bash
-mkdir -p ~/Games/restohack
-cd ~/Games/restohack
-tar -xzf restoHack-*-linux-x86_64-static.tar.gz
-./run-hack.sh
-```
-
-*Note: As of v1.1.1, we provide separate binary and source tarballs instead of hybrid packages.*
-
-*(static binary, no dependencies required)*
-
 **For BSD systems, development builds, IDE integration, and troubleshooting:** see [**Build Instructions**](docs/BUILD.md)
+
+### Windows (Work in Progress)
+
+A `windows-port` branch exists targeting **MSVC** and **MinGW64** using **PDCurses**.
+
+The MinGW build currently compiles but is **not yet playable**. Build system
+details and testing are still in progress.
+
+The long-term goal is a simple Windows build so people curious about early
+roguelike and Hack history can experience the game without needing a Unix
+terminal. A free Steam release is planned once the Windows build is stable.
 
 ---
 

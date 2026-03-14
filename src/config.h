@@ -106,7 +106,10 @@
  * will do when you have signed characters; otherwise use
  *	typedef	short int schar;
  */
-typedef char schar;
+/* Modern: use 'signed char' explicitly — on aarch64 (ARM64) plain 'char' is
+ * unsigned by default, which broke the rooms[] sentinel check (hx < 0 was
+ * never true) and caused a segfault during level generation. */
+typedef signed char schar;
 
 /*
  * small unsigned integers (8 bits suffice - but 7 bits do not)

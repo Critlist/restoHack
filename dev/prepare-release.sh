@@ -43,7 +43,7 @@ fi
 rm -f CMakeCache.txt cmake_install.cmake Makefile
 
 # Run docker with user mapping to avoid permission issues
-docker run --rm \
+docker run --rm --network=host \
   -v "$PWD":/src \
   -w /src \
   --user "${CURRENT_UID}:${CURRENT_GID}" \
@@ -126,7 +126,7 @@ BUILDSCRIPT
 chmod +x build-static.sh
 
 # Run the actual build - first install packages as root, then build as user
-docker run --rm \
+docker run --rm --network=host \
   -v "$PWD":/src \
   -w /src \
   alpine:3.20 /bin/sh -c '

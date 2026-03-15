@@ -36,8 +36,11 @@ CURRENT_GID=$(id -g)
 # =============================================================================
 echo -e "\n${BLUE}[1/4] Building static binary...${NC}"
 
-# Clean build artifacts
-rm -rf CMakeCache.txt CMakeFiles cmake_install.cmake Makefile alp-build
+# Clean build artifacts (alp-build may be root-owned from a previous Docker run)
+if [ -d alp-build ]; then
+    docker run --rm -v "$PWD":/src alpine:3.20 rm -rf /src/alp-build
+fi
+rm -f CMakeCache.txt cmake_install.cmake Makefile
 
 # Run docker with user mapping to avoid permission issues
 docker run --rm \

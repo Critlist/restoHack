@@ -10,7 +10,11 @@ REAL_USER="${SUDO_USER:-$(whoami)}"
 REAL_UID="${SUDO_UID:-$(id -u)}"
 REAL_GID="${SUDO_GID:-$(id -g)}"
 
-rm -rf CMakeCache.txt CMakeFiles cmake_install.cmake Makefile alp-build
+# alp-build may be root-owned from a previous Docker run; use Docker to clean it
+if [ -d alp-build ]; then
+    docker run --rm -v "$PWD":/src alpine:3.20 rm -rf /src/alp-build
+fi
+rm -f CMakeCache.txt cmake_install.cmake Makefile
 
 docker run --rm --network=host \
   -v "$PWD":/src \

@@ -5,6 +5,44 @@ All notable changes to restoHack will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.6] 2026-03-15
+
+### Fixed
+
+- **CRITICAL**: ARM64/aarch64 crash during level generation (issue #15)
+  - Resolved a segmentation fault that occurred after character selection on aarch64 systems
+  - `typedef char schar` resolves to unsigned char on ARM64 by default (unlike x86), breaking
+    the negative sentinel checks (`hx >= 0`) used throughout dungeon generation
+  - `dosdoor()` loop incremented `broom` past the end of `rooms[]`, faulting on `broom->fdoor`
+  - Fixed by changing to `typedef signed char schar` in `config.h`
+  - Affects aarch64 Linux, Apple Silicon, Raspberry Pi, and any ARM64 platform
+  - Reported and verified by @Filipsys — thank you for the detailed GDB backtrace and for
+    confirming the fix on your system
+
+- **SAVE**: Fixed `ustuck` garbage pointer in `dorecover()` on save restore
+  - `u.ustuck` was read from the raw struct dump and could contain a stale pointer
+  - Now clears `u.ustuck = NULL` after struct restore and uses the `has_ustuck` flag to relink
+  - Initializes `mid = 0` to prevent uninitialized-use warnings in the monster restore loop
+
+### Added
+
+- Historical research documentation synced from protoHack project
+  - `docs/research/TIMELINE.md`: corrected Hack origin timeline via primary sources
+    (;login: June 1982, Craddock's *Dungeon Hacks* interviews)
+  - `docs/research/COMPARISON.md`: feature attribution evidence across Fenlason,
+    VU Amsterdam (Huisjes & de Wilde), and Brouwer branches
+- CI: interactive smoke tests using `expect` for automated game startup and map rendering
+- CI: `verify-map.sh` validates smoke test log for evidence of successful map render
+
+### Changed
+
+- **BUILD**: Stack clash protection (`-fstack-clash-protection`) now conditional on non-macOS
+- **BUILD**: Security hardening linker flags conditional on non-Apple platforms
+- **CI**: Workflows skip builds on documentation-only changes (push/PR path filters)
+- **CI**: Smoke test drains multiple consecutive `--More--` prompts after map render
+- README: added Hardfought online play instructions and acknowledgment to K2 for hosting
+- README: updated binary download instructions and development status
+
 ## [1.1.5] 2025-12-12
 
 ### Changed

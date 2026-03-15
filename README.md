@@ -36,7 +36,7 @@ Think resto-mod: the soul stays vintage, the internals get a precision rebuild.
 * **Unix/Linux Fixes** – No more hardcoded BSD paths or FS quirks.
 * **Cross-Platform Verified** – Works on Linux (glibc/musl) & FreeBSD; CI-tested.
 
-> **Tested on:** Arch, Alpine, FreeBSD 14.3 and WSL.
+> **Tested on:** Arch, Alpine, FreeBSD 14.3, WSL, and aarch64.
 > macOS support verified via runner. Arch users can install via the AUR.
 
 ---
@@ -124,13 +124,14 @@ terminal. A free Steam release is planned once the Windows build is stable.
 
 ## Current Status
 
-v1.1.5 — Stable Release
-Introduces a fully overhauled save file system. Inspired by NetHack and EvilHack, the new format improves safety, portability, and long-term compatibility across platforms and builds.
+v1.1.6 — Stable Release
+Fixes a critical crash on aarch64 after character selection. Reported and verified by [@Filipsys](https://github.com/Filipsys).
 
 ---
 
 ## Recent Fixes
 
+* **aarch64 Crash** – Fixed segfault after character selection on aarch64 Ubuntu (reported by [@Filipsys](https://github.com/Filipsys))
 * **Save System Safety** – Version 2 save format with pointer serialization
 * **Ubuntu Fix** – Resolved PATH resolution bug preventing game launch on Ubuntu 22.04/24.04
 * **Security Audit** – Fixed 150+ vulnerabilities: buffer overflows, null pointers, format strings

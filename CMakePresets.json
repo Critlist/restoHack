@@ -16,7 +16,8 @@
       "binaryDir": "build-debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "HACKDIR_OVERRIDE": "${sourceDir}/build-debug/hackdir"
       }
     },
     {
@@ -25,7 +26,8 @@
       "binaryDir": "build-relwithdebinfo",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "HACKDIR_OVERRIDE": "${sourceDir}/build-relwithdebinfo/hackdir"
       }
     }
   ],

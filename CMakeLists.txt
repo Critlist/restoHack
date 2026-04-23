@@ -225,18 +225,22 @@ endif()
 
 # Optimization handled in hardening section below
 
-# Runtime path configuration - inject absolute paths to prevent hardcoded path issues
+# Runtime path configuration
+# HACKDIR is baked into the binary at compile time as the fallback playground path.
+# Resolution order at runtime: -d flag > HACKDIR env var > this compiled-in default.
+# System installs: defaults to ${CMAKE_INSTALL_PREFIX}/share/hack — set HACKDIR_OVERRIDE
+#   to a different path if needed (e.g. -DHACKDIR_OVERRIDE=/var/games/hack).
+# Dev builds: use -DHACKDIR_OVERRIDE via CMake preset (see CMakePresets.json) so the
+#   binary finds data in the build tree without requiring -d at every invocation.
 if(DEFINED HACKDIR_OVERRIDE)
-    target_compile_definitions(hack PRIVATE 
-        HACKDIR="${HACKDIR_OVERRIDE}"
-        SAVE_VERSION="${PROJECT_VERSION}"
-    )
+    set(_hackdir_baked "${HACKDIR_OVERRIDE}")
 else()
-    target_compile_definitions(hack PRIVATE 
-        HACKDIR="${CMAKE_BINARY_DIR}/hackdir"
-        SAVE_VERSION="${PROJECT_VERSION}"
-    )
+    set(_hackdir_baked "${CMAKE_INSTALL_PREFIX}/share/hack")
 endif()
+target_compile_definitions(hack PRIVATE
+    HACKDIR="${_hackdir_baked}"
+    SAVE_VERSION="${PROJECT_VERSION}"
+)
 
 # Struct packing control for save system consistency
 option(ENABLE_STRUCT_PACKING "Enable struct packing for save system compatibility" ON)
@@ -426,31 +430,19 @@ endif()
 # Data files
 set(DATA_FILES rumors help hh data)
 
-
-# Versioned save system configuration
-set(HACK_VERSION "${PROJECT_VERSION}")
+# Build-tree hackdir setup
 set(SAVE_DIR "${CMAKE_BINARY_DIR}/hackdir/save")
-set(VERSIONED_SAVE_DIR "${SAVE_DIR}/v${HACK_VERSION}")
-set(BACKUP_SAVE_DIR "${SAVE_DIR}/backup")
 
 option(RESTOHACK_COPY_ASSETS "Copy asset directories into build tree" ON)
 
 add_custom_target(setup_hackdir ALL
-    # Copy hackdir structure and ensure write permissions on record file
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/hackdir ${CMAKE_BINARY_DIR}/hackdir
-    # Create required directories and lock files
     COMMAND ${CMAKE_COMMAND} -E make_directory ${SAVE_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${VERSIONED_SAVE_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${BACKUP_SAVE_DIR}
     COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_BINARY_DIR}/hackdir/perm
-    # Ensure record file exists and is writable (game checks this at startup)
     COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_BINARY_DIR}/hackdir/record
-    # Also copy files to build root for pre-chdir access (legacy compatibility)
     COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_BINARY_DIR}/perm
-    # Clean all possible lock files (HLOCK, LLOCK, record_lock in all locations)
     COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/record_lock ${CMAKE_BINARY_DIR}/safelock ${CMAKE_BINARY_DIR}/hackdir/record_lock ${CMAKE_BINARY_DIR}/hackdir/safelock
-    COMMAND ${CMAKE_COMMAND} -E remove -f ${SAVE_DIR}/* ${VERSIONED_SAVE_DIR}/* ${BACKUP_SAVE_DIR}/*
-    COMMENT "Setting up versioned save system: v${HACK_VERSION} with backup support"
+    COMMENT "Setting up build-tree hackdir"
     VERBATIM
 )
 
@@ -485,9 +477,50 @@ add_custom_target(clean-all
 )
 
 # Install rules
-install(TARGETS hack DESTINATION bin)
-install(FILES ${DATA_FILES} DESTINATION share/hack)
-install(FILES man/hack.6 DESTINATION share/man/man6)
+include(GNUInstallDirs)
+
+install(TARGETS hack DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# Read-only game assets
+install(FILES ${DATA_FILES} hackdir/news
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/hack
+    PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+)
+install(FILES man/hack.6 DESTINATION ${CMAKE_INSTALL_MANDIR}/man6)
+
+# Mutable runtime artifacts: created only when absent so reinstalls preserve game state.
+# record must pre-exist or the game cannot record scores (fopen "r" is the gatekeeper).
+# perm is the legacy link()-lock anchor; unused with ENABLE_MODERN_LOCKING but installed
+#   for compatibility with builds that compile without it.
+# save/ must pre-exist or the game cannot write save files.
+if(NOT WIN32)
+    install(CODE "
+        set(_hackdata \"${CMAKE_INSTALL_FULL_DATADIR}/hack\")
+        if(NOT \"\$ENV{DESTDIR}\" STREQUAL \"\")
+            set(_hackdata \"\$ENV{DESTDIR}\${_hackdata}\")
+        endif()
+        foreach(_f record perm)
+            if(NOT EXISTS \"\${_hackdata}/\${_f}\")
+                file(WRITE \"\${_hackdata}/\${_f}\" \"\")
+            endif()
+        endforeach()
+        if(NOT EXISTS \"\${_hackdata}/save\")
+            file(MAKE_DIRECTORY \"\${_hackdata}/save\")
+            execute_process(COMMAND chmod 1777 \"\${_hackdata}/save\")
+        endif()
+    ")
+endif()
+
+install(CODE "
+    message(STATUS \"\")
+    message(STATUS \"hackdir: ${CMAKE_INSTALL_FULL_DATADIR}/hack\")
+    message(STATUS \"hackdir holds both read-only assets and writable runtime state.\")
+    message(STATUS \"For multi-user play, set filesystem permissions before first use:\")
+    message(STATUS \"  World-writable:  chmod 777 <hackdir> && chmod 1777 <hackdir>/save\")
+    message(STATUS \"  setgid games:    chown root:games <hackdir> <binary> && chmod g+s <binary>\")
+    message(STATUS \"  Per-user -d:     each user runs hack -d ~/.hack (no shared scores)\")
+    message(STATUS \"\")
+")
 
 # ---- Security Options ----
 option(CLANG_STRICT "Enable draconian warnings under Clang" OFF)

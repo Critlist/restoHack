@@ -62,7 +62,7 @@ void hangup(int sig);
  * dynamic terminal sizing in modern window managers. Maintains game state
  * integrity during resize events.
  */
-static volatile int resize_pending = 0;
+static volatile sig_atomic_t resize_pending = 0; /* Modern: sig_atomic_t required for signal handler writes */
 static int original_CO = 0, original_LI = 0;
 
 void handle_resize(int sig);

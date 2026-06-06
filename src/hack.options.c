@@ -307,7 +307,7 @@ int doset(void) {
         buf[len - 1] = 0;
       }
     }
-    pline(buf);
+    pline("%s", buf); /* Modern: Fix format string vulnerability */
   } else
     parseoptions(buf, FALSE);
 

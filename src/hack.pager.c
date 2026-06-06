@@ -80,7 +80,7 @@ int dowhatis(void) {
             (void)strncpy(buf + 1, "       ", 7);
           }
           pline("%s", buf); /* MODERN: Fix format string vulnerability */
-          if (ep[-1] == ';') {
+          if (ep && ep > buf && ep[-1] == ';') { /* Modern: ep can be NULL; ep>buf guards UB if ep==buf */
             pline("More info? ");
             if (readchar() == 'y') {
               page_more(fp, 1); /* does fclose() */
@@ -448,6 +448,9 @@ int child(int wt) {
       /* Privilege dropping failed, but continue - it's advisory */
       perror("setgid warning");
     }
+    /* Modern: Drop UID before exec - comment at caller claimed this was already done */
+    if (setuid(getuid()) != 0)
+      perror("setuid warning");
 
 #ifdef CHDIR
 #if 0
@@ -456,9 +459,14 @@ int child(int wt) {
 #endif
     /**
      * MODERN ADDITION (2025): Improved chdir error handling*/
-    if (chdir(getenv("HOME")) != 0) {
-      /* Failed to change to HOME directory, warn but continue */
-      perror("chdir to HOME warning");
+    {
+      const char *home = getenv("HOME"); /* Modern: NULL-safe; HOME unset in containers/setuid */
+      if (!home) {
+        fprintf(stderr, "warning: HOME not set, using /tmp as working directory\n");
+        home = "/tmp";
+      }
+      if (chdir(home) != 0)
+        perror("chdir to HOME warning");
     }
 #endif /* CHDIR */
     return (1);

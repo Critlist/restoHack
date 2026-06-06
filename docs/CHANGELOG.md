@@ -5,6 +5,38 @@ All notable changes to restoHack will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.7] - 2026-06-05
+
+### Fixed
+
+- **SECURITY**: Format string vulnerabilities in inventory display
+  - `pline(xprname(...))` in `hack.invent.c` — user-named objects containing `%` became format strings
+  - `pline(buf)` in `hack.options.c` — option state buffer passed directly as format string
+- **SECURITY**: `free()` on arena-allocated `toptenentry` in `prscore()` (hack.end.c)
+  - `newttentry()` returns pointers into a static arena; the old `free()` was undefined behavior
+  - Removed; `reset_topten_arena()` at the top of each caller handles cleanup
+- **SECURITY**: `getenv("HOME")` NULL dereference in `child()` (hack.pager.c)
+  - Crashes in stripped environments (containers, setuid, cron) where HOME is unset
+  - Now falls back to `/tmp` with a warning to stderr
+- **SECURITY**: Missing `setuid(getuid())` privilege drop before `exec` in `child()`
+  - Only `setgid` was being dropped; a comment at the call site already claimed `setuid` was done
+  - Added `setuid(getuid())` after `setgid(getgid())` so the pager exec runs unprivileged
+- **STABILITY**: Out-of-bounds read in `dowhatis()` (hack.pager.c)
+  - `ep[-1]` when `ep == NULL` (no newline found by `index()`) caused a null pointer deref
+  - Guard is now `ep && ep > buf && ep[-1] == ';'`
+- **STABILITY**: Three file descriptor leaks in `dorecover()` on early-return paths (hack.save.c)
+  - Struct size mismatch, unexpected version, and pre-versioned format rejection paths all leaked fd
+- **STABILITY**: `check_save_header()` used panic-backed `mread()` for post-magic header fields
+  - Truncated save files triggered `panic("dungeon collapses")` instead of a graceful rejection
+  - Replaced `sr_u16`/`sr_u32` calls with a single `read()` that returns 0 on short read; removed now-dead `sr_u16`
+- **STABILITY**: `save_pos` typed `long` instead of `off_t` in `dorecover()` (hack.save.c)
+  - `lseek()` returns `off_t`; assignment to `long` truncates on ILP32 large-file platforms
+  - Initial `lseek` now also checked for failure
+- **STABILITY**: lseek I/O failure and "too old" save format were indistinguishable (hack.save.c)
+  - Seek failure now branches to its own error path with a distinct message
+- **CORRECTNESS**: `resize_pending` signal flag typed `volatile int` instead of `volatile sig_atomic_t`
+  - Written from SIGWINCH handler; `sig_atomic_t` is required by the C standard for signal safety
+
 ## [1.1.6] 2026-03-15
 
 ### Fixed

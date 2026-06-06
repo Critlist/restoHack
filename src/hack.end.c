@@ -837,7 +837,7 @@ void prscore(int argc, char **argv) {
           break;
         }
       }
-    free((char *)t1);
+    /* Modern: Removed free() - t1 is arena-allocated, reset_topten_arena() handles cleanup */
   }
 #ifdef nonsense
   totchars[totcharct] = 0;

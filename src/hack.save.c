@@ -59,11 +59,6 @@ static void sw_u16(int fd, rh_u16_t val) {
   bwrite(fd, (char *)buf, 2);
 }
 
-static rh_u16_t sr_u16(int fd) {
-  unsigned char buf[2];
-  mread(fd, (char *)buf, 2);
-  return ((rh_u16_t)buf[0] << 8) | buf[1];
-}
 
 static void sw_u32(int fd, rh_u32_t val) {
   unsigned char buf[4];
@@ -229,9 +224,18 @@ static int check_save_header(int fd, rh_hdr_t *hdr) {
   /* Copy magic to header */
   memcpy(hdr->magic, test_magic, 4);
 
-  hdr->version = sr_u16(fd);
-  hdr->endiantag = sr_u32(fd);
-  hdr->reserved = sr_u32(fd);
+  /* Modern: Use direct read() not sr_u16/sr_u32 — mread() panics on short read,
+   * but this function is supposed to return 0 gracefully on truncated files. */
+  {
+    unsigned char rem[10];
+    if (read(fd, rem, 10) != 10)
+      return 0;
+    hdr->version    = ((rh_u16_t)rem[0] << 8) | rem[1];
+    hdr->endiantag  = ((rh_u32_t)rem[2] << 24) | ((rh_u32_t)rem[3] << 16)
+                    | ((rh_u32_t)rem[4] << 8)  |  rem[5];
+    hdr->reserved   = ((rh_u32_t)rem[6] << 24) | ((rh_u32_t)rem[7] << 16)
+                    | ((rh_u32_t)rem[8] << 8)  |  rem[9];
+  }
 
   /* Check endianness */
   if (hdr->endiantag != RH_ENDIANTAG) {
@@ -505,7 +509,13 @@ int dorecover(int fd) {
 
   /* Check if this is a versioned save file */
   rh_hdr_t hdr;
-  long save_pos = lseek(fd, 0, SEEK_CUR); /* Save current position */
+  off_t save_pos = lseek(fd, 0, SEEK_CUR); /* Modern: off_t not long; lseek returns off_t */
+  if (save_pos == (off_t)-1) {
+    perror("lseek: cannot determine save file position");
+    (void)close(fd);
+    restoring = FALSE;
+    return (0);
+  }
 
   if (check_save_header(fd, &hdr)) {
     /* Versioned format detected */
@@ -530,6 +540,7 @@ int dorecover(int fd) {
     if (you_size != sizeof(struct you)) {
       puts("Save file struct size mismatch.");
       restoring = FALSE;
+      (void)close(fd); /* Modern: Fix fd leak on early return */
       return (0);
     }
     sr_bytes(fd, &u, sizeof(struct you));
@@ -597,6 +608,7 @@ int dorecover(int fd) {
       /* Unknown version (shouldn't happen due to check_save_header) */
       impossible("Unexpected save version", hdr.version, 0);
       restoring = FALSE;
+      (void)close(fd); /* Modern: Fix fd leak on early return */
       return (0);
     }
 
@@ -616,9 +628,16 @@ int dorecover(int fd) {
      *
      * For canonical hosting safety, these are intentionally rejected.
      */
-    lseek(fd, save_pos, SEEK_SET);
+    if (lseek(fd, save_pos, SEEK_SET) == (off_t)-1) { /* Modern: Branch I/O errors separately */
+      perror("lseek on save file");
+      puts("I/O error reading save file. Cannot restore.");
+      restoring = FALSE;
+      (void)close(fd);
+      return (0);
+    }
     puts("Save file is too old (pre-Version 1). Cannot load safely.");
     restoring = FALSE;
+    (void)close(fd);
     return (0);
   }
   restnames(fd);

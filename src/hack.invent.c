@@ -572,7 +572,7 @@ int max;
     if (ckfn && !(*ckfn)(otmp))
       continue;
     if (!allflag) {
-      pline(xprname(otmp, ilet));
+      pline("%s", xprname(otmp, ilet)); /* Modern: Fix format string vulnerability */
       addtopl(" [nyaq]? ");
       sym = readchar();
     } else
@@ -615,7 +615,7 @@ struct obj *obj;
 
 void prinv(obj) struct obj *obj;
 {
-  pline(xprname(obj, obj_to_let(obj)));
+  pline("%s", xprname(obj, obj_to_let(obj))); /* Modern: Fix format string vulnerability */
 }
 
 static char *xprname(struct obj *obj, char let) /* ANSI C conversion from K&R style */

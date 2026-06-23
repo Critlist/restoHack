@@ -39,8 +39,9 @@ int hack_getgid(void);
 int hack_getpid(void);
 char *hack_getlogin(void);
 
-/* Group functions - no-op on Windows (single-user) */
+/* Group/user functions - no-op on Windows (single-user) */
 int hack_setgid(int gid);
+int hack_setuid(int uid);
 
 /* Time functions */
 int hack_usleep(unsigned int usec);  /* useconds_t is unsigned int, returns 0 */
@@ -55,6 +56,7 @@ long hack_random(void);
 #define getpid hack_getpid
 #define getlogin hack_getlogin
 #define setgid hack_setgid
+#define setuid hack_setuid
 #define usleep hack_usleep
 #define srandom hack_srandom
 #define random hack_random

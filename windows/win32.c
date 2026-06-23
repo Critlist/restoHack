@@ -64,6 +64,11 @@ int hack_setgid(int gid) {
   return 0;  /* No-op on Windows, always succeeds */
 }
 
+int hack_setuid(int uid) {
+  (void)uid;
+  return 0;  /* No-op on Windows, always succeeds */
+}
+
 int hack_usleep(unsigned int usec) {
   Sleep((usec + 999) / 1000);  /* Convert microseconds to milliseconds */
   return 0;  /* Always succeeds */

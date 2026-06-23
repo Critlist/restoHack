@@ -370,8 +370,47 @@ static BOOL WINAPI console_ctrl_handler(DWORD dwCtrlType) {
   }
 }
 
+/* Resolve HACKDIR relative to the running executable.
+ *
+ * On Windows the game can be launched from Steam, a desktop shortcut, or
+ * the command line.  In all three cases argv[0] and the working directory
+ * are unreliable.  GetModuleFileName() always returns the real executable
+ * path, so we use it to locate the bundled hackdir/ folder that sits next
+ * to the .exe.
+ *
+ * Only runs when the HACKDIR environment variable is not already set,
+ * so -d flags and environment overrides still take priority.
+ *
+ * Preservation note: this does not change the chdir() flow; it merely
+ * ensures getenv("HACKDIR") returns a useful value before chdirx() is
+ * called in hack.main.c. */
+static void win32_setup_hackdir(void) {
+  static char env_buf[MAX_PATH + 10]; /* "HACKDIR=<path>" */
+
+  if (getenv("HACKDIR"))
+    return; /* caller already configured it */
+
+  char exepath[MAX_PATH];
+  DWORD len = GetModuleFileNameA(NULL, exepath, MAX_PATH);
+  if (len == 0 || len >= MAX_PATH)
+    return; /* unexpected; fall through to compiled-in HACKDIR */
+
+  /* Strip the filename component to get the exe's directory */
+  char *sep = strrchr(exepath, '\\');
+  if (sep) *sep = '\0';
+
+  /* Build "HACKDIR=<exedir>\hackdir" */
+  if (snprintf(env_buf, sizeof(env_buf), "HACKDIR=%s\\hackdir", exepath) >= (int)sizeof(env_buf))
+    return; /* path too long; fall through */
+
+  _putenv(env_buf); /* sets the CRT env table that getenv() reads */
+}
+
 /* Initialize Windows console */
 void win32_init_console(void) {
+  /* Resolve game data directory before any getenv("HACKDIR") calls */
+  win32_setup_hackdir();
+
   /* Install our console control handler */
   SetConsoleCtrlHandler(console_ctrl_handler, TRUE);
 }

@@ -16,6 +16,7 @@
 int tgetent(char *bp, const char *name);
 char *tgetstr(const char *id, char **area);
 int tgetnum(const char *id);
+int tgetflag(const char *id);
 char *tgoto(const char *cap, int col, int row);
 void tputs(const char *str, int affcnt, int (*outc)(int));
 
@@ -99,6 +100,51 @@ int hack_flock(int fd, int operation);
 #define F_SETFD 2  /* Set file descriptor flags */
 int hack_fcntl(int fd, int cmd, ...);
 #define fcntl hack_fcntl
+
+/* POSIX file I/O - available in <io.h> on Windows with underscore prefix */
+#include <io.h>
+#include <sys/types.h>
+
+/* fork/wait stubs - Windows has no process forking */
+#include "sys/wait.h"
+
+/* ssize_t is not standard in MSVC; MinGW defines it but MSVC does not */
+#ifndef _SSIZE_T_DEFINED
+#ifndef ssize_t
+typedef int ssize_t;
+#endif
+#endif
+
+/* Map POSIX names to Windows CRT equivalents */
+#ifndef read
+#define read(fd, buf, cnt) _read((fd), (buf), (unsigned int)(cnt))
+#endif
+#ifndef write
+#define write(fd, buf, cnt) _write((fd), (buf), (unsigned int)(cnt))
+#endif
+#ifndef unlink
+#define unlink _unlink
+#endif
+#ifndef close
+#define close _close
+#endif
+#ifndef open
+#define open _open
+#endif
+#ifndef lseek
+#define lseek _lseek
+#endif
+
+/* open() flags (POSIX) - map to Windows CRT values */
+#ifndef O_RDONLY
+#include <fcntl.h>
+#endif
+
+/* mkdir() - Windows takes one arg (_mkdir), POSIX takes two */
+#include <direct.h>
+#ifndef mkdir
+#define mkdir(path, mode) _mkdir(path)
+#endif
 
 #endif /* _WIN32 */
 #endif /* WIN32_SHIM_H */

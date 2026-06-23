@@ -27,6 +27,39 @@
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }
+    },
+    {
+      "name": "release-install",
+      "generator": "Ninja",
+      "binaryDir": "build-release-install",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "RESTOHACK_RELEASE_BUILD": "ON",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      },
+      "description": "Linux release build: HACKDIR points to CMAKE_INSTALL_PREFIX/share/hack"
+    },
+    {
+      "name": "windows-mingw",
+      "generator": "Ninja",
+      "binaryDir": "build-win",
+      "toolchainFile": "${sourceDir}/cmake/windows-mingw.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      },
+      "description": "Cross-compile for Windows using MinGW-w64 (from Linux)"
+    },
+    {
+      "name": "windows-clang-cl",
+      "generator": "Ninja",
+      "binaryDir": "build-win-clangcl",
+      "toolchainFile": "${sourceDir}/cmake/windows-clang-cl.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      },
+      "description": "Cross-compile for Windows using clang-cl (MSVC-compatible frontend)"
     }
   ],
   "buildPresets": [
@@ -41,6 +74,18 @@
     {
       "name": "relwithdebinfo",
       "configurePreset": "relwithdebinfo"
+    },
+    {
+      "name": "release-install",
+      "configurePreset": "release-install"
+    },
+    {
+      "name": "windows-mingw",
+      "configurePreset": "windows-mingw"
+    },
+    {
+      "name": "windows-clang-cl",
+      "configurePreset": "windows-clang-cl"
     }
   ]
 }

@@ -189,6 +189,7 @@ if(WIN32)
 
     # Force-include win32.h for all source files (POSIX shims for rnd.c, etc.)
     set(WIN32_SHIM_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/windows/win32.h")
+
 endif()
 
 # Cross-compilation handling for hack.onames.h
@@ -228,9 +229,10 @@ target_include_directories(hack PRIVATE
 )
 
 # Force-include win32.h on Windows for POSIX shims
+# clang-cl (even with GNU target) uses MSVC-style /FI rather than GCC -include
 if(WIN32)
-    if(MSVC)
-        target_compile_options(hack PRIVATE /FI"${WIN32_SHIM_HEADER}")
+    if(MSVC OR CMAKE_C_COMPILER MATCHES "clang-cl")
+        target_compile_options(hack PRIVATE "/FI${WIN32_SHIM_HEADER}")
     else()
         target_compile_options(hack PRIVATE -include "${WIN32_SHIM_HEADER}")
     endif()
@@ -299,17 +301,40 @@ endif()
 # Optimization handled in hardening section below
 
 # Runtime path configuration - inject absolute paths to prevent hardcoded path issues
+#
+# Priority (highest to lowest):
+#   1. -DHACKDIR_OVERRIDE=<path>  (explicit, always wins)
+#   2. -DRESTOHACK_RELEASE_BUILD=ON  (auto-sets install prefix based HACKDIR)
+#   3. Default: build directory (dev builds only, not for distribution)
+#
+# Windows: The compiled-in HACKDIR is only a last-resort fallback.
+#          win32_setup_hackdir() in win32.c resolves hackdir/ at runtime
+#          relative to the .exe, so Windows installs are self-locating.
+#
+# Linux release: Pass -DRESTOHACK_RELEASE_BUILD=ON or -DHACKDIR_OVERRIDE=<path>
+#          when building a distributable binary.  Steam launch scripts can
+#          also override at runtime with the HACKDIR env var.
+option(RESTOHACK_RELEASE_BUILD "Build for distribution (sets HACKDIR to install prefix)" OFF)
+
 if(DEFINED HACKDIR_OVERRIDE)
-    target_compile_definitions(hack PRIVATE
-        HACKDIR="${HACKDIR_OVERRIDE}"
-        SAVE_VERSION="${PROJECT_VERSION}"
-    )
+    set(_hackdir "${HACKDIR_OVERRIDE}")
+    message(STATUS "HACKDIR: ${_hackdir} (from HACKDIR_OVERRIDE)")
+elseif(RESTOHACK_RELEASE_BUILD AND NOT WIN32)
+    set(_hackdir "${CMAKE_INSTALL_PREFIX}/share/hack")
+    message(STATUS "HACKDIR: ${_hackdir} (release build, install prefix)")
+elseif(WIN32)
+    # Windows: runtime discovery via win32_setup_hackdir(); this is a fallback
+    set(_hackdir ".\\hackdir")
+    message(STATUS "HACKDIR: ${_hackdir} (Windows fallback; runtime discovery preferred)")
 else()
-    target_compile_definitions(hack PRIVATE
-        HACKDIR="${CMAKE_BINARY_DIR}/hackdir"
-        SAVE_VERSION="${PROJECT_VERSION}"
-    )
+    set(_hackdir "${CMAKE_BINARY_DIR}/hackdir")
+    message(STATUS "HACKDIR: ${_hackdir} (dev build)")
 endif()
+
+target_compile_definitions(hack PRIVATE
+    HACKDIR="${_hackdir}"
+    SAVE_VERSION="${PROJECT_VERSION}"
+)
 
 # Struct packing control for save system consistency
 option(ENABLE_STRUCT_PACKING "Enable struct packing for save system compatibility" ON)
@@ -475,7 +500,10 @@ endif()
 if(WIN32)
     # Windows static linking configuration
     # Link PDCurses and required Windows system libraries
-    target_link_libraries(hack PRIVATE ${PDCURSES_LIBRARIES} winmm)
+    # clang-cl strips -l flags before passing them to ld; use find_library() to
+    # get the full path so it is treated as a positional object file argument.
+    find_library(WINMM_LIB winmm REQUIRED)
+    target_link_libraries(hack PRIVATE ${PDCURSES_LIBRARIES} ${WINMM_LIB})
 
     # PDCurses compile definitions must match those used to build libpdcurses
     target_compile_definitions(hack PRIVATE PDCURSES PDC_WIDE PDC_FORCE_UTF8)
@@ -630,10 +658,79 @@ add_custom_target(clean-all
     COMMENT "Clean all hack files and lock files"
 )
 
+# ===========================================================================
 # Install rules
-install(TARGETS hack DESTINATION bin)
-install(FILES ${DATA_FILES} DESTINATION share/hack)
-install(FILES man/hack.6 DESTINATION share/man/man6)
+# ---------------------------------------------------------------------------
+# Two layouts are supported:
+#
+#  Unix / Linux (FHS):
+#    bin/hack
+#    share/hack/{data,help,hh,rumors,news,perm,record}  ← game data + writable files
+#    share/man/man6/hack.6
+#
+#  Windows (flat, for Steam and standalone zip):
+#    hack.exe
+#    hackdir/{data,help,hh,rumors,news,perm,record}
+#
+# On Windows the exe auto-discovers hackdir/ via GetModuleFileName()
+# (see windows/win32.c: win32_setup_hackdir).  No HACKDIR env var needed.
+#
+# On Linux, set HACKDIR to the installed share/hack directory at build time
+# so the binary finds its data.  Users can still override with $HACKDIR or
+# the -d flag.  Steam launch options can also set HACKDIR for per-user data.
+# ===========================================================================
+
+if(WIN32)
+    # Windows: flat install — exe + hackdir/ side by side (Steam-friendly)
+    install(TARGETS hack DESTINATION .)
+
+    # Game data read-only files.
+    # Most assets live at the source root; 'news' lives in hackdir/.
+    foreach(_asset data help hh rumors)
+        if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${_asset})
+            install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/${_asset} DESTINATION hackdir)
+        endif()
+    endforeach()
+    if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/hackdir/news)
+        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/hackdir/news DESTINATION hackdir)
+    endif()
+
+    # Writable sentinel files — must exist at startup (created empty by installer)
+    install(CODE "
+        file(MAKE_DIRECTORY \"\${CMAKE_INSTALL_PREFIX}/hackdir/save\")
+        file(TOUCH \"\${CMAKE_INSTALL_PREFIX}/hackdir/perm\")
+        file(TOUCH \"\${CMAKE_INSTALL_PREFIX}/hackdir/record\")
+    ")
+else()
+    # Unix: FHS layout — binary baked with HACKDIR pointing to share/hack
+    install(TARGETS hack DESTINATION bin)
+
+    # Install Linux Steam launch wrapper (must be executable)
+    if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/steam_launch.sh)
+        install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/steam_launch.sh DESTINATION bin)
+    endif()
+
+    # Game data read-only files.
+    # Most assets live at the source root; 'news' lives in hackdir/.
+    foreach(_asset data help hh rumors)
+        if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${_asset})
+            install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/${_asset} DESTINATION share/hack)
+        endif()
+    endforeach()
+    if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/hackdir/news)
+        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/hackdir/news DESTINATION share/hack)
+    endif()
+
+    # Create writable files and save/ directory in share/hack
+    install(CODE "
+        file(MAKE_DIRECTORY \"\${CMAKE_INSTALL_PREFIX}/share/hack/save\")
+        file(TOUCH \"\${CMAKE_INSTALL_PREFIX}/share/hack/perm\")
+        file(TOUCH \"\${CMAKE_INSTALL_PREFIX}/share/hack/record\")
+    ")
+
+    install(FILES man/hack.6 DESTINATION share/man/man6)
+endif()
+
 
 # ---- Security Options ----
 option(CLANG_STRICT "Enable draconian warnings under Clang" OFF)

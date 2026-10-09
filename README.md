@@ -1,13 +1,13 @@
-# restoHack: Bringing 1984 Hack Back from the Dead
+# restoHack: Bringing 1985 Hack Back from the Dead
 
-**restoHack** is a full-blooded resurrection of *Hack*, the 1984 roguelike that spawned *NetHack*.
+**restoHack** is a full-blooded resurrection of *Hack* 1.0.3 (1985), the version of Hack that spawned *NetHack*.
 Not a remake. Not a reboot. This is *software preservation with a blowtorch and a scalpel*.
 
 The goal: make the original code compile, run, and dungeon-crawl exactly as it did when floppies were king.
 
 Think resto-mod: the soul stays vintage, the internals get a precision rebuild.
 
-**Philosophy**: "Fix what breaks, preserve what works" - authentic 1984 gameplay with modern build system and safety improvements.
+**Philosophy**: "Fix what breaks, preserve what works" - authentic 1985 gameplay with modern build system and safety improvements.
 
 **[Read the Complete History of Hack](docs/HISTORY_OF_HACK.md)**  
 *From Rogue (1980) to NetHack's rise, through decades of digital decay, to restoHack's 2025 resurrection*
@@ -124,8 +124,8 @@ terminal. A free Steam release is planned once the Windows build is stable.
 
 ## Current Status
 
-v1.1.6 — Stable Release
-Fixes a critical crash on aarch64 after character selection. Reported and verified by [@Filipsys](https://github.com/Filipsys).
+v1.1.7 — Stable Release
+Security and stability fixes from a code review: format-string bugs, a missing `setuid` privilege drop, a crash when `HOME` is unset, and file-descriptor leaks. See [CHANGELOG](docs/CHANGELOG.md).
 
 ---
 
@@ -134,9 +134,9 @@ Fixes a critical crash on aarch64 after character selection. Reported and verifi
 * **aarch64 Crash** – Fixed segfault after character selection on aarch64 Ubuntu (reported by [@Filipsys](https://github.com/Filipsys))
 * **Save System Safety** – Version 2 save format with pointer serialization
 * **Ubuntu Fix** – Resolved PATH resolution bug preventing game launch on Ubuntu 22.04/24.04
-* **Security Audit** – Fixed 150+ vulnerabilities: buffer overflows, null pointers, format strings
+* **Hardening** – Made 151 char-typed array subscripts safe, fixed a format-string bug and privilege-drop handling, and added bounds checks
 * **Terminal Resize** – Added SIGWINCH handler to prevent display corruption on window resize
-* **40-Year Bug** – Fixed strength overflow that could instantly kill players (spinach/potions)
+* **Overflow Guards** – Defensive caps on strength arithmetic (spinach/potions); the original math already stays within range in normal play
 
 ---
 
@@ -158,7 +158,7 @@ Full history: [HISTORY_OF_HACK.md](docs/HISTORY_OF_HACK.md)
 
 ## Historical Research
 
-**[protoHack](https://github.com/Critlist/protoHack)** recovers and restores Jay Fenlason's original 1981-82 source code and conducts primary-source research into Hack's origins. **restoHack** is the stabilized restoration of Brouwer's Hack 1.0.3 with curated history. The [`docs/research/`](docs/research/) directory is the shared evidence base maintained across both projects.
+**[protoHack](https://github.com/Critlist/protoHack)** restores Jay Fenlason's original 1981-82 source code (preserved by Brian Harvey and published by Dan Stormont as [fenlason-hack](https://github.com/Sustainable-Games/fenlason-hack)) and conducts primary-source research into Hack's origins. **restoHack** is the stabilized restoration of Brouwer's Hack 1.0.3 with curated history. The [`docs/research/`](docs/research/) directory is the shared evidence base maintained across both projects.
 
 ---
 

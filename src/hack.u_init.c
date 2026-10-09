@@ -27,7 +27,7 @@ char pl_character[PL_CSIZ];
 /**
  * MODERN ADDITION (2025): Mutable character role strings
  *
- * WHY: Original K&R C code at line 184 attempts to modify roles[i][0] = pc;
+ * WHY: Original K&R C code at line 170 attempts to modify roles[i][0] = pc;
  * In K&R C, string literals could be modified, but in ANSI C and modern C,
  * string literals are stored in read-only memory, causing segmentation faults.
  *

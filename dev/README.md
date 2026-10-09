@@ -47,7 +47,7 @@ Run multiple tests in sequence:
 - `lib/` - Shared modules
   - `colors.py` - Color output utilities
   - `build_lanes.py` - Build system management
-  - `game_runner.py` - 1984 Hack game automation
+  - `game_runner.py` - Hack 1.0.3 game automation
   - `test_runner.py` - Test execution and logging
 
 - Individual runners:

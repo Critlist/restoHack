@@ -5,6 +5,17 @@ All notable changes to restoHack will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- README: Hack 1.0.3 is dated 1985 (not 1984); security and strength-overflow claims reworded to match what was actually fixed; protoHack description credits Brian Harvey and Dan Stormont for preserving and publishing Fenlason's source.
+- README: current status updated to v1.1.7.
+- HISTORY_OF_HACK.md: replaced a misquoted `struct monst` with the verbatim original; fixed a misattributed Fenlason quote; Rogue trip dated to summer 1981 (per TIMELINE); custody dates and protoHack's role corrected; removed uncited sections (Dark Ages, Digital Archaeology, Technical Legacy, Philosophy, Conclusion).
+- TIMELINE/COMPARISON: `READ_Me` → `READ_ME`; 82-1 tape submitter and licensing wording corrected.
+- Package descriptions (CPack), CODING_STANDARDS, dev/README: Hack 1.0.3 is dated 1985; removed unsourced "94.2%/100% authentic" figures.
+- TODO: save-system plan marked as shipped in v1.1.5.
+
 ## [1.1.7] - 2026-06-05
 
 ### Fixed
@@ -151,7 +162,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **SECURITY**: Protected against integer overflow in tracking and scoring systems
 - **SECURITY**: Secured format string vulnerabilities in error reporting
 - **SECURITY**: Fixed memory corruption issues in worm segments and vault guards
-- **CRITICAL**: Strength overflow bug that could instantly kill players (eating spinach, potions)
+- **CRITICAL**: Strength overflow bug that could instantly kill players (eating spinach, potions) *(2026 note: this is a defensive guard. The original arithmetic caps strength at 118, within `schar` range, so the overflow was not reachable in normal play.)*
 - **CRITICAL**: Coordinate sign conversion bugs causing wraparound issues
 - **BUILD**: Fixed format-nonliteral warnings with pragma directives
 - **BUILD**: Resolved index/rindex macro collisions with variable names

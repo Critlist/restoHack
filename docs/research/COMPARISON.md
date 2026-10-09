@@ -409,7 +409,7 @@ Fenlason's README exists in three forms:
 
 | Location | Content |
 |----------|---------|
-| Repo `original/READ_Me` | 11 setup steps, mentions MAGIC mode (gid==42), SMALL/VTONL paragraph |
+| Repo `original/READ_ME` | 11 setup steps, mentions MAGIC mode (gid==42), SMALL/VTONL paragraph |
 | Hack 1.0 `Original_READ_ME` | 9 setup steps (renumbered, "2.5"), no SMALL/VTONL paragraph |
 | Hack 1.0 `READ_ME` | Brouwer's own, credits Fenlason "at lincolnsudbury" |
 

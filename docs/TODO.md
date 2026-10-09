@@ -1,11 +1,13 @@
 # restoHack Development TODO
 
-## **Active: Option A — Save System Safety (Canonical Deployment Path)**
+> **Status (2026-10): Done.** Shipped in v1.1.5 (Dec 2025) as save format v2. One deviation from the plan below: pre-versioned legacy saves are *rejected* (`src/hack.save.c`) rather than migrated. Kept for the record.
+
+## **Completed: Option A — Save System Safety (Canonical Deployment Path)**
 
 **Decision:** **OPTION A SELECTED**
 **Timeline:** 4–6 hours focused work
 **Priority:** **HIGH** — Required for Hardfought multi-user deployment
-**Status:** **Approved → Implementation**
+**Status:** **Shipped (v1.1.5)**
 
 ---
 

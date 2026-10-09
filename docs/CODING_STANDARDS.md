@@ -2,11 +2,11 @@
 
 ## Documentation Policy for Non-Original Code
 
-This project preserves authentic 1984 Hack source code while making minimal modern additions for buildability and stability. To maintain clear distinction between original and modern code:
+This project preserves the original Hack 1.0.3 (1985) source code while making minimal modern additions for buildability and stability. To maintain clear distinction between original and modern code:
 
 ### Documentation Requirement
 
-**ALL** code that is not part of the original 1984 codebase or simple K&R to ANSI C conversion MUST be documented with structured comments explaining:
+**ALL** code that is not part of the original Hack 1.0.3 codebase or simple K&R to ANSI C conversion MUST be documented with structured comments explaining:
 
 1. **WHY** the addition was necessary
 2. **HOW** it was implemented  
@@ -47,7 +47,9 @@ This project preserves authentic 1984 Hack source code while making minimal mode
 
 ### Original Source Preservation Rule
 
-### NEVER DELETE ORIGINAL 1984 CODE
+### NEVER DELETE ORIGINAL CODE
+
+*Note: comment markers in the source say "1984" (e.g. `ORIGINAL 1984 CODE`). They predate a date correction and refer to Hack 1.0.3, released in 1985. Keep using the existing marker so it stays greppable.*
 
 All original source code must be preserved using one of these methods:
 
@@ -81,7 +83,7 @@ modern_approach();  /* MODERN: explanation */
 
 The goal is to make it easy for future developers to:
 
-1. **Identify authentic 1984 code** vs modern additions
+1. **Identify original Hack 1.0.3 code** vs modern additions
 2. **Understand why** modern additions were necessary
 3. **Evaluate whether** additions could be removed or improved
 4. **Learn from** the historical code while understanding modern adaptations

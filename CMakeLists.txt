@@ -158,7 +158,7 @@ add_custom_command(
     COMMAND makedefs ${CMAKE_CURRENT_SOURCE_DIR}/src/def.objects.h > ${CMAKE_CURRENT_BINARY_DIR}/hack.onames.h
     DEPENDS makedefs ${CMAKE_CURRENT_SOURCE_DIR}/src/def.objects.h
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Generating hack.onames.h with authentic 1984 object definitions"
+    COMMENT "Generating hack.onames.h with original Hack 1.0.3 object definitions"
 )
 
 # Main hack executable
@@ -505,8 +505,8 @@ option(RESTOHACK_ENABLE_PACKAGE "Enable CPack packaging" ON)
 # Modern CMake: CPack configuration for professional distribution
 set(CPACK_PACKAGE_NAME "restohack")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Authentic 1984 Hack game restoration - modernized for contemporary systems")
-set(CPACK_PACKAGE_DESCRIPTION "restoHack brings the legendary 1984 Hack game back from the dead with 94.2% authentic code preservation. This isn't a reimagining - it's historical software preservation with modern compatibility. Features complete K&R to ANSI C conversion, cross-platform builds, and 100% authentic 1984 gameplay experience.")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Hack 1.0.3 (1985) restored for modern systems")
+set(CPACK_PACKAGE_DESCRIPTION "restoHack restores Andries Brouwer's Hack 1.0.3 (1985), the direct ancestor of NetHack, for modern systems. This isn't a reimagining - it's historical software preservation with modern compatibility: K&R to ANSI C conversion, cross-platform builds, and the original gameplay preserved.")
 
 set(CPACK_PACKAGE_VENDOR "restoHack Project")
 set(CPACK_PACKAGE_CONTACT "https://github.com/Critlist/restoHack.git")
@@ -538,7 +538,7 @@ set(CPACK_SOURCE_IGNORE_FILES
 if(WIN32)
     # Windows NSIS installer
     set(CPACK_GENERATOR "NSIS;ZIP")
-    set(CPACK_NSIS_DISPLAY_NAME "restoHack - Authentic 1984 Hack Game")
+    set(CPACK_NSIS_DISPLAY_NAME "restoHack - Hack 1.0.3 (1985)")
     set(CPACK_NSIS_HELP_LINK "https://github.com/Critlist/restoHack.git")
     set(CPACK_NSIS_URL_INFO_ABOUT "https://github.com/Critlist/restoHack.git")
 elseif(APPLE)

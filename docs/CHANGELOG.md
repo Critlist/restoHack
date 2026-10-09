@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - README: Hack 1.0.3 is dated 1985 (not 1984); security and strength-overflow claims reworded to match what was actually fixed; protoHack description credits Brian Harvey and Dan Stormont for preserving and publishing Fenlason's source.
+- README: current status updated to v1.1.7.
+- HISTORY_OF_HACK.md: replaced a misquoted `struct monst` with the verbatim original; fixed a misattributed Fenlason quote; Rogue trip dated to summer 1981 (per TIMELINE); custody dates and protoHack's role corrected; removed uncited sections (Dark Ages, Digital Archaeology, Technical Legacy, Philosophy, Conclusion).
+- TIMELINE/COMPARISON: `READ_Me` → `READ_ME`; 82-1 tape submitter and licensing wording corrected.
+- Package descriptions (CPack), CODING_STANDARDS, dev/README: Hack 1.0.3 is dated 1985; removed unsourced "94.2%/100% authentic" figures.
+- TODO: save-system plan marked as shipped in v1.1.5.
 
 ## [1.1.7] - 2026-06-05
 

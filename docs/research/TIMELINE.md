@@ -34,27 +34,29 @@ the Summer 1982 USENIX conference took place.
   (Craddock, p. 94)
 
 - **Fall/Winter 1981** — Fenlason develops Hack in C at Lincoln-Sudbury
-  Regional High School — his "first semester programming project" (READ_Me).
+  Regional High School — his "first semester programming project" (READ_ME).
   The development environment is a PDP-11/70 running V7 Unix (alpha test site
   for 2.9BSD), administered by a student-run Computer Center Users Society
   with ~50 members who have keys and unsupervised access. The game is an
   implementation of Rogue with 56 monster types (vs. Rogue's 26) and expanded
   dungeon features. Collaborators and their contributions:
   - **Kenny Woodland** (KW) — Maze-generating code for the bottom level, the
-    original BUZZ() function, and "general random things" (READ_Me). Also
+    original BUZZ() function, and "general random things" (READ_ME). Also
     contributed code for a game called *Bombs*. (Craddock, p. 94)
   - **Mike Thome** (MT) — Invented the chameleon, a monster that "could take
     on the appearance and abilities of other types of monsters" (Craddock,
-    p. 94). Credited in READ_Me as "The original chamelian" [sic].
+    p. 94). Credited in READ_ME as "The original chamelian" [sic].
   - **Jonathan Payne** (JP) — The lock file system and "the massive CURS()"
-    (READ_Me). Also the author of JOVE (Jonathan's Own Version of Emacs).
+    (READ_ME). Also the author of JOVE (Jonathan's Own Version of Emacs).
     Payne and Fenlason had "a friendly rivalry going on as to whose program,
     *JOVE* or *Hack*, could update the screen most efficiently" (Craddock,
     p. 94). Both programs shipped on the same USENIX 82-1 tape.
 
-- **First half of 1982** — Brian Harvey, Computer Director at Lincoln-Sudbury
-  (1979-1982), submits student projects — including Hack and JOVE — for
-  inclusion on the USENIX distribution tapes (82-1). Harvey, whose background
+- **First half of 1982** — Lincoln-Sudbury student software, including Hack
+  and JOVE, is submitted for the USENIX 82-1 distribution tape. *;login:*
+  refers only to "the submitter… he" and does not list Hack by name;
+  Fenlason later recalled, "I put [Hack] on the tape." Brian Harvey was
+  Computer Director at Lincoln-Sudbury (1979-1982). Harvey, whose background
   was in the MIT and Stanford AI labs, had built the school's computing
   environment to resemble those labs: "a powerful computer system, with lots
   of software tools, an informal community spirit, and not much formal
@@ -124,7 +126,7 @@ from Amsterdam to Denmark was silently discarded by a gateway for exceeding
 
 The *;login:* evidence shows Hack was already submitted for the distribution
 tapes before the conference. Jay encountered Rogue during a trip to UC Berkeley
-while attending Harvey's summer class at SFSU — confirming his READ_Me
+while attending Harvey's summer class at SFSU — confirming his READ_ME
 acknowledgment: "This entire program would not have been possible without the
 SFSU Logo Workshop ... without whom I would never have seen Rogue." The
 Craddock interview further reveals that the earliest version of Hack was
@@ -135,8 +137,7 @@ for Hack itself.
 
 ## Licensing
 
-Both original authors have issued BSD-type licenses allowing free
-redistribution and modification:
+The two sources are under different licenses:
 
 **Jay Fenlason** (covers all code he wrote):
 > It is shared under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License (CC-BY-NC-SA 4.0), as specified by Jay Fenlason when the source was archived by the Snap!Hack project. A copy of the license is available at: https://creativecommons.org/licenses/by-nc-sa/4.0/
@@ -161,7 +162,7 @@ Full license texts preserved in Brouwer's published account.
   - [Archive.org scan](https://archive.org/details/login_june-1982/page/n13/mode/2up)
   - [Full text](https://archive.org/stream/login_june-1982/login_june-1982_djvu.txt)
 - Jay Fenlason's `Original_READ_ME` (preserved in Brouwer's Hack 1.0)
-- Jay Fenlason's `READ_Me` (preserved in the protoHack repository at `original/READ_Me`)
+- Jay Fenlason's `READ_ME` (preserved in the protoHack repository at `original/READ_ME`)
 - Andries Brouwer's [Hack history page](https://homepages.cwi.nl/~aeb/games/hack/hack.html)
 - Brian Harvey, ["Computer Hacking and Ethics" — A Case Study: The Lincoln-Sudbury
   Regional High School](https://people.eecs.berkeley.edu/~bh/lsrhs.html) (appendix

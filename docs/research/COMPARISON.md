@@ -28,13 +28,17 @@ bestiary tables where applicable.
 ## 1. Monster Table
 
 The main monster table is an 8x7 array (`struct permonst mon[8][7]`).
-Levels 1--4 are nearly identical across all variants. Divergence begins at
-level 5.
+Levels 1--4 hold the same monsters in every variant; Hack 1.0 changes three
+of their stat lines (below). Most divergence begins at level 5.
 
-### Levels 1--4 (shared across all variants with D&D names)
+### Levels 1--4
 
-All four source variants use the same monsters and stats for levels 1--4.
-Minor spelling differences exist (repo has "homonculous" and "gelatenous").
+The repo and PDP-11/PC/IX use the same monsters and stats for levels 1--4
+(PDP-11/PC/IX correct the repo's "homonculous" and "gelatenous" spellings).
+Hack 1.0 keeps the same monsters but changes three stat lines: leprechaun
+`5,15,8,1,2` (repo `1,15,8,1,5`), nymph `6,12,9,1,2` (repo `3,12,9,1,4`), and
+killer bee speed 14 (repo 6) (`hack-v1.0/ab_hack-1.0/hack.monst.c:12,23,33`;
+repo `original/hack.vars:62,75,86`).
 
 - Repo: `original/hack.vars:57-87`
 - PDP-11: `hack-pdp11/src/hack.monst.c:34-65`
@@ -43,15 +47,19 @@ Minor spelling differences exist (repo has "homonculous" and "gelatenous").
 
 ### Level 5+ divergences
 
-| Slot | Repo (`original/hack.vars`) | PDP-11 / PC/IX | Hack 1.0 |
+Slot numbers follow the repo's 8x7 table. Brouwer's Hack 1.0 table is a flat
+list, so its column is paired by monster letter, not by position.
+
+| Slot | Repo (`original/hack.vars`) | PDP-11 / PC/IX | Hack 1.0 (by letter) |
 |------|------------------------|----------------|----------|
-| 5.3 | **rust monster** R 5hd `:77` | rust monster R 5hd | **rust monster** R **10hd** |
-| 5.4 | **giant scorpion** s `:78` | giant scorpion s | **scorpion** s |
-| 5.5 | **teleporter** t `:79` | teleporter t | **tengu** t |
+| 5.3 | **rust monster** R 5hd `:91` | rust monster R 5hd | **rust monster** R **10hd** |
+| 5.4 | **giant scorpion** s `:92` | giant scorpion s | **scorpion** s |
+| 5.5 | **teleporter** t `:93` | teleporter t | **tengu** t |
 | 5.7 | **yeti** Y `:95` | **long worm** w | long worm w (or **wumpus** w under `NOWORM`) |
 | 6.1 | **displacer beast** d `:97` | **large dog** d | large dog d |
 | 6.6 | **ugod** u `:102` | ugod u | **unicorn** u |
 | 6.7 | **xerp** x `:103` | yeti Y | yeti Y |
+| 7.2 | **umber hulk** U 2d10 `:106` | umber hulk U **2d14** | umber hulk U 2d10 |
 | 7.4 | **wumpus** w `:108` | xorn X | xorn X |
 | 7.5 | **xorn** X `:109` | xerp x | **xan** x |
 | 7.6 | **zelomp** z `:110` | zelomp z | **zruty** z |
@@ -59,7 +67,7 @@ Minor spelling differences exist (repo has "homonculous" and "gelatenous").
 | 8.3 | **lurker above** ~ `:115` | lurker above **'** | lurker above **~** |
 | 8.4 | **neo-otyugh** n `:116` | neo-otyugh n | **nurse** n |
 | 8.6 | **purple worm** P 15hd `:118` | purple worm P **20hd** | purple worm P **15hd** |
-| 8.7 | **demon** & 10hd `:119` | demon & **14hd** | demon & **10hd** |
+| 8.7 | **demon** & 10hd 1d4 `:119` | demon & **14hd 1d6** | demon & **10hd 1d4** |
 
 Key observations:
 
@@ -80,8 +88,12 @@ Key observations:
   #endif NOWORM
   ```
 
-  This confirms wumpus was in whatever code Brouwer started from and was
-  replaced when the worm system was added.
+  Jay's wumpus `{8,3,2,3,6}` matches Brouwer's NOWORM wumpus stat for stat,
+  so the fallback derives from Jay's table. Two cautions: NOWORM is not
+  defined in Hack 1.0's build (long worm is what ships), and the PDP-11
+  version (taken from Brouwer's early draft) has no wumpus and a different
+  long worm (`hack-pdp11/src/hack.monst.c:73`). The fallback may be a later
+  re-addition rather than the original state of Brouwer's tree.
 
 - **Hit dice**: The repo matches Hack 1.0 for dragon (10hd), purple worm
   (15hd), and demon (10hd). PDP-11 and PC/IX inflate these to 20, 20,
@@ -89,6 +101,33 @@ Key observations:
 
 - **Lurker above symbol**: Repo uses `~` (`original/hack.vars:115`),
   matching Hack 1.0 (`hack.monst.c:61`). PDP-11 and PC/IX use `'`.
+
+### Stat lines that survived
+
+The `permonst` field order is the same in both trees (repo `original/hack.h:65-66`
+`{mname,mlet,mhd,mmove,ac,damn,damd}`; Hack 1.0 `def.permonst.h` adds only `pxlth`).
+Matched by letter, **48 of the repo's 56 main-table entries have identical stat
+lines in Hack 1.0** (47 in the default build, which compiles long worm instead of
+the NOWORM wumpus). Brouwer's own READ_ME says "only the display routines are the
+original ones" (`hack-v1.0/ab_hack-1.0/READ_ME:13`); the monster data says otherwise.
+
+Several repo monsters lost their names but **Brouwer reused the slot and the stat line**:
+
+| Repo (1982) | Hack 1.0 | Stat line | Into NetHack 3.6 (`src/monst.c`) |
+|---|---|---|---|
+| displacer beast `:97` | large dog (`hack.dog.c:14`, `hack.monst.c:46`) | `6,15,4,2,4` | exact: `LVL(6,15,4)`, bite 2d4 |
+| invisible stalker `:105` | stalker (`hack.monst.c:52`) | `8,12,3,4,4` | exact: `LVL(8,12,3)`, claw 4d4 |
+| wumpus `:108` | wumpus (NOWORM, `:42`) | `8,3,2,3,6` | exact: `LVL(8,3,2)`, bite 3d6 |
+| neo-otyugh `:116` | nurse (`:62`) | `11,6,0,1,3` | level/speed/AC only; nurse heals (AD_HEAL 2d6) |
+| zelomp `:110` | zruty (`:57`) | `9,8,3,3,6` | level/speed/AC only; zruty gains two 3d4 claws |
+| giant scorpion `:92` | scorpion (`:38`) | `5,15,3,1,4` | -- |
+
+These are reused slots, not the same monsters: the nurse heals you
+(`hack-v1.0/ab_hack-1.0/hack.mhitu.c:132-136`) where the neo-otyugh hit twice for
+2d6 (`original/hack.mon.c:288`). The displacer beast → large dog link is the
+strongest: the special attack `case 'd': hitu(6,d(2,4),...)` (`original/hack.mon.c:195`)
+survives as `case 'd': (void) hitu(mtmp,d(2,4));` (`hack-v1.0/ab_hack-1.0/hack.mhitu.c:71-72`),
+and PDP-11 also gives its large dog the same stats (`hack-pdp11/src/hack.monst.c:75`).
 
 ### Monsters in separate structures
 
@@ -104,7 +143,10 @@ have full dog/pet hierarchies and shopkeeper definitions.
 - Repo: 56 (8x7 main) + 1 (vampire bat) = **57**
 - PDP-11: 56 + shopkeeper, treasurer, li_dog, dog, la_dog, ghost, eel = **63+**
 - PC/IX: same as PDP-11
-- Hack 1.0: 58 (main, including shopkeeper and minotaur appended) + li_dog, dog, la_dog = **61**
+- Hack 1.0: 57 compiled main entries (`CMNUM 55` + shopkeeper + minotaur, `mklev.h:77`;
+  only one of wumpus/long worm is compiled) + li_dog, dog, la_dog + ghost
+  (`hack.bones.c:7`) + vault guard (`hack.vault.c:27`) = **62**, counted the same
+  way as PDP-11's 63+
 
 ---
 
@@ -132,7 +174,7 @@ PDP-11 help text also contains a third name, "Amulet of Guyver"
 | 3 | invisibility | invisibility | invisibility | invisibility |
 | 4 | fruit juice | fruit juice | fruit juice | fruit juice |
 | 5 | healing | healing | healing | healing |
-| 6 | paralysis | **paralysis** | paralysis | paralysis |
+| 6 | paralysis | paralysis | paralysis | paralysis |
 | 7 | monster detection | monster detection | monster detection | monster detection |
 | 8 | object detection | object detection | object detection | object detection |
 | 9 | sickness | sickness | sickness | sickness |
@@ -336,7 +378,12 @@ The VU Amsterdam developers documented these as their own additions in
 the PDP-11 Hack readme (`hack-pdp11/src/READ_ME:33-41`):
 > "Some additions we (Fred de Wilde and Michiel Huisjes) made are
 >
-> - The Vault / - The Swamp / - The Zoo / - The Graveyard"
+> - The Vault / - The Swamp / - The Zoo / - The Graveyard / - Maxlevel = 40 /
+>   - Proper Saving / - Several bugs / - And many, many more..."
+
+"Proper Saving" independently corroborates the repo's own READ_ME ("a better
+save (One that works!)") and PDP-11's `hack-pdp11/src/hack.save.c:6`: "The old
+version of save () didn't work at all."
 
 The repo has none of these. Its `mklev.c` generates only basic rooms,
 corridors, and mazes.
@@ -383,6 +430,7 @@ types WALL through ROOM only.
 | mtame | -- | yes (bit) | yes |
 | wormno | -- | yes (5 bits) | yes |
 | mxlth | -- | yes | yes |
+| mstole | -- | yes (`hack-pdp11/src/hack.h:205`; stolen loot moved onto the monster) | -- |
 | mextra | -- | yes | yes |
 
 The repo's struct is notably simpler. It uses a combined `mstat` field
@@ -409,12 +457,13 @@ Fenlason's README exists in three forms:
 
 | Location | Content |
 |----------|---------|
-| Repo `original/READ_ME` | 11 setup steps, mentions MAGIC mode (gid==42), SMALL/VTONL paragraph |
-| Hack 1.0 `Original_READ_ME` | 9 setup steps (renumbered, "2.5"), no SMALL/VTONL paragraph |
+| Repo `original/READ_ME` | 12 numbered entries (step 7 appears twice), mentions MAGIC mode (gid==42), SMALL/VTONL paragraph |
+| Hack 1.0 `Original_READ_ME` | 9 setup steps (1, 2, 2.5, 3--6, 8, 9; no step 7), no save/perm steps, no SMALL/VTONL paragraph -- likely an earlier revision of Jay's README |
 | Hack 1.0 `READ_ME` | Brouwer's own, credits Fenlason "at lincolnsudbury" |
 
-All three credit the same collaborators: Kenny Woodland (KW), Mike Thome
-(MT), Jon Payne (JP), and reference the SFSU Logo Workshop and Mike Clancy.
+All three credit Kenny Woodland, Mike Thome and Jon Payne. Jay's two READMEs
+(repo `READ_ME` and Hack 1.0 `Original_READ_ME:57-60`) also thank the SFSU Logo
+Workshop and Mike Clancy; Brouwer's own `READ_ME` does not.
 
 Brouwer's README (`hack-v1.0/ab_hack-1.0/READ_ME:6`) identifies
 Fenlason's location as "lincolnsudbury" -- consistent with
@@ -449,7 +498,7 @@ words in the same order, with one exception:
 | "Daiyen Fooels" | "DAIYEN FOOELS" |
 
 "Elbib Yloh" ("Holy Bible" reversed) is present in the repo but commented
-out in PC/IX (`pcix/src/hack.vars.h:105`: `/* "ELBIB YLOH", */`).
+out in both PDP-11 and PC/IX (`pcix/src/hack.vars.h:105`: `/* "ELBIB YLOH", */`).
 
 ---
 
@@ -513,3 +562,23 @@ but not PDP-11/PC/IX:
 - Wumpus monster
 - Ring of increase hit points (`original/hack.vars:305`)
 - "alcohol" potion (hack121 also uses "alcohol")
+
+---
+
+## 15. Mechanics Dated by the Source
+
+Comparing trees can date when a behavior appeared.
+
+**Bear-trap escape.** In the repo, every move while trapped simply counts down
+(`original/hack.c:107-111`: `u.utrap--`, direction irrelevant). Hack 1.0 adds a
+rule that diagonal moves always count and orthogonal moves count 1 time in 5
+(`hack-v1.0/ab_hack-1.0/hack.c:287`: `if((u.dx && u.dy) || !rn2(5)) u.utrap--;`).
+The rule survives into NetHack 3.7, where a 2008 DevTeam comment asks
+`/* [why does diagonal movement give quickest escape?] */`. The source shows the
+rule began with Brouwer, not Fenlason; its reason is not recorded.
+
+**mklev as a separate program.** The repo runs `./mklev` as a separate process
+(`original/hack.lev.c:189-191`). Hack 1.0 still does (`hack-v1.0/ab_hack-1.0/hack.lev.c:138`).
+By Hack 1.0.2, `mklev()` calls an in-process `makelevel()` (Brouwer's 1.0.2
+posting, part 5: `/* hack.mklev.c - version 1.0.2 */`). The repo's own `exp/exp1/`
+had already merged it (`original/exp/exp1/hack.levl.c:23`).

@@ -34,7 +34,7 @@
       │    ∘ Andries Brouwer distributes Hack 1.0 (Dec 17, 1984)
       │    ∘ Near-complete rewrite: adds shops, pets, long worms
       │    ∘ Renames Amulet of Frobozz to Amulet of Yendor
-      │    ∘ 61 monster types, expanded food/armor/item systems
+      │    ∘ 62 monster types, expanded food/armor/item systems
       │
 1985  ████ HACK 1.0.2 / 1.0.3
       │    ∘ 1.0.2 (April): female adventurer, moon phases, pools
@@ -122,7 +122,7 @@ The exact content of Fenlason's original was long unknown; a detailed comparison
 #### **Monster System**
 
 * **57 monsters** (56 in an 8x7 array + vampire bat) — vs. Rogue's 26
-* Unique creatures found in no other variant: **displacer beast**, **wumpus**, **ugod**, **xerp**, **zelomp**
+* Names found in no later source variant: **displacer beast**, **ugod**, **xerp**, **zelomp** (Brouwer reused their slots: the displacer beast's exact stats and attack became the large dog's, the zelomp's stats the zruty's). The **wumpus** survives only as Hack 1.0's `NOWORM` fallback and in the DOS hack121
 * Polymorphic **chameleon** (Thome's contribution)
 * The **Amulet of Frobozz** (Brouwer later renamed it to the Amulet of Yendor)
 
@@ -214,7 +214,7 @@ The [source comparison](research/COMPARISON.md) makes clear the scale of Brouwer
 
 #### **Content Expansion**
 
-* **61 monster types** (up from Fenlason's 57), including shopkeeper, minotaur, nurse, unicorn
+* **62 monster types** (57 in the main table, plus three dogs, a ghost and a vault guard; up from Fenlason's 57), including shopkeeper, minotaur, nurse, unicorn. Yet 48 of Fenlason's 56 main-table stat lines carry over unchanged (see [COMPARISON.md](research/COMPARISON.md))
 * **16 food types** (up from 2): tripe ration, pancake, dead lizard, fortune cookie, fruits, egg, carrot, tin, garlic, corpse
 * **12 armor types** (up from 6): added banded mail, studded leather, elven cloak, helmet, shield, gloves
 * **Wand of wishing** and **wand of make invisible** — powerful new magic items
@@ -227,7 +227,7 @@ Brouwer also wrote **Quest**, a game sharing most of Hack's source but using its
 
 * **Hack 1.0** (Dec 17, 1984) — Initial distribution, 15 shar parts
 * **Hack 1.0.1** (Jan 1985) — Patch adding a few features (sender: `play@turing.UUCP`)
-* **Hack 1.0.2** (Apr 1-14, 1985) — Full source redistribution over two weeks. The 1.0 single-day dump had overwhelmed many sites, and 1.0.1 required the `patch` utility which was not universally available. Female adventurer option, moon phase effects, pools, swamps.
+* **Hack 1.0.2** (Apr 1-14, 1985) — Full source redistribution over two weeks. The 1.0 single-day dump had overwhelmed many sites, and 1.0.1 required the `patch` utility which was not universally available. Female adventurer option, moon phase effects, pools, swamps. `mklev` becomes an in-process function (Hack 1.0 still ran it as a separate program, like Fenlason's original).
 * **Hack 1.0.3** (Jul 23, 1985) — Brouwer's final version, distributed as an ed script against 1.0.2. **19,239 lines** of meticulously crafted C code. Direct template for NetHack.
 
 ---
@@ -260,7 +260,7 @@ The [protoHack](https://github.com/Critlist/protoHack) project restored Fenlason
 
 * **The timeline is clearer**: *;login:* (June 1982) shows the Lincoln-Sudbury submission was on the 82-1 distribution tape completed before the Boston conference that July, and Fenlason recalled putting Hack on that tape.
 * **Attribution corrections**: Shops, pets, long worms, and special rooms were NOT in Fenlason's original — they were added by Brouwer and the VU Amsterdam developers. Earlier secondary accounts that attributed these features to Fenlason have been corrected throughout this document.
-* **Unique artifacts**: The recovered source contains items found in no other variant — the displacer beast, "alcohol" potion, "rust armor" scroll, and original incantation names. It also preserves personal development files (.cshrc, .login), Zork reference material, and experimental branches showing code evolution.
+* **Unique artifacts**: The recovered source contains items found in no other variant — the displacer beast, "alcohol" potion (otherwise known only from the DOS hack121 binary), "rust armor" scroll, and original incantation names. It also preserves personal development files (.cshrc, .login), Zork reference material, and experimental branches showing code evolution.
 * **Structural evidence**: Fenlason's `struct monst` is simpler than all derivatives, with unique fields (`sinv`, `mstuck`, combined `mstat`) and missing fields (`mtame`, `wormno`, `mxlth`) that prove the pet and worm systems were later additions.
 
 ### Lineage

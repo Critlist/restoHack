@@ -34,7 +34,7 @@ Think resto-mod: the soul stays vintage, the internals get a precision rebuild.
 * **Authentic Systems** – Over a dozen original systems restored from source, untouched in design.
 * **Complete K\&R Modernization** – Entire codebase converted to ANSI C (\~250 functions updated).
 * **Unix/Linux Fixes** – No more hardcoded BSD paths or FS quirks.
-* **Cross-Platform Verified** – Works on Linux (glibc/musl) & FreeBSD; CI-tested.
+* **Cross-Platform Verified** – Linux (glibc/musl) and macOS are CI-tested on GitHub Actions; FreeBSD was CI-tested on Cirrus CI until that service shut down in June 2026.
 
 > **Tested on:** Arch, Alpine, FreeBSD 14.3, WSL, and aarch64.
 > macOS support verified via runner. Arch users can install via the AUR.

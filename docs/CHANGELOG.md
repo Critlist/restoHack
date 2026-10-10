@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TIMELINE/COMPARISON: `READ_Me` → `READ_ME`; 82-1 tape submitter and licensing wording corrected.
 - Package descriptions (CPack), CODING_STANDARDS, dev/README: Hack 1.0.3 is dated 1985; removed unsourced "94.2%/100% authentic" figures.
 - TODO: save-system plan marked as shipped in v1.1.5.
+- COMPARISON.md re-synced from protoHack after a source audit (line refs, counts, Hack 1.0 differences, stat-line survival, mechanics dated by the source).
+- HISTORY_OF_HACK.md: Hack 1.0 has 62 monster types; "unique" names corrected (wumpus survives as Hack 1.0's NOWORM fallback); mklev merged in 1.0.2.
+- TIMELINE: Harvey's account of sending JOVE to USENIX (jonmacs/jove#34); Bresnick vs Craddock on Jay's school year.
+- README: FreeBSD CI ran on Cirrus until its June 2026 shutdown; Linux and macOS are CI-tested on GitHub Actions.
 
 ## [1.1.7] - 2026-06-05
 

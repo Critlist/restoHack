@@ -26,7 +26,9 @@ the Summer 1982 USENIX conference took place.
   UC Berkeley, where I got to play *Rogue* for the first time." He is
   immediately hooked: "I think I got a little bit obsessed then, and like any
   obsessed person who'd been cut off, I decided to build my own." (Craddock,
-  pp. 92)
+  pp. 92) Julie Bresnick's 2000 profile calls him "a junior" at the time;
+  the 1982 Lincoln-Sudbury yearbook (archive.org, p.54), which shows him
+  finishing junior year in 1982, supports Craddock's summer-1981 dating.
 
 - **Summer 1981** — **Jay Fenlason** creates the earliest version of Hack
   in **Logo** (Turtle Graphics) on an **Apple II**. Once satisfied with the Logo
@@ -55,8 +57,11 @@ the Summer 1982 USENIX conference took place.
 - **First half of 1982** — Lincoln-Sudbury student software, including Hack
   and JOVE, is submitted for the USENIX 82-1 distribution tape. *;login:*
   refers only to "the submitter… he" and does not list Hack by name;
-  Fenlason later recalled, "I put [Hack] on the tape." Brian Harvey was
-  Computer Director at Lincoln-Sudbury (1979-1982). Harvey, whose background
+  Fenlason later recalled, "I put [Hack] on the tape." Brian Harvey,
+  Computer Director at Lincoln-Sudbury (1979-1982), says of JOVE: "pretty
+  much as soon as JOVE was running I sent it to Usenix" (relayed by Jonathan
+  Payne, jonmacs/jove#34, 2026-02-04). Mark Moraes identifies *;login:*'s
+  "EMACS-like editor patterned after TORES but faster" as JOVE (same thread). Harvey, whose background
   was in the MIT and Stanford AI labs, had built the school's computing
   environment to resemble those labs: "a powerful computer system, with lots
   of software tools, an informal community spirit, and not much formal

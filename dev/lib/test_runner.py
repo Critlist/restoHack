@@ -8,6 +8,7 @@ import sys
 import time
 import re
 import shutil
+import zlib
 import tempfile
 from pathlib import Path
 from typing import Tuple, Dict, List
@@ -45,6 +46,11 @@ class TestRunner:
         except Exception as e:
             Colors.error(f"Failed to enable core dumps: {e}")
     
+    @staticmethod
+    def run_seed(lane_name: str, run_number: int) -> int:
+        """Stable per-(lane, run) seed (Python's hash() is randomized per process)."""
+        return zlib.crc32(f"{lane_name}_{run_number}".encode())
+
     def _lane_env(self, lane: BuildLane, run_number: int) -> Dict[str, str]:
         """Generate deterministic environment for each lane"""
         env = os.environ.copy()
@@ -68,8 +74,9 @@ class TestRunner:
         # Add any lane-specific env vars
         env.update(lane.env_vars)
         
-        # Set consistent random seed for reproducibility
-        env["HACK_SEED"] = str(hash(f"{lane.name}_{run_number}") % 2**32)
+        # Informational only: the game does not read HACK_SEED.  The harness's
+        # own choices are seeded in HackGameRunner via run_seed().
+        env["HACK_SEED"] = str(self.run_seed(lane.name, run_number))
         
         return env
         
@@ -123,13 +130,15 @@ class TestRunner:
         
         for i in range(1, runs + 1):
             run_env = self._lane_env(lane, i)
+            seed = self.run_seed(lane.name, i)
             
             try:
                 self._clean_lane_artifacts(lane)
                 
                 # Use corrected pexpect approach with proper game flow
                 with tempfile.NamedTemporaryFile(mode="w+b", delete=False) as temp_stderr:
-                    runner = HackGameRunner(lane.binary_path, debug=self.debug, enhanced_mode=self.enhanced_mode)
+                    runner = HackGameRunner(lane.binary_path, debug=self.debug, enhanced_mode=self.enhanced_mode,
+                                            seed=self.run_seed(lane.name, i))
                     
                     # Start the process with stderr redirection
                     # Convert to proper environment format
@@ -183,6 +192,7 @@ class TestRunner:
                     with open(run_log_path, "w") as log_file:
                         log_file.write(f"Exit code: {exit_code}\n")
                         log_file.write(f"Success: {success}\n")
+                        log_file.write(f"Seed: {seed} (lane={lane.name} run={i})\n")
                         if killed_by_signal:
                             log_file.write(f"Signal: Process killed by signal\n")
                         for label, path in log_findings:
@@ -190,8 +200,8 @@ class TestRunner:
                         log_file.write(f"STDERR:\n{stderr_output}\n")
                 
                 # PASS: No sanitizer errors and no signals = healthy run
-                # Player death, timeout, normal quit are all acceptable
-                is_healthy = (not has_sanitizer_errors and not killed_by_signal
+                # Player death and normal quit are acceptable; a hung quit is not
+                is_healthy = (success and not has_sanitizer_errors and not killed_by_signal
                               and not has_log_errors)
                 
                 if is_healthy:
@@ -205,11 +215,12 @@ class TestRunner:
                         if label not in error_reason:
                             error_reason.append(label)
                     if killed_by_signal: error_reason.append("signal")
-                    print(f"❌ {lane.name} {i:03d} FAILED ({', '.join(error_reason)})")
+                    if not success: error_reason.append(f"session-failed: {runner.fail_reason or 'unknown'}")
+                    print(f"❌ {lane.name} {i:03d} FAILED ({', '.join(error_reason)}) seed={seed}")
                     failed += 1
                         
             except Exception as e:
-                print(f"❌ {lane.name} {i:03d} EXCEPTION: {e}")
+                print(f"❌ {lane.name} {i:03d} EXCEPTION: {e} seed={seed}")
                 failed += 1
         
         return passed, failed

@@ -28,6 +28,9 @@ def main():
     parser.add_argument('--test-only', action='store_true', help='Only test (assume built)')
     parser.add_argument('--no-clean', action='store_true', help='Skip clean rebuild (faster but may have stale objects)')
     
+    parser.add_argument('--tolerate-failure-percent', type=int, default=0,
+                        help='Opt-in: allow up to this percent of failed runs (default 0: any failure fails)')
+    
     args = parser.parse_args()
     
     # Check requirements
@@ -85,8 +88,8 @@ def main():
     
     Colors.say("RESULTS", f"Passed: {passed}, Failed: {failed}, Rate: {failure_rate}%")
     
-    if failure_rate > 10:  # Allow up to 10% failure for stress testing
-        Colors.error(f"High failure rate: {failure_rate}%")
+    if total == 0 or failed * 100 > args.tolerate_failure_percent * total:
+        Colors.error(f"FAILED: {failed}/{total} runs failed ({failure_rate}%)")
         return 1
     else:
         Colors.success("UBSan testing completed successfully")

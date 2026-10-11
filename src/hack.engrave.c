@@ -304,21 +304,24 @@ int doengrave(void) {
 }
 
 void save_engravings(int fd) {
-  struct engr *ep = head_engr;
+  struct engr *ep = head_engr, *next;
   while (ep) {
-    if (!ep->engr_lth || !ep->engr_txt[0]) {
-      ep = ep->nxt_engr;
-      continue;
+    /* MODERN: free each engraving once written, like saveobjchn().  The
+     * original dropped the list (head_engr = 0) without freeing it, leaking
+     * every engraving each time a level was saved. */
+    next = ep->nxt_engr;
+    if (ep->engr_lth && ep->engr_txt[0]) {
+      /* MODERN: Prevent integer overflow in write size calculation */
+      if (ep->engr_lth > UINT_MAX - sizeof(struct engr)) {
+        impossible("Engraving length overflow during save: %u", ep->engr_lth,
+                   0);
+      } else {
+        bwrite(fd, (char *)&(ep->engr_lth), sizeof(ep->engr_lth));
+        bwrite(fd, (char *)ep, sizeof(struct engr) + ep->engr_lth);
+      }
     }
-    /* MODERN: Prevent integer overflow in write size calculation */
-    if (ep->engr_lth > UINT_MAX - sizeof(struct engr)) {
-      impossible("Engraving length overflow during save: %u", ep->engr_lth, 0);
-      ep = ep->nxt_engr;
-      continue;
-    }
-    bwrite(fd, (char *)&(ep->engr_lth), sizeof(ep->engr_lth));
-    bwrite(fd, (char *)ep, sizeof(struct engr) + ep->engr_lth);
-    ep = ep->nxt_engr;
+    free((char *)ep);
+    ep = next;
   }
   bwrite(fd, (char *)nul, sizeof(unsigned));
   head_engr = 0;

@@ -641,6 +641,9 @@ int dorecover(int fd) {
     return (0);
   }
   restnames(fd);
+  /* MODERN: the current level read at the top was only needed to reach the
+   * data after it; it is reread below, so free this copy (it leaked). */
+  freelev();
   while (1) {
     if (read(fd, (char *)&tmp, sizeof tmp) != sizeof tmp)
       break;

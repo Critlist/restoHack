@@ -47,11 +47,15 @@ class TestRunner:
             Colors.error(f"Failed to enable core dumps: {e}")
     
     @staticmethod
-    def run_seed(lane_name: str, run_number: int) -> int:
-        """Stable per-(lane, run) seed (Python's hash() is randomized per process)."""
-        return zlib.crc32(f"{lane_name}_{run_number}".encode())
+    def run_seed(lane_name: str, run_number: int, seed_offset: int = 0) -> int:
+        """Stable per-(lane, run, offset) seed (Python's hash() is randomized
+        per process).  Offset 0 keeps the original seeds."""
+        key = f"{lane_name}_{run_number}"
+        if seed_offset:
+            key += f"_{seed_offset}"
+        return zlib.crc32(key.encode())
 
-    def _lane_env(self, lane: BuildLane, run_number: int) -> Dict[str, str]:
+    def _lane_env(self, lane: BuildLane, run_number: int, seed: int) -> Dict[str, str]:
         """Generate deterministic environment for each lane"""
         env = os.environ.copy()
         logbase = str(self.log_dir / f"{lane.name}_run{run_number:03d}")
@@ -76,7 +80,7 @@ class TestRunner:
         
         # Same seed drives the game's RNG (lanes build with -DHACK_TEST_SEED)
         # and the harness's key choices (HackGameRunner), so a run replays.
-        env["HACK_SEED"] = str(self.run_seed(lane.name, run_number))
+        env["HACK_SEED"] = str(seed)
         
         return env
         
@@ -117,20 +121,28 @@ class TestRunner:
             except OSError as e:
                 Colors.error(f"Could not remove {victim}: {e}")
 
-    def test_lane(self, lane: BuildLane, runs: int = 50, steps: int = 40) -> Tuple[int, int]:
-        """Test a built lane with stress runs and proper logging"""
+    def test_lane(self, lane: BuildLane, runs: int = 50, steps: int = 40,
+                  seed_offset: int = 0, only_run: int = 0) -> Tuple[int, int]:
+        """Test a built lane with stress runs and proper logging.
+
+        only_run replays a single run number (same seed and keys as when it
+        ran inside a larger batch with the same offset, steps and mode).
+        """
         if not os.path.exists(lane.binary_path):
             Colors.error(f"Binary not found: {lane.binary_path}")
             return 0, runs
-            
-        Colors.say("TEST", f"{lane.name} stress: {runs} runs x {steps} steps")
+
+        run_numbers = [only_run] if only_run else range(1, runs + 1)
+        Colors.say("TEST", f"{lane.name} stress: {len(run_numbers)} runs x {steps} steps"
+                           f" (seed offset {seed_offset})")
         
         passed = 0
         failed = 0
+        resizes = resizes_seen = 0
         
-        for i in range(1, runs + 1):
-            run_env = self._lane_env(lane, i)
-            seed = self.run_seed(lane.name, i)
+        for i in run_numbers:
+            seed = self.run_seed(lane.name, i, seed_offset)
+            run_env = self._lane_env(lane, i, seed)
             
             try:
                 self._clean_lane_artifacts(lane)
@@ -144,13 +156,16 @@ class TestRunner:
                     # Convert to proper environment format
                     env_dict = dict(os.environ)
                     env_dict.update(run_env)
-                    child = pexpect.spawn(f'{lane.binary_path} -D', timeout=10, env=env_dict)
+                    child = pexpect.spawn(f'{lane.binary_path} -D', timeout=10, env=env_dict,
+                                          dimensions=(24, 80))
                     child.logfile_read = temp_stderr
                     runner.child = child
                     
                     # Run the game session with proper interaction
                     player_name = f"Player{i:02d}"
                     success, exit_code = runner.run_session(steps, player_name)
+                    resizes += runner.resizes
+                    resizes_seen += runner.resizes_seen
                 
                 # Read stderr for sanitizer errors
                 stderr_output = ""
@@ -179,8 +194,13 @@ class TestRunner:
                 log_findings = self._check_sanitizer_logs(lane.name, i)
                 has_log_errors = bool(log_findings)
 
+                # error()/hangup paths exit(1); a normal quit or death exits 0.
+                # For the hardened lane (no sanitizer logs) this and signals
+                # are the whole check.
+                bad_exit = success and exit_code != 0
+
                 # Only write logs for actual memory/safety errors
-                if has_sanitizer_errors or killed_by_signal or has_log_errors:
+                if has_sanitizer_errors or killed_by_signal or has_log_errors or bad_exit:
                     stderr_log_path = self.log_dir / f"{lane.name}_run{i:03d}.stderr"
                     run_log_path = self.log_dir / f"{lane.name}_run{i:03d}.log"
                     
@@ -192,7 +212,9 @@ class TestRunner:
                     with open(run_log_path, "w") as log_file:
                         log_file.write(f"Exit code: {exit_code}\n")
                         log_file.write(f"Success: {success}\n")
-                        log_file.write(f"Seed: {seed} (lane={lane.name} run={i})\n")
+                        log_file.write(f"Seed: {seed} (lane={lane.name} run={i} "
+                                       f"seed_offset={seed_offset} steps={steps} "
+                                       f"enhanced={self.enhanced_mode})\n")
                         if killed_by_signal:
                             log_file.write(f"Signal: Process killed by signal\n")
                         for label, path in log_findings:
@@ -202,10 +224,12 @@ class TestRunner:
                 # PASS: No sanitizer errors and no signals = healthy run
                 # Player death and normal quit are acceptable; a hung quit is not
                 is_healthy = (success and not has_sanitizer_errors and not killed_by_signal
-                              and not has_log_errors)
+                              and not has_log_errors and not bad_exit)
+                resize_note = (f" (resize {runner.resizes_seen}/{runner.resizes})"
+                               if runner.resizes else "")
                 
                 if is_healthy:
-                    print(f"✅ {lane.name} {i:03d}")
+                    print(f"✅ {lane.name} {i:03d}{resize_note}")
                     passed += 1
                 else:
                     error_reason = []
@@ -214,15 +238,19 @@ class TestRunner:
                     for label, _path in log_findings:
                         if label not in error_reason:
                             error_reason.append(label)
-                    if killed_by_signal: error_reason.append("signal")
+                    if killed_by_signal: error_reason.append(f"signal {runner.child.signalstatus}")
+                    if bad_exit: error_reason.append(f"exit {exit_code}")
                     if not success: error_reason.append(f"session-failed: {runner.fail_reason or 'unknown'}")
-                    print(f"❌ {lane.name} {i:03d} FAILED ({', '.join(error_reason)}) seed={seed}")
+                    print(f"❌ {lane.name} {i:03d} FAILED ({', '.join(error_reason)}) "
+                          f"seed={seed} seed_offset={seed_offset}{resize_note}")
                     failed += 1
                         
             except Exception as e:
-                print(f"❌ {lane.name} {i:03d} EXCEPTION: {e} seed={seed}")
+                print(f"❌ {lane.name} {i:03d} EXCEPTION: {e} seed={seed} seed_offset={seed_offset}")
                 failed += 1
-        
+
+        Colors.say("SOAK", f"{lane.name}: seed offset {seed_offset}; resize cycles {resizes}"
+                           f" ({resizes_seen} reached TERMINAL TOO SMALL)")
         return passed, failed
     
     @staticmethod

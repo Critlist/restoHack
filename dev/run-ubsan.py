@@ -28,6 +28,11 @@ def main():
     parser.add_argument('--test-only', action='store_true', help='Only test (assume built)')
     parser.add_argument('--no-clean', action='store_true', help='Skip clean rebuild (faster but may have stale objects)')
     
+    parser.add_argument('--seed-offset', type=int, default=0,
+                        help='Mixed into every run seed (default 0 keeps the standard seeds)')
+    parser.add_argument('--only-run', type=int, default=0, metavar='N',
+                        help='Replay just run N (use the same --seed-offset, --steps, --enhanced)')
+    
     parser.add_argument('--tolerate-failure-percent', type=int, default=0,
                         help='Opt-in: allow up to this percent of failed runs (default 0: any failure fails)')
     
@@ -80,7 +85,8 @@ def main():
     
     # Test phase  
     test_runner = TestRunner(log_dir, args.debug, args.enhanced)
-    passed, failed = test_runner.test_lane(lane, args.runs, args.steps)
+    passed, failed = test_runner.test_lane(lane, args.runs, args.steps,
+                                           args.seed_offset, args.only_run)
     
     # Results
     total = passed + failed

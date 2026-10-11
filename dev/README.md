@@ -53,12 +53,46 @@ HACK_SEED=<N> ../build-asan-ubsan/hack -D
 Release builds don't define `HACK_TEST_SEED` and ignore `HACK_SEED`.
 Date-dependent events (moon phase, Friday 13th, midnight) still vary by day.
 
+`--seed-offset N` mixes N into every run seed (default 0 keeps the standard
+seeds), so each soak explores new dungeons. To replay one run exactly, keep
+the lane, `--seed-offset`, `--steps` and `--enhanced` from the failure line
+or the run's `.log` file and add `--only-run <run number>`:
+
+```bash
+# failure line: ❌ asan-ubsan 137 FAILED (...) seed=... seed_offset=1760220000
+./run-asan-ubsan.py --test-only --only-run 137 --steps 1000 --enhanced --seed-offset 1760220000
+```
+
+Keys are sent one at a time and the game's output is drained before the
+next, so a replay is exact unless a prompt appears later than the drain
+window (`KEY_SETTLE` in `lib/game_runner.py`); a key that lands on a
+`--More--` it didn't see is swallowed.
+
+## Soak
+
+```bash
+./run-all.py --runs 300 --steps 1000 --enhanced --seed-offset $(date +%s)
+```
+
+That runs all four lanes (ASan, UBSan, ASan+UBSan, hardened) back to back.
+Under the sanitizers a full 1000-step run takes about 1-2 minutes (roughly
+90 ms per move); runs that end early (save test, death) are shorter. Expect
+on the order of a day for `--runs 300`; `--runs 100` fits overnight.
+Enhanced mode adds stairs keys (`>`, and `<` once below level 1, since `<` on
+the starting stairs leaves the dungeon) and, about once per 500 moves,
+shrinks the terminal below 80x24 and restores it, exercising the resize
+pause. Per-run lines show `(resize seen/attempted)`; each lane
+ends with a `[SOAK]` line giving the seed offset and resize totals. A run
+fails on a sanitizer report (pty or log file), a signal, a non-zero exit,
+or a hung quit. The hardened lane has no sanitizer logs, so signals and
+exit status are its whole check.
+
 ## Orchestration Script
 
 Run multiple tests in sequence:
 
 ```bash
-# Default: Run all sanitizers (ASan, UBSan, ASan+UBSan)
+# Default: Run all lanes (ASan, UBSan, ASan+UBSan, hardened)
 ./run-all.py
 
 # Run specific combinations
@@ -84,6 +118,7 @@ Run multiple tests in sequence:
   - `run-asan.py` - AddressSanitizer
   - `run-ubsan.py` - UndefinedBehaviorSanitizer  
   - `run-asan-ubsan.py` - Combined ASan+UBSan
+  - `run-hardened.py` - Hardened build, no sanitizers (signals + exit status)
 
 - `standalone-fuzzer.py` - Standalone libFuzzer targets (self-contained, no `src/` linkage)
 - `run-all.py` - Simple orchestration

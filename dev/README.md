@@ -19,9 +19,24 @@ Run specific sanitizers individually:
 # Skip clean rebuild for faster iteration (may have stale objects)
 ./run-asan.py --no-clean --test-only
 
-# Enhanced fuzzer
-./run-fuzz.py --duration 120
+# Standalone fuzzer (see "Fuzzer" below; there is no run-fuzz.py)
+./standalone-fuzzer.py --duration 120
 ```
+
+## Fuzzer
+
+`standalone-fuzzer.py` builds small libFuzzer targets with
+`clang -fsanitize=fuzzer,address` and runs each one:
+
+```bash
+./standalone-fuzzer.py --duration 120      # all targets, 120s each (default 30)
+./standalone-fuzzer.py --target integers   # one target (substring match on name)
+./standalone-fuzzer.py --debug             # verbose output
+```
+
+The targets are self-contained C reimplementations compiled one file at a
+time. They do not link or exercise anything from `src/` (the game code), so a
+clean fuzz run says nothing about restoHack itself.
 
 ## Orchestration Script
 
@@ -33,8 +48,8 @@ Run multiple tests in sequence:
 
 # Run specific combinations
 ./run-all.py --asan --ubsan      # Just ASan and UBSan
-./run-all.py --fuzz             # Just fuzzer
-./run-all.py --all              # Everything including fuzzer
+./run-all.py --fuzz             # Just fuzzer (runs standalone-fuzzer.py)
+./run-all.py --all              # Sanitizers plus fuzzer
 
 # With parameters
 ./run-all.py --debug --runs 25 --enhanced
@@ -54,15 +69,15 @@ Run multiple tests in sequence:
   - `run-asan.py` - AddressSanitizer
   - `run-ubsan.py` - UndefinedBehaviorSanitizer  
   - `run-asan-ubsan.py` - Combined ASan+UBSan
-  - `run-fuzz.py` - Enhanced libFuzzer
 
+- `standalone-fuzzer.py` - Standalone libFuzzer targets (self-contained, no `src/` linkage)
 - `run-all.py` - Simple orchestration
 
 ## Key Improvements
 
 1. **Modularity**: Each sanitizer can be run independently
 2. **Focused Testing**: Target specific issues without running everything
-3. **Enhanced Fuzzer**: Targets actual hack functions with proper corpus
+3. **Standalone Fuzzer**: Self-contained libFuzzer targets (do not exercise `src/`)
 4. **Clean Logs**: Timestamped logs in `test-logs/` and `fuzz-logs/`
 5. **Better Error Handling**: Clear pass/fail status for each component
 6. **UV Support**: Updated dependency messages for uv package manager

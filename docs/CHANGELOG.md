@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TIMELINE: Harvey's account of sending JOVE to USENIX (jonmacs/jove#34); Bresnick vs Craddock on Jay's school year.
 - README: FreeBSD CI ran on Cirrus until its June 2026 shutdown; Linux and macOS are CI-tested on GitHub Actions.
 
+### Fixed
+
+- **STABILITY**: Shrinking the terminal below 80x24 mid-game exited without saving (`check_resize()` re-ran `startup()`, whose size check calls `error()`). The new `term_getsize()` re-reads the size via `TIOCGWINSZ`, and the game now waits on the "TERMINAL TOO SMALL" screen until the window is big enough; EOF there saves and exits through `hangup()`. (#21)
+
 ## [1.1.7] - 2026-06-05
 
 ### Fixed

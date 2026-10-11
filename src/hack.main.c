@@ -21,6 +21,7 @@
 /* MODERN ADDITION (2025): Terminal size globals for resize protection */
 extern int CO, LI;         /* Defined in hack.termcap.c */
 extern void startup(void); /* Re-initialize termcap - hack.termcap.c */
+extern void term_getsize(void); /* Non-fatal size re-query - hack.termcap.c */
 extern void docrt(void);   /* Complete screen redraw - hack.pri.c */
 
 #ifdef QUEST
@@ -621,9 +622,10 @@ void check_resize(void) {
   if (!resize_pending)
     return;
 
-  /* Query current terminal size */
+  /* Query current terminal size. MODERN: not startup(), which exits
+   * (without saving) when the screen is too small. */
   int new_CO, new_LI;
-  startup(); /* Re-read termcap values */
+  term_getsize();
   new_CO = CO;
   new_LI = LI;
 
@@ -636,21 +638,26 @@ void check_resize(void) {
 
   /* Terminal size changed - handle it */
   if (new_CO < COLNO || new_LI < ROWNO + 2) {
-    /* Terminal too small - pause game */
-    cls();
-    printf("\n\nTERMINAL TOO SMALL!\n");
-    printf("Current: %dx%d, Required: %dx%d\n", new_CO, new_LI, COLNO,
-           ROWNO + 2);
-    printf("Please resize terminal and press any key...");
-    getchar();
-    /* Re-check after user input */
-    startup();
-    if (CO >= COLNO && LI >= ROWNO + 2) {
-      /* Size is now adequate */
-      docrt(); /* Full screen redraw */
+    /* Terminal too small - pause game until it is big enough again.
+     * MODERN: never exit here; the game state must survive a resize. */
+    for (;;) {
+      cls();
+      printf("\n\nTERMINAL TOO SMALL!\n");
+      printf("Current: %dx%d, Required: %dx%d\n", CO, LI, COLNO, ROWNO + 2);
+      printf("Please resize terminal and press any key...");
+      fflush(stdout);
+      if (getchar() == EOF)
+        hangup(0); /* input gone: save and leave cleanly */
       resize_pending = 0;
+      term_getsize();
+      if (CO >= COLNO && LI >= ROWNO + 2)
+        break;
     }
-    /* If still too small, will re-prompt on next check */
+    /* Size is now adequate */
+    docrt(); /* Full screen redraw */
+    resize_pending = 0;
+    original_CO = CO;
+    original_LI = LI;
   } else {
     /* Terminal size acceptable but changed - redraw everything */
     docrt();

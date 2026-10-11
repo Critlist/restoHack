@@ -75,8 +75,13 @@ void savelev(
     for (wtmp = wsegs[tmp]; wtmp; wtmp = wtmp2) {
       wtmp2 = wtmp->nseg;
       bwrite(fd, (char *)wtmp, sizeof(struct wseg));
+      /* MODERN: free each segment once written; the original cleared
+       * wsegs[] without freeing, leaking every worm segment on each level
+       * save.  Plain free(), not remseg(): a save must not redraw. */
+      free((char *)wtmp);
     }
     wsegs[tmp] = 0;
+    wheads[tmp] = 0;
   }
   bwrite(fd, (char *)wgrowtime, sizeof(wgrowtime));
 #endif /* NOWORM */

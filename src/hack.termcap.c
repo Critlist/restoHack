@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <termcap.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 
 static char tbuf[512];
@@ -18,6 +19,25 @@ static int SG;
 static char hack_PC = '\0';
 char *CD;   /* tested in pri.c: docorner() */
 int CO, LI; /* used in pri.c and whatis.c */
+
+/*
+ * MODERN: Re-read the terminal size WITHOUT startup()'s fatal size check.
+ *
+ * WHY: startup() calls setclipped() on a small screen, which error()s out and
+ * exits without saving. That is right when refusing to START, but wrong when
+ * the user shrinks the window mid-game (tiling window managers).
+ * HOW: ask the tty directly via TIOCGWINSZ and update CO/LI. Leaves them
+ * unchanged if the size cannot be queried.
+ */
+void term_getsize(void) {
+  struct winsize ws;
+
+  if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0 &&
+      ws.ws_row > 0) {
+    CO = ws.ws_col;
+    LI = ws.ws_row;
+  }
+}
 
 void startup(void) {
   char *term;

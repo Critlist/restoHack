@@ -235,6 +235,7 @@ extern void gettty(void);
 extern void settty(const char *s);
 extern void setrandom(void);
 extern void startup(void);
+extern void term_getsize(void);
 extern void cls(void);
 extern void gethdate(char *name);
 /* askname() defined in hack.main.c */
@@ -439,6 +440,7 @@ extern void make_engr_at(int x, int y, const char *s);
 
 /* TERMCAP FUNCTION PROTOTYPES - from hack.termcap.c */
 extern void startup(void);
+extern void term_getsize(void);
 extern void start_screen(void);
 extern void end_screen(void);
 extern void curs(int x, int y);

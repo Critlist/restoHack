@@ -74,8 +74,8 @@ class TestRunner:
         # Add any lane-specific env vars
         env.update(lane.env_vars)
         
-        # Informational only: the game does not read HACK_SEED.  The harness's
-        # own choices are seeded in HackGameRunner via run_seed().
+        # Same seed drives the game's RNG (lanes build with -DHACK_TEST_SEED)
+        # and the harness's key choices (HackGameRunner), so a run replays.
         env["HACK_SEED"] = str(self.run_seed(lane.name, run_number))
         
         return env
@@ -138,7 +138,7 @@ class TestRunner:
                 # Use corrected pexpect approach with proper game flow
                 with tempfile.NamedTemporaryFile(mode="w+b", delete=False) as temp_stderr:
                     runner = HackGameRunner(lane.binary_path, debug=self.debug, enhanced_mode=self.enhanced_mode,
-                                            seed=self.run_seed(lane.name, i))
+                                            seed=seed)
                     
                     # Start the process with stderr redirection
                     # Convert to proper environment format

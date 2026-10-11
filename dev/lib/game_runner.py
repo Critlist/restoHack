@@ -10,6 +10,16 @@ import random
 from typing import Tuple, Optional
 import pexpect
 
+# Movement keys: 8 directions, walk and run
+MOVEMENT_KEYS = 'hjklyubnHJKLYUBN'
+# After each move, read output until the game is quiet this long (seconds).
+# Draining replaces fixed sleeps and keeps the pty from filling up, which
+# would block the game and then our own writes.
+KEY_SETTLE = 0.03
+# Enhanced mode: per-move chance of a stairs key and of a terminal resize
+STAIRS_CHANCE = 0.02
+RESIZE_CHANCE = 0.002
+
 
 class HackGameRunner:
     """Reliable 1984 Hack game automation with enhanced inventory and save/resume testing"""
@@ -26,6 +36,9 @@ class HackGameRunner:
         self.current_inventory = []  # Track inventory state
         self.fail_reason = ""        # Why the last session reported failure
         self.save_file_path = None   # Track save file location
+        self.resizes = 0             # Resize cycles attempted this session
+        self.resizes_seen = 0        # ...that reached "TERMINAL TOO SMALL"
+        self.depth = 1               # Dungeon level, tracked from stairs use
         
     def log(self, msg: str) -> None:
         if self.debug:
@@ -69,14 +82,11 @@ class HackGameRunner:
             time.sleep(0.5)
             
             # Phase 1: Move around (with optional save/resume testing)
-            movement_keys = 'hjklyubnHJKLYUBN'  # 8 directions + diagonals
-            
             # Test save/resume mid-game if enhanced mode enabled
             if self.enhanced_mode and self.rng.random() < 0.3:  # 30% chance
                 # Move some steps before save
                 for _ in range(min(50, steps)):
-                    self.child.send(self.rng.choice(movement_keys))
-                    time.sleep(0.1)
+                    self._move()
                     
                 # Test save functionality
                 if self._test_save_game():
@@ -92,8 +102,7 @@ class HackGameRunner:
             self.last_move_count = move_count
             self.log(f"Movement phase: {move_count} moves (steps={steps}, seed={self.seed})")
             for _ in range(move_count):
-                self.child.send(self.rng.choice(movement_keys))
-                time.sleep(0.1)  # Faster movement
+                self._move()
                 
             # Phase 2: Enhanced inventory testing (if enabled)
             if self.enhanced_mode and self.rng.random() < 0.6:  # 60% chance
@@ -107,8 +116,7 @@ class HackGameRunner:
             
             # Phase 3: Move some more (3 moves)
             for _ in range(3):
-                self.child.send(self.rng.choice(movement_keys))
-                time.sleep(0.1)
+                self._move()
                 
             # Phase 4: Enhanced item operations (drop, pickup, apply)
             if self.enhanced_mode and self.rng.random() < 0.5:  # 50% chance
@@ -122,15 +130,16 @@ class HackGameRunner:
             
             # Phase 5: Final moves (3 more)
             for _ in range(3):
-                self.child.send(self.rng.choice(movement_keys))
-                time.sleep(0.1)
+                self._move()
                 
             # Quit sequence
             # Clear any pending prompt (--More--, "What do you want to drop?",
             # death screens in wizard mode) that would swallow the 'Q'.
+            # Return ends text-entry prompts (getlin echoes ESC) and the
+            # "Hit return to continue" after escaping the dungeon.
             try:
                 for attempt in range(8):
-                    self.child.send(' \x1b')
+                    self.child.send(' \x1b\r')
                     time.sleep(0.3)
                     self.child.send('Q')
                     try:
@@ -150,14 +159,12 @@ class HackGameRunner:
                 else:
                     raise pexpect.TIMEOUT("game did not exit after quit")
                 # If we get here, clean exit
-                exit_code = self.child.exitstatus or 0
-                return True, exit_code
+                return True, self._exit_status()
             except pexpect.EOF:
                 # Game already ended (e.g. the player died during the moves):
                 # not a harness failure; sanitizer/signal checks still apply.
                 self.log("Game exited before/during quit sequence")
-                self.child.close()
-                return True, self.child.exitstatus or 0
+                return True, self._exit_status()
             except pexpect.TIMEOUT:
                 tail = (self.child.before or b"")[-200:] if isinstance(self.child.before, bytes) else str(self.child.before)[-200:]
                 self.fail_reason = f"quit sequence timed out (last output: {tail!r})"
@@ -165,13 +172,96 @@ class HackGameRunner:
                 self.child.terminate(force=True)
                 return False, -2
             
+        except pexpect.EOF:
+            # Game ended during the moves; exit status and signals decide
+            self.log("Game exited during play")
+            return True, self._exit_status()
         except Exception as e:
             self.fail_reason = f"exception: {e}"
             self.log(f"Session failed: {e}")
             if self.child and self.child.isalive():
                 self.child.terminate(force=True)
             return False, -1
-            
+
+    def _exit_status(self) -> int:
+        """Reap the game and return its exit status (signals: see signalstatus)."""
+        self.child.close()
+        return self.child.exitstatus if self.child.exitstatus is not None else 0
+
+    def _drain(self, settle: float = KEY_SETTLE) -> None:
+        """Read output until quiet, dismissing --More-- (and "Hit return",
+        shown when the game ends) so later keys reach the command loop
+        instead of being swallowed by the prompt."""
+        for _ in range(20):
+            i = self.child.expect(['--More--', 'Hit return to continue', pexpect.TIMEOUT],
+                                  timeout=settle)
+            if i == 2:
+                return
+            self.child.send(' ' if i == 0 else '\r')
+
+    def _move(self) -> None:
+        """One step: usually a movement key; in enhanced mode sometimes a
+        stairs key or a terminal resize cycle.  All choices use self.rng."""
+        if self.enhanced_mode:
+            roll = self.rng.random()
+            if roll < RESIZE_CHANCE:
+                self._resize_cycle()
+                return
+            if roll < RESIZE_CHANCE + STAIRS_CHANCE:
+                self._stairs()
+                return
+        self.child.send(self.rng.choice(MOVEMENT_KEYS))
+        self._drain()
+
+    def _stairs(self) -> None:
+        """Send '>' or '<'.  '<' only below level 1: the game starts on the
+        up stairs, and '<' there leaves the dungeon and ends the run.
+
+        A level change clears the screen; a stairs key off the stairs says
+        "You can't go down/up here".  Watching for either tracks the depth
+        without parsing the partially repainted status line.
+        """
+        key = self.rng.choice('<>') if self.depth > 1 else '>'
+        self.child.send(key)
+        i = self.child.expect([r'\x1b\[2J', "can't go (down|up) here", pexpect.TIMEOUT],
+                              timeout=0.5)
+        if i == 0:
+            self.depth += 1 if key == '>' else -1
+            self.log(f"Stairs '{key}': now on level {self.depth}")
+        self._drain()
+
+    def _resize_cycle(self) -> None:
+        """Shrink the pty below 80x24 and restore it (the #21 path).
+
+        check_resize() runs once per main-loop turn, so after shrinking we
+        send one command ('s', search) to get there.  The game then pauses
+        on "TERMINAL TOO SMALL ... press any key"; restore the size first,
+        then press a key, or the game keeps waiting.
+        """
+        if self.rng.random() < 0.5:
+            rows, cols = self.rng.randint(5, 23), self.rng.randint(20, 80)
+        else:
+            rows, cols = self.rng.randint(5, 24), self.rng.randint(20, 79)
+        self.resizes += 1
+        self.child.setwinsize(rows, cols)
+        self.child.send('s')
+        seen = False
+        for _ in range(10):
+            i = self.child.expect(['TERMINAL TOO SMALL', '--More--', pexpect.TIMEOUT], timeout=3)
+            if i == 0:
+                seen = True
+                break
+            if i == 2:
+                break
+            self.child.send(' ')
+        self.child.setwinsize(24, 80)
+        if seen:
+            self.resizes_seen += 1
+            self.child.expect('press any key', timeout=3)
+            self.child.send(' ')
+        self.log(f"Resize to {cols}x{rows}: {'TERMINAL TOO SMALL shown' if seen else 'no prompt'}")
+        self._drain()
+
     def __del__(self):
         if self.child and self.child.isalive():
             try:

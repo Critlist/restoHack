@@ -10,7 +10,7 @@ import re
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Tuple, Dict
+from typing import Tuple, Dict, List
 
 import pexpect
 
@@ -29,7 +29,9 @@ class TestRunner:
     """Runs tests for individual sanitizer lanes"""
     
     def __init__(self, log_dir: Path, debug: bool = False, enhanced_mode: bool = False):
-        self.log_dir = log_dir
+        # Absolute: the game chdir()s into its hackdir, so a relative
+        # sanitizer log_path would silently point somewhere else.
+        self.log_dir = Path(log_dir).resolve()
         self.debug = debug
         self.enhanced_mode = enhanced_mode
         self._setup_core_dumps()
@@ -163,8 +165,13 @@ class TestRunner:
                     killed_by_signal = (runner.child.signalstatus is not None and 
                                        runner.child.signalstatus != 0)
                 
+                # Sanitizer reports written to log_path files (e.g. LeakSanitizer
+                # at exit) never appear on the pty stream, so check them too.
+                log_findings = self._check_sanitizer_logs(lane.name, i)
+                has_log_errors = bool(log_findings)
+
                 # Only write logs for actual memory/safety errors
-                if has_sanitizer_errors or killed_by_signal:
+                if has_sanitizer_errors or killed_by_signal or has_log_errors:
                     stderr_log_path = self.log_dir / f"{lane.name}_run{i:03d}.stderr"
                     run_log_path = self.log_dir / f"{lane.name}_run{i:03d}.log"
                     
@@ -178,11 +185,14 @@ class TestRunner:
                         log_file.write(f"Success: {success}\n")
                         if killed_by_signal:
                             log_file.write(f"Signal: Process killed by signal\n")
+                        for label, path in log_findings:
+                            log_file.write(f"Sanitizer log ({label}): {path}\n")
                         log_file.write(f"STDERR:\n{stderr_output}\n")
                 
                 # PASS: No sanitizer errors and no signals = healthy run
                 # Player death, timeout, normal quit are all acceptable
-                is_healthy = not has_sanitizer_errors and not killed_by_signal
+                is_healthy = (not has_sanitizer_errors and not killed_by_signal
+                              and not has_log_errors)
                 
                 if is_healthy:
                     print(f"✅ {lane.name} {i:03d}")
@@ -191,6 +201,9 @@ class TestRunner:
                     error_reason = []
                     if has_asan_errors: error_reason.append("asan-error")
                     if has_ubsan_errors: error_reason.append("ubsan-error") 
+                    for label, _path in log_findings:
+                        if label not in error_reason:
+                            error_reason.append(label)
                     if killed_by_signal: error_reason.append("signal")
                     print(f"❌ {lane.name} {i:03d} FAILED ({', '.join(error_reason)})")
                     failed += 1
@@ -201,18 +214,34 @@ class TestRunner:
         
         return passed, failed
     
-    def _check_sanitizer_logs(self, lane_name: str, run_number: int) -> bool:
-        """Check for sanitizer runtime errors in log files"""
-        has_errors = False
-        
-        # Check for ASan log files
-        for asan_log in self.log_dir.glob(f"{lane_name}_run{run_number:03d}.asan.*"):
-            has_errors = True
-            Colors.error(f"ASan error detected in {asan_log.name}")
-            
-        # Check for UBSan log files  
-        for ubsan_log in self.log_dir.glob(f"{lane_name}_run{run_number:03d}.ubsan.*"):
-            has_errors = True
-            Colors.error(f"UBSan error detected in {ubsan_log.name}")
-            
-        return has_errors
+    @staticmethod
+    def _classify_sanitizer_log(path: Path) -> str:
+        """Label a sanitizer log file by its content.
+
+        LeakSanitizer reports go to the ASan log (log_path=<base>.asan.<pid>),
+        so the file name alone cannot distinguish leaks from other ASan errors.
+        """
+        try:
+            text = path.read_text(errors="replace")
+        except OSError as e:
+            return f"unreadable-log({e.__class__.__name__})"
+        if "LeakSanitizer" in text or "leaked in" in text:
+            return "leak"
+        if ".ubsan." in path.name or "UndefinedBehaviorSanitizer" in text or "runtime error:" in text:
+            return "ubsan"
+        return "asan"
+
+    def _check_sanitizer_logs(self, lane_name: str, run_number: int) -> List[Tuple[str, Path]]:
+        """Find sanitizer report files for a run.
+
+        Sanitizers write log_path=<log_dir>/<lane>_run<NNN>.asan|.ubsan and
+        append .<pid>, hence the trailing '.*'.  Returns (label, path) pairs;
+        an empty list means no reports.
+        """
+        findings: List[Tuple[str, Path]] = []
+        for kind in ("asan", "ubsan"):
+            for log in sorted(self.log_dir.glob(f"{lane_name}_run{run_number:03d}.{kind}.*")):
+                label = self._classify_sanitizer_log(log)
+                Colors.error(f"Sanitizer report ({label}) in {log.name}")
+                findings.append((label, log))
+        return findings

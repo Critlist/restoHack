@@ -10,12 +10,12 @@ import argparse
 from pathlib import Path
 from datetime import datetime, timezone
 
-# Add lib directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent / 'lib'))
+# Put dev/ on sys.path so lib/ imports as a package (lib uses relative imports)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from colors import Colors
-from build_lanes import BuildLane, BuildManager
-from test_runner import TestRunner
+from lib.colors import Colors
+from lib.build_lanes import BuildLane, BuildManager
+from lib.test_runner import TestRunner
 
 
 def main():

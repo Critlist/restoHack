@@ -11,10 +11,10 @@ import argparse
 from pathlib import Path
 from datetime import datetime, timezone
 
-# Add lib directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent / 'lib'))
+# Put dev/ on sys.path so lib/ imports as a package (lib uses relative imports)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from colors import Colors
+from lib.colors import Colors
 
 
 def run_script(script_name: str, args: list, description: str) -> bool:

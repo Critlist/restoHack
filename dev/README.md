@@ -38,6 +38,21 @@ The targets are self-contained C reimplementations compiled one file at a
 time. They do not link or exercise anything from `src/` (the game code), so a
 clean fuzz run says nothing about restoHack itself.
 
+## Reproducible Runs
+
+Each run gets a fixed seed (printed as `seed=N` on failure). Lane builds are
+compiled with `-DHACK_TEST_SEED`, which makes the game seed its RNG from the
+`HACK_SEED` environment variable, and the harness seeds its own key choices
+with the same number. Rerunning the same lane and run number therefore replays
+the same dungeon and the same keystrokes. To open a failing seed by hand:
+
+```bash
+HACK_SEED=<N> ../build-asan-ubsan/hack -D
+```
+
+Release builds don't define `HACK_TEST_SEED` and ignore `HACK_SEED`.
+Date-dependent events (moon phase, Friday 13th, midnight) still vary by day.
+
 ## Orchestration Script
 
 Run multiple tests in sequence:

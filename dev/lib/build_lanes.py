@@ -95,11 +95,13 @@ class BuildManager:
             build_type = "Debug"
         else:
             build_type = "Release"
+        # Test lanes only: lets HACK_SEED seed the game's RNG so runs replay
+        cflags = f"{lane.cflags} -DHACK_TEST_SEED"
         cmake_cmd = [
             'cmake', '-S', str(self.project_root), '-B', lane.build_dir,
             f'-DCMAKE_BUILD_TYPE={build_type}',
             '-DCMAKE_C_COMPILER=clang',
-            f'-DCMAKE_C_FLAGS_DEBUG={lane.cflags}' if build_type == "Debug" else f'-DCMAKE_C_FLAGS_RELWITHDEBINFO={lane.cflags}',
+            f'-DCMAKE_C_FLAGS_DEBUG={cflags}' if build_type == "Debug" else f'-DCMAKE_C_FLAGS_RELWITHDEBINFO={cflags}',
             '-DENABLE_SANITIZERS=ON' if 'sanitize' in lane.cflags else '-DENABLE_SANITIZERS=OFF'
         ]
         

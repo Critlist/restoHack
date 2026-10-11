@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- dev/ sanitizer harness: runners start (H1), cleanup stays inside the lane's hackdir (H3), sanitizer log files and failed quits now fail runs (H2, H4), `--steps` honoured, README fixed (H5); test builds (`-DHACK_TEST_SEED`) seed the game RNG from `HACK_SEED` so runs replay; hardened lane now configures (RelWithDebInfo, `_FORTIFY_SOURCE=3`).
 - README: Hack 1.0.3 is dated 1985 (not 1984); security and strength-overflow claims reworded to match what was actually fixed; protoHack description credits Brian Harvey and Dan Stormont for preserving and publishing Fenlason's source.
 - README: current status updated to v1.1.7.
 - HISTORY_OF_HACK.md: replaced a misquoted `struct monst` with the verbatim original; fixed a misattributed Fenlason quote; Rogue trip dated to summer 1981 (per TIMELINE); custody dates and protoHack's role corrected; removed uncited sections (Dark Ages, Digital Archaeology, Technical Legacy, Philosophy, Conclusion).

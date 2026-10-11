@@ -54,7 +54,7 @@ class BuildManager:
             BuildLane(
                 "hardened",
                 str(self.project_root / "build-hardened"),
-                "-O2 -fPIE -fstack-protector-strong -D_FORTIFY_SOURCE=2"
+                "-O2 -fPIE -fstack-protector-strong"
             )
         ]
         

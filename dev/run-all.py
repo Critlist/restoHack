@@ -11,10 +11,10 @@ import argparse
 from pathlib import Path
 from datetime import datetime, timezone
 
-# Add lib directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent / 'lib'))
+# Put dev/ on sys.path so lib/ imports as a package (lib uses relative imports)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from colors import Colors
+from lib.colors import Colors
 
 
 def run_script(script_name: str, args: list, description: str) -> bool:
@@ -77,6 +77,9 @@ Examples:
     parser.add_argument('--test-only', action='store_true', help='Only test (assume built)')
     parser.add_argument('--no-clean', action='store_true', help='Skip clean rebuild (faster but may have stale objects)')
     
+    parser.add_argument('--tolerate-failure-percent', type=int, default=0,
+                        help='Opt-in: allow up to this percent of failed runs per sanitizer (default 0)')
+    
     # Fuzzer parameters
     parser.add_argument('--fuzz-duration', type=int, default=60, help='Fuzz duration per target (seconds)')
     
@@ -108,6 +111,7 @@ Examples:
     if args.no_clean:
         common_args.append('--no-clean')
     
+    common_args.extend(['--tolerate-failure-percent', str(args.tolerate_failure_percent)])
     common_args.extend(['--runs', str(args.runs)])
     common_args.extend(['--steps', str(args.steps)])
     

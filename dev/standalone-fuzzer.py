@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
 Standalone fuzzer for restoHack - tests critical functions without full linking
+
+NOTE: the libFuzzer targets are self-contained C snippets compiled one file at
+a time (clang -fsanitize=fuzzer,address). They link no src/ objects, so they
+do not exercise the restoHack game code.
 """
 
 import os
@@ -12,10 +16,10 @@ import struct
 from pathlib import Path
 from datetime import datetime
 
-# Add lib directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent / 'lib'))
+# Put dev/ on sys.path so lib/ imports as a package (lib uses relative imports)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from colors import Colors
+from lib.colors import Colors
 
 
 class StandaloneFuzzer:

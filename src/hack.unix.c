@@ -101,6 +101,25 @@ static uint32_t secure_seed(void) {
  * ADDS: Secure entropy sources (arc4random, getentropy) for unpredictable seeds
  */
 static void seed_prng(void) {
+#ifdef HACK_TEST_SEED
+  /* MODERN: test builds only (dev/ harness lanes define HACK_TEST_SEED).
+   * HACK_SEED=<n> makes the dungeon reproducible so a failing run can be
+   * replayed.  Never compiled into release builds: players can't pick seeds. */
+  {
+    const char *s = getenv("HACK_SEED");
+    char *end;
+    unsigned long v;
+
+    if (s && *s) {
+      errno = 0;
+      v = strtoul(s, &end, 10);
+      if (errno == 0 && *end == '\0') {
+        srandom((unsigned int)v);
+        return;
+      }
+    }
+  }
+#endif
 #ifdef HAVE_SRANDOMDEV
   srandomdev();
 #else

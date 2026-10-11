@@ -14,12 +14,17 @@ import pexpect
 class HackGameRunner:
     """Reliable 1984 Hack game automation with enhanced inventory and save/resume testing"""
     
-    def __init__(self, binary_path: str, debug: bool = False, enhanced_mode: bool = False):
+    def __init__(self, binary_path: str, debug: bool = False, enhanced_mode: bool = False,
+                 seed: Optional[int] = None):
         self.binary_path = binary_path
         self.debug = debug
         self.enhanced_mode = enhanced_mode
+        self.seed = seed
+        # Private RNG so a given seed always yields the same key sequence
+        self.rng = random.Random(seed)
         self.child: Optional[pexpect.spawn] = None
         self.current_inventory = []  # Track inventory state
+        self.fail_reason = ""        # Why the last session reported failure
         self.save_file_path = None   # Track save file location
         
     def log(self, msg: str) -> None:
@@ -48,9 +53,11 @@ class HackGameRunner:
                 self.child.expect(['choose a character', 'This game you will be', 'choose a character for you.'], timeout=5)
                 self.child.send(' ')  # Press space to continue after character selection
             except pexpect.TIMEOUT:
+                self.fail_reason = "startup timeout"
                 self.log("Timeout during startup sequence")
                 return False, -1
             except pexpect.EOF:
+                self.fail_reason = "EOF during startup"
                 self.log("Unexpected EOF during startup")
                 return False, -1
                 
@@ -65,10 +72,10 @@ class HackGameRunner:
             movement_keys = 'hjklyubnHJKLYUBN'  # 8 directions + diagonals
             
             # Test save/resume mid-game if enhanced mode enabled
-            if self.enhanced_mode and random.random() < 0.3:  # 30% chance
+            if self.enhanced_mode and self.rng.random() < 0.3:  # 30% chance
                 # Move some steps before save
-                for _ in range(50):
-                    self.child.send(random.choice(movement_keys))
+                for _ in range(min(50, steps)):
+                    self.child.send(self.rng.choice(movement_keys))
                     time.sleep(0.1)
                     
                 # Test save functionality
@@ -77,13 +84,19 @@ class HackGameRunner:
                     return True, 0
             
             # Standard movement phase
-            move_count = 200 if not self.enhanced_mode else random.randint(100, 300)
+            # Honor --steps; enhanced mode varies it between 0.5x and 1.5x
+            if self.enhanced_mode:
+                move_count = self.rng.randint(max(1, steps // 2), max(1, steps * 3 // 2))
+            else:
+                move_count = steps
+            self.last_move_count = move_count
+            self.log(f"Movement phase: {move_count} moves (steps={steps}, seed={self.seed})")
             for _ in range(move_count):
-                self.child.send(random.choice(movement_keys))
+                self.child.send(self.rng.choice(movement_keys))
                 time.sleep(0.1)  # Faster movement
                 
             # Phase 2: Enhanced inventory testing (if enabled)
-            if self.enhanced_mode and random.random() < 0.6:  # 60% chance
+            if self.enhanced_mode and self.rng.random() < 0.6:  # 60% chance
                 self._test_enhanced_inventory()
             else:
                 # Basic inventory test
@@ -94,11 +107,11 @@ class HackGameRunner:
             
             # Phase 3: Move some more (3 moves)
             for _ in range(3):
-                self.child.send(random.choice(movement_keys))
+                self.child.send(self.rng.choice(movement_keys))
                 time.sleep(0.1)
                 
             # Phase 4: Enhanced item operations (drop, pickup, apply)
-            if self.enhanced_mode and random.random() < 0.5:  # 50% chance
+            if self.enhanced_mode and self.rng.random() < 0.5:  # 50% chance
                 self._test_smart_item_operations()
             else:
                 # Basic drop and apply
@@ -109,26 +122,51 @@ class HackGameRunner:
             
             # Phase 5: Final moves (3 more)
             for _ in range(3):
-                self.child.send(random.choice(movement_keys))
+                self.child.send(self.rng.choice(movement_keys))
                 time.sleep(0.1)
                 
             # Quit sequence
-            self.child.send('Q')
-            time.sleep(0.5)
+            # Clear any pending prompt (--More--, "What do you want to drop?",
+            # death screens in wizard mode) that would swallow the 'Q'.
             try:
-                self.child.expect(['Really quit', 'quit'], timeout=3)
+                for attempt in range(8):
+                    self.child.send(' \x1b')
+                    time.sleep(0.3)
+                    self.child.send('Q')
+                    try:
+                        self.child.expect(['Really quit', 'quit'], timeout=2)
+                        break
+                    except pexpect.TIMEOUT:
+                        self.log(f"No quit prompt (attempt {attempt + 1}); retrying")
+                else:
+                    raise pexpect.TIMEOUT("no quit prompt after retries")
                 self.child.send('y')
                 time.sleep(0.5)
-                self.child.expect(pexpect.EOF, timeout=5)
+                # The exit may be preceded by --More-- pages (tombstone/score)
+                for _ in range(6):
+                    if self.child.expect([pexpect.EOF, '--More--'], timeout=5) == 0:
+                        break
+                    self.child.send(' ')
+                else:
+                    raise pexpect.TIMEOUT("game did not exit after quit")
                 # If we get here, clean exit
                 exit_code = self.child.exitstatus or 0
                 return True, exit_code
-            except:
-                # Always treat quit sequence as successful - game might die or timeout
+            except pexpect.EOF:
+                # Game already ended (e.g. the player died during the moves):
+                # not a harness failure; sanitizer/signal checks still apply.
+                self.log("Game exited before/during quit sequence")
+                self.child.close()
+                return True, self.child.exitstatus or 0
+            except pexpect.TIMEOUT:
+                tail = (self.child.before or b"")[-200:] if isinstance(self.child.before, bytes) else str(self.child.before)[-200:]
+                self.fail_reason = f"quit sequence timed out (last output: {tail!r})"
+                self.log("Quit sequence timed out; killing game")
                 self.child.terminate(force=True)
-                return True, 0  # Normal quit, regardless of timeout/death
+                return False, -2
             
         except Exception as e:
+            self.fail_reason = f"exception: {e}"
             self.log(f"Session failed: {e}")
             if self.child and self.child.isalive():
                 self.child.terminate(force=True)
@@ -160,7 +198,7 @@ class HackGameRunner:
                 
             # Test selective inventory commands
             inventory_tests = ['I$', 'I*', 'IU']  # Money, gems, unpaid
-            chosen_test = random.choice(inventory_tests)
+            chosen_test = self.rng.choice(inventory_tests)
             
             self.child.send(chosen_test)
             time.sleep(0.4)
@@ -174,7 +212,7 @@ class HackGameRunner:
                 pass
                 
             # Test item interaction if we have items
-            if random.random() < 0.4:  # 40% chance to try item interaction
+            if self.rng.random() < 0.4:  # 40% chance to try item interaction
                 self._test_item_interaction()
                 
         except Exception as e:
@@ -189,7 +227,7 @@ class HackGameRunner:
         
         # List of common starting item letters in 1984 Hack
         possible_items = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-        test_item = random.choice(possible_items)
+        test_item = self.rng.choice(possible_items)
         
         # Test different item operations
         operations = [
@@ -200,7 +238,7 @@ class HackGameRunner:
             ('q', 'quaff'),     # Drink potion
         ]
         
-        operation, desc = random.choice(operations)
+        operation, desc = self.rng.choice(operations)
         
         try:
             self.child.send(operation)
@@ -245,8 +283,8 @@ class HackGameRunner:
         ]
         
         # Randomly choose 1-2 operations to test
-        num_ops = random.randint(1, 2)
-        chosen_ops = random.sample(operations, num_ops)
+        num_ops = self.rng.randint(1, 2)
+        chosen_ops = self.rng.sample(operations, num_ops)
         
         for operation in chosen_ops:
             try:
@@ -263,7 +301,7 @@ class HackGameRunner:
         
         # Test dropping specific items by letter
         test_items = ['a', 'b', 'c', 'd', 'e']  # Common starting items
-        item_to_drop = random.choice(test_items)
+        item_to_drop = self.rng.choice(test_items)
         
         try:
             self.child.send('d')  # Drop command
@@ -314,7 +352,7 @@ class HackGameRunner:
                 ], timeout=1)
                 
                 # Send space or 'n' to handle prompts
-                response = random.choice([' ', 'n', 'y'])
+                response = self.rng.choice([' ', 'n', 'y'])
                 self.child.send(response)
                 time.sleep(0.3)
                 
@@ -355,7 +393,7 @@ class HackGameRunner:
             
             # Try different drop patterns
             drop_patterns = ['!', '%', '*', 'au', '']  # Potions, food, all, all unpaid, none
-            pattern = random.choice(drop_patterns)
+            pattern = self.rng.choice(drop_patterns)
             
             self.child.send(pattern)
             time.sleep(0.4)

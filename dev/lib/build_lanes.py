@@ -54,7 +54,7 @@ class BuildManager:
             BuildLane(
                 "hardened",
                 str(self.project_root / "build-hardened"),
-                "-O2 -fPIE -fstack-protector-strong -D_FORTIFY_SOURCE=2"
+                "-O2 -fPIE -fstack-protector-strong"
             )
         ]
         
@@ -88,18 +88,21 @@ class BuildManager:
             shutil.rmtree(lane.build_dir)
             
         # Configure with proper build type and flags
-        # Use project-supported build types: Debug, Release, Hardened
+        # CMakeLists.txt accepts only Debug, Release, RelWithDebInfo;
+        # RelWithDebInfo is its hardened profile (PIE, RELRO, fortify)
         if "hardened" in lane.name.lower():
-            build_type = "Hardened"
+            build_type = "RelWithDebInfo"
         elif any(flag in lane.cflags for flag in ["-fsanitize", "-g"]):
             build_type = "Debug"
         else:
             build_type = "Release"
+        # Test lanes only: lets HACK_SEED seed the game's RNG so runs replay
+        cflags = f"{lane.cflags} -DHACK_TEST_SEED"
         cmake_cmd = [
             'cmake', '-S', str(self.project_root), '-B', lane.build_dir,
             f'-DCMAKE_BUILD_TYPE={build_type}',
             '-DCMAKE_C_COMPILER=clang',
-            f'-DCMAKE_C_FLAGS_DEBUG={lane.cflags}' if build_type == "Debug" else f'-DCMAKE_C_FLAGS_RELWITHDEBINFO={lane.cflags}',
+            f'-DCMAKE_C_FLAGS_{build_type.upper()}={cflags}',
             '-DENABLE_SANITIZERS=ON' if 'sanitize' in lane.cflags else '-DENABLE_SANITIZERS=OFF'
         ]
         

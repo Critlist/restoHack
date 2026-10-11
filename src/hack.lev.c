@@ -82,6 +82,67 @@ void savelev(
 #endif /* NOWORM */
 }
 
+static void freeobjchn(struct obj *otmp) {
+  struct obj *otmp2;
+
+  for (; otmp; otmp = otmp2) {
+    otmp2 = otmp->nobj;
+    free((char *)otmp);
+  }
+}
+
+/**
+ * MODERN ADDITION (2025): Free the current level's chains without writing
+ * them (savelev() frees as it writes).
+ *
+ * WHY: dorecover() reads the current level once only to reach the data that
+ * follows it in the save file, then rewinds and reads it again.  getlev()
+ * overwrites fmon, fobj, fgold, ftrap, billobjs, head_engr and the worm
+ * segments without freeing them, so the first copy leaked on every restore.
+ * Same in the original 1985 code.
+ */
+void freelev(void) {
+  struct monst *mtmp, *mtmp2;
+  struct gold *gold, *gold2;
+  struct trap *trap, *trap2;
+#ifndef NOWORM
+  struct wseg *wtmp, *wtmp2;
+  int tmp;
+#endif /* NOWORM */
+
+  for (mtmp = fmon; mtmp; mtmp = mtmp2) {
+    mtmp2 = mtmp->nmon;
+    freeobjchn(mtmp->minvent);
+    free((char *)mtmp);
+  }
+  fmon = 0;
+  for (gold = fgold; gold; gold = gold2) {
+    gold2 = gold->ngold;
+    free((char *)gold);
+  }
+  fgold = 0;
+  for (trap = ftrap; trap; trap = trap2) {
+    trap2 = trap->ntrap;
+    free((char *)trap);
+  }
+  ftrap = 0;
+  freeobjchn(fobj);
+  fobj = 0;
+  freeobjchn(billobjs);
+  billobjs = 0;
+  cleanup_all_engravings();
+#ifndef NOWORM
+  for (tmp = 1; tmp < 32; tmp++) {
+    for (wtmp = wsegs[tmp]; wtmp; wtmp = wtmp2) {
+      wtmp2 = wtmp->nseg;
+      free((char *)wtmp);
+    }
+    wsegs[tmp] = wheads[tmp] = 0;
+  }
+#endif /* NOWORM */
+  setgd(); /* fmon is empty: clears the vault guard pointer */
+}
+
 void bwrite(int fd, char *loc, unsigned num) {
   /* lint wants the 3rd arg of write to be an int; lint -p an unsigned */
   if (write(fd, loc, (size_t)num) != (ssize_t)num) /* MODERN: proper POSIX types */

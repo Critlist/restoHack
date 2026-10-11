@@ -490,6 +490,8 @@ extern void seeoff(int mode);
 extern void
 savelev(int fd,
         unsigned char lev); /* MODERN: unsigned to prevent buffer underflow */
+/* MODERN ADDITION (2025): free the current level without saving it */
+extern void freelev(void);
 
 /* FORWARD DECLARATIONS FOR hack.mon.c */
 struct engr;

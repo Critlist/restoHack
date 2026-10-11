@@ -6,7 +6,7 @@ Test runner for sanitizer lanes
 import os
 import sys  
 import time
-import glob
+import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -17,6 +17,12 @@ import pexpect
 from .colors import Colors
 from .game_runner import HackGameRunner
 from .build_lanes import BuildLane
+
+
+# dev/lib/test_runner.py -> repo root
+REPO_ROOT = Path(__file__).resolve().parents[2]
+# Level files the game writes into its hackdir: <name>.<level-number>
+_LEVEL_FILE_RE = re.compile(r"^.+\.\d+$")
 
 
 class TestRunner:
@@ -65,6 +71,43 @@ class TestRunner:
         
         return env
         
+    def _clean_lane_artifacts(self, lane: BuildLane) -> None:
+        """Remove stale game state from this lane's own hackdir.
+
+        Deletes only what the game itself writes: hackdir/save/*, level files
+        (<name>.<N>) and game.lock.  Never touches anything outside
+        <lane.build_dir>/hackdir, and refuses to run if that directory is not
+        inside the repository checkout this harness lives in.
+        """
+        hackdir = (Path(lane.build_dir) / "hackdir").resolve()
+        try:
+            hackdir.relative_to(REPO_ROOT)
+        except ValueError:
+            Colors.error(f"Refusing to clean {hackdir}: outside {REPO_ROOT}")
+            return
+        if not hackdir.is_dir():
+            return
+
+        victims = []
+        save_dir = hackdir / "save"
+        if save_dir.is_dir():
+            victims.extend(p for p in save_dir.iterdir() if p.is_file())
+        victims.extend(p for p in hackdir.iterdir()
+                       if p.is_file() and _LEVEL_FILE_RE.match(p.name))
+        lock = hackdir / "game.lock"
+        if lock.is_file():
+            victims.append(lock)
+
+        for victim in victims:
+            try:
+                victim.unlink()
+                if self.debug:
+                    print(f"[CLEAN] removed {victim}", file=sys.stderr)
+            except FileNotFoundError:
+                pass
+            except OSError as e:
+                Colors.error(f"Could not remove {victim}: {e}")
+
     def test_lane(self, lane: BuildLane, runs: int = 50, steps: int = 40) -> Tuple[int, int]:
         """Test a built lane with stress runs and proper logging"""
         if not os.path.exists(lane.binary_path):
@@ -80,14 +123,7 @@ class TestRunner:
             run_env = self._lane_env(lane, i)
             
             try:
-                # Clean up any leftover save files that might cause restore issues
-                save_patterns = [f"/tmp/*{lane.name}*", f"/home/mjh/projects/restoHack/*save*", f"/home/mjh/projects/restoHack/*.hack"]
-                for pattern in save_patterns:
-                    for save_file in glob.glob(pattern):
-                        try:
-                            os.unlink(save_file)
-                        except:
-                            pass
+                self._clean_lane_artifacts(lane)
                 
                 # Use corrected pexpect approach with proper game flow
                 with tempfile.NamedTemporaryFile(mode="w+b", delete=False) as temp_stderr:

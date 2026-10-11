@@ -25,7 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **STABILITY**: Shrinking the terminal below 80x24 mid-game exited without saving (`check_resize()` re-ran `startup()`, whose size check calls `error()`). The new `term_getsize()` re-reads the size via `TIOCGWINSZ`, and the game now waits on the "TERMINAL TOO SMALL" screen until the window is big enough; EOF there saves and exits through `hangup()`. (#21)
-- **MEMORY**: Save/restore leaks from the original code. `save_engravings()` dropped the engraving list without freeing it on every level save; `dorecover()` read the current level twice and leaked the first copy (monsters, objects, gold, traps, engravings, worm segments). Engravings are now freed as they're written, and the new `freelev()` frees the first copy before the reread.
+- **MEMORY**: Save/restore leaks from the original code. `save_engravings()` dropped the engraving list without freeing it on every level save; `dorecover()` read the current level twice and leaked the first copy (monsters, objects, gold, traps, engravings, worm segments). Engravings are now freed as they're written, and the new `freelev()` frees the first copy before the reread. (#23)
+- **MEMORY**: `savelev()` cleared the worm segment lists without freeing them, leaking every worm segment on each level save (stairs, level teleport, `S`, and the level copies during restore); also in the original code. Segments are now freed as they're written.
 
 ## [1.1.7] - 2026-06-05
 

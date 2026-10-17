@@ -45,8 +45,9 @@ static inline int safe_strcat(char *dst, size_t cap, const char *src) {
     return -1; /* buffer already full/corrupted */
   size_t remaining = cap - len;
 
-  /* MODERN: Validate pointer is not corrupted before using in snprintf */
-  if (!src || (uintptr_t)src < 0x1000 || (uintptr_t)src > 0x7FFFFFFFFFFF) {
+  /* MODERN: a NULL src is written as "<corrupted>" rather than passed to
+   * snprintf. */
+  if (!src) {
     int wrote = snprintf(dst + len, remaining, "<corrupted>");
     return (wrote >= 0 && (size_t)wrote < remaining) ? 0 : 1;
   }
@@ -62,8 +63,8 @@ static inline int safe_strcpy(char *dst, size_t cap, const char *src) {
   if (cap == 0)
     return -1;
 
-  /* MODERN: Validate pointer is not corrupted before using in snprintf */
-  if (!src || (uintptr_t)src < 0x1000 || (uintptr_t)src > 0x7FFFFFFFFFFF) {
+  /* MODERN: same guard (see safe_strcat). */
+  if (!src) {
     int wrote = snprintf(dst, cap, "<corrupted>");
     return (wrote >= 0 && (size_t)wrote < cap) ? 0 : 1;
   }

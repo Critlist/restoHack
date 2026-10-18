@@ -299,7 +299,9 @@ int veryold(int fd) {
     if (!(kill(lockedpid, 0) == -1 && errno == ESRCH))
       return (0);
   }
-  (void)close(fd);
+  /* Original 1984: (void) close(fd); -- moved to getlock(), which owns fd.
+   * Closing here meant getlock() closed it a second time whenever the final
+   * unlink() below failed (veryold() then returns 0). */
   for (i = 1; i <= MAXLEVEL; i++) { /* try to remove all */
     glo(i);
     (void)unlink(lock);
@@ -370,8 +372,12 @@ void getlock(void) {
       error("Cannot open %s", lock);
     }
 
-    if (veryold(fd)) /* if true, this closes fd and unlinks lock */
+    /* veryold() unlinks stale saves but does not close fd; getlock() owns it.
+     * (It used to be closed twice when veryold()'s final unlink() failed.) */
+    if (veryold(fd)) { /* stale saves removed: reuse this lock name */
+      (void)close(fd);
       goto gotlock;
+    }
     (void)close(fd);
   } while (i < locknum);
 

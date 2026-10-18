@@ -272,8 +272,11 @@ int main(int argc, char *argv[]) {
     (void)signal(SIGQUIT, SIG_IGN);
     (void)signal(SIGINT, SIG_IGN);
     if (!locknum) {
-      (void)strncpy(lock, plname, PL_NSIZ + 4 - 1);
-      lock[PL_NSIZ + 4 - 1] = '\0'; /* MODERN: Ensure null termination */
+      /* Original 1984: strcpy(lock, plname); -- the copy count is the source
+       * size, not lock's: reading PL_NSIZ+3 bytes from plname[PL_NSIZ] walked
+       * past the array. The last 3 bytes of lock stay free for glo()'s ".N". */
+      (void)strncpy(lock, plname, PL_NSIZ - 1);
+      lock[PL_NSIZ - 1] = '\0'; /* MODERN: Ensure null termination */
     }
 #ifdef ENABLE_MODERN_LOCKING
     /* MODERN ADDITION (2025): Clean up any stale locks on startup */
@@ -283,8 +286,8 @@ int main(int argc, char *argv[]) {
 #ifdef WIZARD
   } else {
     char *sfoo;
-    (void)strncpy(lock, plname, PL_NSIZ + 4 - 1);
-    lock[PL_NSIZ + 4 - 1] = '\0'; /* MODERN: Ensure null termination */
+    (void)strncpy(lock, plname, PL_NSIZ - 1); /* MODERN: see !locknum case */
+    lock[PL_NSIZ - 1] = '\0'; /* MODERN: Ensure null termination */
     if ((sfoo = getenv("MAGIC")))
       while (*sfoo) {
         switch (*sfoo++) {

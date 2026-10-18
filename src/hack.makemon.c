@@ -145,35 +145,35 @@ gotmon:
 }
 
 coord enexto(xchar xx, xchar yy) {
-  xchar x, y;
+  int x, y; /* MODERN: int, not xchar: range grows and xchar can wrap */
   coord foo[15], *tfoo;
   int range;
 
   tfoo = foo;
   range = 1;
   do { /* full kludge action. */
-    for (x = (xchar)(xx - range); x <= xx + range; x++) /* MODERN: cast to xchar */
+    for (x = xx - range; x <= xx + range; x++)
       if (goodpos(x, yy - range)) {
         tfoo->x = (unsigned char)x; /* MODERN: cast to coord field type */
         tfoo++->y = (unsigned char)(yy - range); /* MODERN: cast to coord field type */
         if (tfoo == &foo[15])
           goto foofull;
       }
-    for (x = (xchar)(xx - range); x <= xx + range; x++) /* MODERN: cast to xchar */
+    for (x = xx - range; x <= xx + range; x++)
       if (goodpos(x, yy + range)) {
         tfoo->x = (unsigned char)x; /* MODERN: cast to coord field type */
         tfoo++->y = (unsigned char)(yy + range); /* MODERN: cast to coord field type */
         if (tfoo == &foo[15])
           goto foofull;
       }
-    for (y = (xchar)(yy + 1 - range); y < yy + range; y++) /* MODERN: cast to xchar */
+    for (y = yy + 1 - range; y < yy + range; y++)
       if (goodpos(xx - range, y)) {
         tfoo->x = (unsigned char)(xx - range); /* MODERN: cast to coord field type */
         tfoo++->y = (unsigned char)y; /* MODERN: cast to coord field type */
         if (tfoo == &foo[15])
           goto foofull;
       }
-    for (y = (xchar)(yy + 1 - range); y < yy + range; y++) /* MODERN: cast to xchar */
+    for (y = yy + 1 - range; y < yy + range; y++)
       if (goodpos(xx + range, y)) {
         tfoo->x = (unsigned char)(xx + range); /* MODERN: cast to coord field type */
         tfoo++->y = (unsigned char)y; /* MODERN: cast to coord field type */

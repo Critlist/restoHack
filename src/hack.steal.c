@@ -108,7 +108,10 @@ struct obj *steal(struct monst *mtmp) {
         stop_occupation();
         pline("%s seduces you and %s off your %s.",
               Amonnam(mtmp, Blind ? "gentle" : "beautiful"),
-              otmp->cursed ? "helps you to take" : "you start taking",
+              /* Original 1984 tested otmp->cursed here, but it had just been
+               * cleared above, so "helps you to take" was unreachable. Use
+               * the saved value. */
+              curssv ? "helps you to take" : "you start taking",
               (otmp == uarmg)   ? "gloves"
               : (otmp == uarmh) ? "helmet"
                                 : "armor");

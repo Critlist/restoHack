@@ -131,12 +131,16 @@ quit_game
 set repeated 0
 for {set try 1} {$try <= 3 && !$repeated} {incr try} {
     start_game "qwertz"
+    # The counted zap goes first: "y" cancelled at the item prompt uses no
+    # turn, but the "z" move does, and gives nearby monsters time to close in.
     if {$try == 1} {
         expect_zap "y" "qwertz: y zaps"
-        expect_no_zap "z" "qwertz: z moves"
     }
     set repeated [counted_zap]
     send_log "\n>>> counted zap, game $try: repeated=$repeated\n"
+    if {$try == 1} {
+        expect_no_zap "z" "qwertz: z moves"
+    }
     quit_game
 }
 if {!$repeated} {

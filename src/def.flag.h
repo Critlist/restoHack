@@ -18,6 +18,7 @@ struct flag {
   unsigned no_rest_on_space : 1; /* spaces are ignored */
   unsigned beginner : 1;
   unsigned female : 1;
+  unsigned qwertz : 1; /* Modern: QWERTZ, swap y and z (off by default) */
   unsigned invlet_constant : 1; /* let objects keep their
                                    inventory symbol */
   unsigned move : 1;

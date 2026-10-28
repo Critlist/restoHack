@@ -131,6 +131,13 @@ void parseoptions(char *opts, boolean from_env) {
     return;
   }
 
+  /* Modern: QWERTZ keyboards (Central Europe): use z to move NW, y to zap.
+   * Same semantics as NetHack's swap_yz; see rhack()/getdir(). */
+  if (!strncmp(opts, "qwertz", 6)) {
+    flags.qwertz = !negated;
+    return;
+  }
+
   /* name:string */
   if (!strncmp(opts, "name", 4)) {
     extern char plname[PL_NSIZ];
@@ -198,7 +205,7 @@ bad:
             "Here <options> is a list of <option>s separated by commas.");
       pline("%s%s%s",
             "Simple (boolean) options are rest_on_space, news, time, ",
-            "null, tombstone, (fe)male. ",
+            "null, tombstone, (fe)male, qwertz. ", /* Modern: qwertz */
             "These can be negated by prefixing them with '!' or \"no\".");
       pline("%s",
             "A string option is name, as in HACKOPTIONS=\"name:Merlin-W\".");
@@ -273,6 +280,13 @@ int doset(void) {
     }
     if (flags.notombstone && remaining > 0) {
       int added = snprintf(buf + len, remaining, "notombstone,");
+      if (added > 0 && added < remaining) {
+        len += added;
+        remaining -= added;
+      }
+    }
+    if (flags.qwertz && remaining > 0) { /* Modern: qwertz option */
+      int added = snprintf(buf + len, remaining, "qwertz,");
       if (added > 0 && added < remaining) {
         len += added;
         remaining -= added;

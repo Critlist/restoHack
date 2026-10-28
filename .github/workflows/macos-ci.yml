@@ -100,3 +100,25 @@ jobs:
       shell: bash
       run: |
         bash "${GITHUB_WORKSPACE}/.github/scripts/verify-map.sh" /tmp/hack-expect.log
+
+    - name: qwertz key-binding test (expect)
+      shell: bash
+      run: |
+        set -Eeuo pipefail
+
+        cd "build"
+        export TERM=vt100
+
+        set +e
+        perl -e 'alarm 180; exec @ARGV' expect -f "${GITHUB_WORKSPACE}/.github/scripts/qwertz-test.exp"
+        EXPECT_RC=$?
+        set -e
+
+        echo "===== Expect session log ====="
+        cat /tmp/hack-qwertz.log 2>/dev/null || echo "(no log file found)"
+        echo "===== End log ====="
+
+        if [ "$EXPECT_RC" -ne 0 ]; then
+          echo "qwertz test failed (expect exit code: $EXPECT_RC)"
+          exit 1
+        fi

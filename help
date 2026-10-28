@@ -105,7 +105,9 @@ Commands:
 		If this is empty, the current options are reported.
 		Otherwise it should be a list of options separated by commas.
 		Possible boolean options are: oneline, time, news, tombstone,
-		rest_on_space, fixinvlet, beginner, male, female.
+		rest_on_space, fixinvlet, beginner, male, female, qwertz.
+		qwertz (off by default) swaps y and z for QWERTZ keyboards:
+		z moves northwest and y zaps.
 		They can be negated by prefixing them with '!' or "no".
 		A string option is name; it supplies the answer to the question
 		"Who are you?"; it may have a suffix.

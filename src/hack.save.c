@@ -143,7 +143,7 @@ static void pack_flags(int fd, const struct flag *f) {
   if (f->made_amulet)
     packed2 |= 0x01000000;
   if (f->qwertz)
-    packed2 |= 0x40000000; /* spare bit 30: old saves read back as 0 */
+    packed2 |= 0x40000000; /* Modern: qwertz, spare bit 30; old saves read 0 */
   packed2 |= (f->no_of_wizards & 3) << 25;
   packed2 |= (f->moonphase & 7) << 27;
   sw_u32(fd, packed2);
@@ -188,7 +188,7 @@ static void unpack_flags(int fd, struct flag *f) {
   f->botlx = (packed2 & 0x00400000) ? 1 : 0;
   f->nscrinh = (packed2 & 0x00800000) ? 1 : 0;
   f->made_amulet = (packed2 & 0x01000000) ? 1 : 0;
-  f->qwertz = (packed2 & 0x40000000) ? 1 : 0;
+  f->qwertz = (packed2 & 0x40000000) ? 1 : 0; /* Modern: qwertz */
   f->no_of_wizards = (packed2 >> 25) & 3;
   f->moonphase = (packed2 >> 27) & 7;
 

@@ -1,0 +1,148 @@
+#!/usr/bin/expect -f
+#
+# Key-binding test for the qwertz option (y/z swap, off by default)
+#
+# Checks, against the real binary:
+#   1. Default bindings are untouched: z zaps, y does not.
+#   2. HACKOPTIONS=qwertz swaps them: y zaps, z does not.
+#   3. A counted command replays the swapped key, not the raw one:
+#      "2y" must zap twice. (rhack() swaps parse()'s buffer in place and the
+#      main loop replays that same buffer, so a second swap would turn the
+#      repeat into a move NW.)
+#
+# Plays a Wizard (name suffix -W), who always starts with two wands. The zap
+# direction prompt is answered with ESC: dozap() still uses the turn, so the
+# count repeats without the wand doing anything.
+#
+# A monster attack ends a count early (nomul(0)), so check 3 gets up to three
+# games. Without the fix the second zap prompt can never appear.
+#
+# Usage: expect -f qwertz-test.exp   (from the build directory, ./hack present)
+# Writes session log to /tmp/hack-qwertz.log.
+#
+
+set timeout 15
+log_file -noappend /tmp/hack-qwertz.log
+match_max 50000
+
+proc fail {code msg} {
+    send_log "\n>>> FAIL: $msg\n"
+    puts "\nFAIL: $msg"
+    exit $code
+}
+
+# Start a game as a Wizard and wait for the map, dismissing any --More--.
+proc start_game {options} {
+    global spawn_id
+    if {$options eq ""} {
+        catch {unset ::env(HACKOPTIONS)}
+    } else {
+        set ::env(HACKOPTIONS) $options
+    }
+    spawn ./hack -u qz[pid]-W
+    # The status line is drawn with the map. Match it before --More--: one
+    # read can hold both, and a --More-- match would swallow it.
+    expect {
+        "Hp " {}
+        -exact "--More--" { send " "; exp_continue }
+        "Hit space" { send " "; exp_continue }
+        timeout { fail 2 "map did not render (HACKOPTIONS=$options)" }
+        eof { fail 3 "game exited during startup (HACKOPTIONS=$options)" }
+    }
+    # Drain trailing messages.
+    set timeout 3
+    expect {
+        -exact "--More--" { send " "; exp_continue }
+        timeout {}
+    }
+    set timeout 15
+}
+
+proc quit_game {} {
+    send "Q"
+    expect {
+        "Really quit?" { send "y" }
+        timeout { fail 4 "no quit prompt" }
+        eof { return }
+    }
+    expect {
+        -re {\[yn[aq]*\]} { send "n"; exp_continue }
+        -exact "--More--" { send " "; exp_continue }
+        eof {}
+        timeout { fail 5 "game did not exit after quit" }
+    }
+    catch wait
+}
+
+# Send key and require (or forbid) the zap item prompt.
+proc expect_zap {key label} {
+    send -- $key
+    expect {
+        "to zap" { send "\033"; send_log "\n>>> ok: $label\n" }
+        timeout { fail 10 "$label: '$key' did not zap" }
+        eof { fail 11 "$label: game exited" }
+    }
+    set timeout 3
+    expect { -exact "--More--" { send " "; exp_continue } timeout {} }
+    set timeout 15
+}
+
+proc expect_no_zap {key label} {
+    set timeout 3
+    send -- $key
+    expect {
+        "to zap" { fail 12 "$label: '$key' zapped" }
+        -exact "--More--" { send " "; exp_continue }
+        eof { fail 13 "$label: game exited" }
+        timeout { send_log "\n>>> ok: $label\n" }
+    }
+    set timeout 15
+}
+
+# Check 3: returns 1 if "2y" produced a second zap prompt, 0 if the count was
+# cut short without one.
+proc counted_zap {} {
+    send "2y"
+    expect {
+        -re {want to zap \[([a-zA-Z])} {
+            send $expect_out(1,string)
+        }
+        timeout { fail 20 "2y: no zap prompt" }
+        eof { fail 21 "2y: game exited" }
+    }
+    expect {
+        "want to zap" { send "\033"; return 1 }
+        "In what direction" { send "\033"; exp_continue }
+        -exact "--More--" { send " "; exp_continue }
+        -re {\[yn[aq]*\]} { send "n"; exp_continue }
+        "For what do you wish" { send "\033"; exp_continue }
+        timeout { return 0 }
+        eof { fail 22 "2y: game exited" }
+    }
+}
+
+# 1. Default bindings
+start_game ""
+expect_zap "z" "default: z zaps"
+expect_no_zap "y" "default: y moves"
+quit_game
+
+# 2 + 3. qwertz
+set repeated 0
+for {set try 1} {$try <= 3 && !$repeated} {incr try} {
+    start_game "qwertz"
+    if {$try == 1} {
+        expect_zap "y" "qwertz: y zaps"
+        expect_no_zap "z" "qwertz: z moves"
+    }
+    set repeated [counted_zap]
+    send_log "\n>>> counted zap, game $try: repeated=$repeated\n"
+    quit_game
+}
+if {!$repeated} {
+    fail 30 "qwertz: '2y' zapped once, then the repeat was not a zap"
+}
+
+send_log "\n>>> All qwertz checks passed!\n"
+puts "\nqwertz: all checks passed"
+exit 0

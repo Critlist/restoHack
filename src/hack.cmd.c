@@ -96,9 +96,9 @@ struct ext_func_tab extcmdlist[] = {
 
 extern char *parse(), quitchars[];
 
-/* QWERTZ keyboards (Central Europe): with the qwertz option, the physical
- * key in the Y position (labelled Z) moves NW and the one in the Z position
- * (labelled Y) zaps - i.e. the y/z bindings are exchanged, both cases.
+/* Modern: QWERTZ keyboards (Central Europe). With the qwertz option (off by
+ * default) the physical key in the Y position (labelled Z) moves NW and the
+ * one in the Z position (labelled Y) zaps: y/z are exchanged, both cases.
  * Same semantics as NetHack's swap_yz. Only command dispatch (rhack) and
  * direction prompts (getdir) are translated; text entry is untouched. */
 static char swap_yz(char c) {
@@ -128,10 +128,15 @@ void rhack(char *cmd) {
     flags.nopick = 0;
     cmd = parse();
   }
-  *cmd = swap_yz(*cmd);
-  /* f/F/m/M movement prefixes carry the direction as second char */
-  if ((*cmd == 'f' || *cmd == 'F' || *cmd == 'm' || *cmd == 'M') && cmd[1])
-    cmd[1] = swap_yz(cmd[1]);
+  /* Modern: qwertz option. Swap only fresh input: a counted command is
+   * replayed from the same (already swapped) parse() buffer via
+   * rhack(save_cm), and swapping it again would turn "2z" into a move. */
+  if (firsttime) {
+    *cmd = swap_yz(*cmd);
+    /* f/F/m/M movement prefixes carry the direction as second char */
+    if ((*cmd == 'f' || *cmd == 'F' || *cmd == 'm' || *cmd == 'M') && cmd[1])
+      cmd[1] = swap_yz(cmd[1]);
+  }
   if (!*cmd || (*cmd & 0377) == 0377 ||
       (flags.no_rest_on_space && *cmd == ' ')) {
     bell();
@@ -286,7 +291,7 @@ int getdir(boolean s) {
 
   if (s)
     pline("In what direction?");
-  dirsym = swap_yz(readchar());
+  dirsym = swap_yz(readchar()); /* Modern: qwertz option */
   if (!movecmd(dirsym) && !u.dz) {
     if (!index(quitchars, dirsym))
       pline("What a strange direction!");

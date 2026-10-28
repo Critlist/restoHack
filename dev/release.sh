@@ -67,7 +67,10 @@ parse_args() {
 }
 
 ensure_in_repo_root() {
-  [[ -d .git ]] || die "Run from the repo root (no .git found)."
+  # In a worktree .git is a file, not a directory, so ask git instead.
+  local top
+  top=$(git rev-parse --show-toplevel 2>/dev/null) || die "Not inside a git repository."
+  [[ "$(cd "${top}" && pwd -P)" == "$(pwd -P)" ]] || die "Run from the repo root (${top})."
 }
 
 ensure_prepare_exists() {

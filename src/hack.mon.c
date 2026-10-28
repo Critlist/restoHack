@@ -535,8 +535,7 @@ void mpickgold(struct monst *mtmp) {
     mtmp->mgold += gold->amount;
     freegold(gold);
     if (levl[(int)mtmp->mx][(int)mtmp->my].scrsym == '$')
-      if (levl[(int)mtmp->mx][(int)mtmp->my].scrsym == '$')
-        newsym(mtmp->mx, mtmp->my);
+      newsym(mtmp->mx, mtmp->my); /* MODERN: 1985 had one check here */
   }
 }
 
@@ -549,8 +548,7 @@ void mpickgems(struct monst *mtmp) {
           freeobj(otmp);
           mpickobj(mtmp, otmp);
           if (levl[(int)mtmp->mx][(int)mtmp->my].scrsym == GEM_SYM)
-            if (levl[(int)mtmp->mx][(int)mtmp->my].scrsym == GEM_SYM)
-              newsym(mtmp->mx, mtmp->my); /* %% */
+            newsym(mtmp->mx, mtmp->my); /* %% */
           return;                         /* pick only one object */
         }
 }

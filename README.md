@@ -109,6 +109,14 @@ cmake --preset=release && cmake --build build
 
 **For BSD systems, development builds, IDE integration, and troubleshooting:** see [**Build Instructions**](docs/BUILD.md)
 
+### Raspberry Pi Pico (RP2040)
+
+Hack 1.0.3 runs bare-metal on the Raspberry Pi Pico via
+[rp2040-console](https://github.com/neuhaus/rp2040-console), a minimal
+terminal platform for the board. See the
+[restoHack recipe](https://github.com/neuhaus/rp2040-console/tree/main/applications/restohack)
+for build and flash instructions.
+
 ### Windows (Work in Progress)
 
 A `windows-port` branch exists targeting **MSVC** and **MinGW64** using **PDCurses**.

@@ -147,9 +147,14 @@ void freeobj(obj) struct obj *obj;
   if (obj == fobj)
     fobj = fobj->nobj;
   else {
-    for (otmp = fobj; otmp->nobj != obj; otmp = otmp->nobj)
-      if (!otmp)
-        panic("error in freeobj");
+    /* Original 1984: for(otmp = fobj; otmp->nobj != obj; otmp = otmp->nobj)
+     *                 if(!otmp) panic("error in freeobj");
+     * The loop test dereferenced otmp->nobj before !otmp could run, so the
+     * panic was unreachable and a missing object crashed instead. */
+    for (otmp = fobj; otmp && otmp->nobj != obj; otmp = otmp->nobj)
+      ;
+    if (!otmp)
+      panic("error in freeobj");
     otmp->nobj = obj->nobj;
   }
 }
@@ -162,9 +167,13 @@ void freegold(gold) struct gold *gold;
   if (gold == fgold)
     fgold = gold->ngold;
   else {
-    for (gtmp = fgold; gtmp->ngold != gold; gtmp = gtmp->ngold)
-      if (!gtmp)
-        panic("error in freegold");
+    /* Original 1984: for(gtmp = fgold; gtmp->ngold != gold; gtmp = gtmp->ngold)
+     *                 if(!gtmp) panic("error in freegold");
+     * Same unreachable guard as freeobj(). */
+    for (gtmp = fgold; gtmp && gtmp->ngold != gold; gtmp = gtmp->ngold)
+      ;
+    if (!gtmp)
+      panic("error in freegold");
     gtmp->ngold = gold->ngold;
   }
   free((char *)gold);

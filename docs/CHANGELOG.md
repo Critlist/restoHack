@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.8] - 2026-10-28
+
+### Added
+
+- `qwertz` option for QWERTZ keyboards (off by default): with `HACKOPTIONS=qwertz` the key labelled Z moves northwest and the one labelled Y zaps, as in NetHack's `swap_yz`. Contributed by [@neuhaus](https://github.com/neuhaus); a counted zap (`2y`) replayed as a move until fixed before merge. CI now checks the bindings and the counted replay (`.github/scripts/qwertz-test.exp`). (#29, #40)
+- README: link to the bare-metal Raspberry Pi Pico (RP2040) port by [@neuhaus](https://github.com/neuhaus). (#26)
+
 ### Changed
 
 - dev/ soak setup: hardened lane runnable (`run-hardened.py`, `run-all.py --hardened`, in the default set); `--seed-offset` for fresh dungeons per soak and `--only-run` to replay one run; enhanced mode adds `<`/`>` and terminal shrink/restore cycles; moves drain output instead of sleeping (1000-step runs practical); non-zero game exit now fails a run; soak recipe in dev/README.
@@ -27,6 +34,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **STABILITY**: Shrinking the terminal below 80x24 mid-game exited without saving (`check_resize()` re-ran `startup()`, whose size check calls `error()`). The new `term_getsize()` re-reads the size via `TIOCGWINSZ`, and the game now waits on the "TERMINAL TOO SMALL" screen until the window is big enough; EOF there saves and exits through `hangup()`. (#21)
 - **MEMORY**: Save/restore leaks from the original code. `save_engravings()` dropped the engraving list without freeing it on every level save; `dorecover()` read the current level twice and leaked the first copy (monsters, objects, gold, traps, engravings, worm segments). Engravings are now freed as they're written, and the new `freelev()` frees the first copy before the reread. (#23)
 - **MEMORY**: `savelev()` cleared the worm segment lists without freeing them, leaking every worm segment on each level save (stairs, level teleport, `S`, and the level copies during restore); also in the original code. Segments are now freed as they're written.
+- **STABILITY**: `enexto()` hung when the nearest free square was 49 or more columns away: its `xchar` (signed char) loop counters wrapped past 127, so the scan never ended. Now `int`. (#38)
+- **STABILITY**: `getlock()` closed the lock file descriptor a second time when `veryold()` closed it and then failed to unlink a stale lock; the caller now owns the descriptor. (#32)
+- **STABILITY**: The lock name was copied from `plname` with the destination's size (35 bytes from a 32-byte array); now bounded by `PL_NSIZ`. Latent, as `plname` is always terminated. (#33)
+- **STABILITY**: `freeobj()`/`freegold()` dereferenced the list pointer before their NULL check could run, so a missing object crashed instead of reaching `panic()`; also in the original code. (#34)
+- **STABILITY**: `RND()` divides by zero for a modulus of 0; it now returns 0 for non-positive arguments. Latent: level generation never passes one (checked over 1000 seeds of every dungeon level). (#36)
+- **CORRECTNESS**: A nymph stealing cursed armor always said "you start taking" off: the curse bit was cleared before the message tested it; also in the original code. Now uses the saved value. (#35)
+- **CORRECTNESS**: `hack.o_init.c` declared `bwrite()`/`mread()` as `int (int, char *, int)`, conflicting with their `void (int, char *, unsigned)` definitions (undefined behavior). (#30)
+- **CORRECTNESS**: `safe_strcat()`/`safe_strcpy()` (hack.objnam.c) rejected pointers outside an assumed 64-bit address range, which breaks on targets such as WebAssembly; now a NULL check only. (#30)
+- Removed a duplicated `scrsym` test in `mpickgold()`/`mpickgems()` introduced during modernization. (#37)
+- Help file: the diagonal directions were listed swapped (`y: ne, u: nw, b: se, n: sw`); the original 1985 file has the same error and is kept unchanged in `docs/historical/`. (#39)
 
 ## [1.1.7] - 2026-06-05
 

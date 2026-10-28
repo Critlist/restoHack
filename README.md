@@ -132,8 +132,8 @@ terminal. A free Steam release is planned once the Windows build is stable.
 
 ## Current Status
 
-v1.1.7 — Stable Release
-Security and stability fixes from a code review: format-string bugs, a missing `setuid` privilege drop, a crash when `HOME` is unset, and file-descriptor leaks. See [CHANGELOG](docs/CHANGELOG.md).
+v1.1.8 — Stable Release
+Fixes from a community code review (a level-placement hang, a double `close()`, unreachable `panic()` guards), save/restore memory leaks, waiting out a too-small terminal instead of exiting, and an optional `qwertz` key layout. See [CHANGELOG](docs/CHANGELOG.md).
 
 ---
 

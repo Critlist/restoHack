@@ -15,8 +15,10 @@
 #include <stdio.h>
 #include <string.h>
 /* Function prototypes */
-extern int bwrite(int fd, char *buf, int len);
-extern int mread(int fd, char *buf, int len);
+/* MODERN: Signatures must match hack.lev.c/hack.h exactly (void return,
+ * unsigned length). Conflicting declarations are UB. */
+extern void bwrite(int fd, char *buf, unsigned len);
+extern void mread(int fd, char *buf, unsigned len);
 /* MODERN: CONST-CORRECTNESS: error message is read-only */
 extern void error(const char *s, ...);
 /* MODERN: CONST-CORRECTNESS: panic message is read-only */

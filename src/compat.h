@@ -29,4 +29,10 @@
 #define random  rand
 #endif
 
+/* Modern: WebAssembly/browser compatibility layer injection (termcap shim
+ * from the unix-tui-to-wasm submodule at wasm/utw) */
+#ifdef __EMSCRIPTEN__
+#include "tui.h"
+#endif
+
 #endif /* RESTOHACK_COMPAT_H */

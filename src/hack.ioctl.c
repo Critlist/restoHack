@@ -23,6 +23,14 @@
 /* MODERN: CONST-CORRECTNESS: settty message is read-only */
 extern void settty(const char *s);
 
+#ifdef __EMSCRIPTEN__
+/* Terminal state is managed through termios in hack.tty.c. */
+void getioctls(void) {}
+
+void setioctls(void) {}
+
+#else /* !__EMSCRIPTEN__ */
+
 #ifdef BSD
 /**
  * MODERN ADDITION (2025): Platform-specific terminal interface selection
@@ -101,6 +109,8 @@ void setioctls(void) {
   (void)ioctl(fileno(stdin), (int)TCSETA, &termio);
 #endif /* BSD */
 }
+
+#endif /* !__EMSCRIPTEN__ */
 
 #ifdef SUSPEND /* implies BSD */
 int dosuspend(void) {

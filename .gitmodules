@@ -1,0 +1,3 @@
+[submodule "wasm/utw"]
+	path = wasm/utw
+	url = https://github.com/Critlist/unix-tui-to-wasm.git

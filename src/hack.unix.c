@@ -177,6 +177,12 @@ int midnight(void) { return (getlt()->tm_hour == 0); }
 struct stat buf, hbuf;
 
 void gethdate(char *name) {
+#ifdef __EMSCRIPTEN__
+  /* Modern: in the browser there is no executable path to stat */
+  (void)name;
+  memset(&hbuf, 0, sizeof(hbuf));
+  return;
+#else
   /* old version - for people short of space */
   /* char *np; */ /* MODERN ADDITION (2025): Commented out to avoid
                      redeclaration with PATH version */
@@ -261,6 +267,7 @@ void gethdate(char *name) {
   }
   error("Cannot get status of %s.", (np = rindex(name, '/')) ? np + 1 : name);
 #endif
+#endif /* __EMSCRIPTEN__ */
 }
 
 int uptodate(int fd) {

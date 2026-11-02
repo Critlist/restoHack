@@ -69,6 +69,11 @@
 #endif          /* BSD */
 #endif          /* UNIX */
 
+/* Modern: no job control in the browser (Emscripten has no SIGTSTP). */
+#ifdef __EMSCRIPTEN__
+#undef SUSPEND
+#endif
+
 #ifdef CHDIR
 /*
  * If you define HACKDIR, then this will be the default playground;

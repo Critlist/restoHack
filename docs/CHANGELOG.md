@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- WebAssembly port: play in the browser, offline, with saves kept in IndexedDB (IDBFS under `/save`). Built with Emscripten 3.1.47 (pinned) via `wasm/build-wasm.sh` into a self-contained bundle with SHA-256-verified xterm.js 5.5.0 / xterm-pty 0.12.0. The termcap shim, pty bridge and bundle staging come from the `unix-tui-to-wasm` template, pinned as the `wasm/utw` submodule (Critlist fork, `333eda3`). `__EMSCRIPTEN__` guards skip `gethdate()`'s executable stat, the BSD tty ioctls and `SUSPEND`; native builds are unchanged. Contributed by [@neuhaus](https://github.com/neuhaus). (#31)
+- Raspberry Pi Pico (RP2040) images `hack.uf2` and `hack-volume.uf2`, built from `v1.1.8` by [@neuhaus](https://github.com/neuhaus), are attached to the v1.1.8 release with `SHA256SUMS-pico.txt`; the README now links there. (#27, #43)
+
+### Fixed
+
+- **CORRECTNESS**: `somegold()` was defined `long long` (a stray `long` from the K&R-to-ANSI conversion) but declared `long` in `hack.bones.c`; where `long` is 32 bits (wasm32, i386) the two disagreed. Restored the original `long`. (#42)
+
 ## [1.1.8] - 2026-10-28
 
 ### Added

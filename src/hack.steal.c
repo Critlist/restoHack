@@ -4,7 +4,6 @@
 
 #include "hack.h"
 long /* actually returns something that fits in an int */
-    long
     somegold(void) {
   return ((u.ugold < 100)     ? u.ugold
           : (u.ugold > 10000) ? rnd(10000)

@@ -113,7 +113,11 @@ cmake --preset=release && cmake --build build
 
 Hack 1.0.3 runs bare-metal on the Raspberry Pi Pico via
 [rp2040-console](https://github.com/neuhaus/rp2040-console), a minimal
-terminal platform for the board. See the
+terminal platform for the board, ported by [@neuhaus](https://github.com/neuhaus).
+Prebuilt `hack.uf2` and `hack-volume.uf2` images are attached to the
+[v1.1.8 release](https://github.com/Critlist/restoHack/releases/tag/v1.1.8)
+(checksums in `SHA256SUMS-pico.txt`); hold BOOTSEL and copy each file to the
+board in turn. See the
 [restoHack recipe](https://github.com/neuhaus/rp2040-console/tree/main/applications/restohack)
 for build and flash instructions.
 

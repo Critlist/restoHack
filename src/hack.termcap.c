@@ -22,7 +22,6 @@ static char *HO, *CL, *CE, *hack_UP, *CM, *ND, *XD, *hack_BC, *SO, *SE, *TI,
     *TE;
 static char *VS, *VE;
 static int SG;
-static char hack_PC = '\0';
 char *CD;   /* tested in pri.c: docorner() */
 int CO, LI; /* used in pri.c and whatis.c */
 
@@ -48,7 +47,7 @@ void term_getsize(void) {
 void startup(void) {
   char *term;
   char *tptr;
-  char *tbufptr, *pc;
+  char *tbufptr;
 
   tptr = (char *)alloc(1024);
 
@@ -59,8 +58,7 @@ void startup(void) {
     error("Unknown terminal type: %s.", term);
   if (tgetflag("NP") || tgetflag("nx"))
     flags.nonull = 1;
-  if ((pc = tgetstr("pc", &tbufptr)))
-    hack_PC = *pc;
+  /* Original 1984 stored terminfo's pad character here but never used it. */
   if (!(hack_BC = tgetstr("bc", &tbufptr))) {
     if (!tgetflag("bs"))
       error("Terminal must backspace.");

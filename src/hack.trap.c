@@ -159,7 +159,6 @@ int mintrap(struct monst *mtmp) {
   } else {
     int tt = trap->ttyp;
     int in_sight = cansee(mtmp->mx, mtmp->my);
-    extern char mlarge[];
 
     if (mtmp->mtrapseen & (1 << tt)) {
       /* he has been in such a trap - perhaps he escapes */
@@ -343,7 +342,6 @@ int teleok(int x, int y) { /* might throw him into a POOL */
 }
 
 int dotele(void) {
-  extern char pl_character[];
 
   if (
 #ifdef WIZARD

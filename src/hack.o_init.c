@@ -10,6 +10,7 @@
  */
 
 #include "config.h" /* for typedefs */
+#include "hack.h"
 #include "def.objects.h"
 #include "hack.onames.h" /* for LAST_GEM */
 #include <stdio.h>
@@ -136,7 +137,6 @@ int probtype(int let) {
 
 void setgemprobs(void) {
   int j, first;
-  extern xchar dlevel;
 
   first = bases[letindex(GEM_SYM)];
 

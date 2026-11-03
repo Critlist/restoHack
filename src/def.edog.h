@@ -1,3 +1,6 @@
+#ifndef DEF_EDOG_H
+#define DEF_EDOG_H
+
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /* def.edog.h - version 1.0.2 */
 
@@ -10,3 +13,5 @@ struct edog {
   long whistletime;  /* last time he whistled */
 };
 #define EDOG(mp) ((struct edog *)(&(mp->mextra[0])))
+
+#endif /* DEF_EDOG_H */

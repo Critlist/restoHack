@@ -96,7 +96,7 @@ struct func_tab cmdlist[] = {
 struct ext_func_tab extcmdlist[] = {
     {"dip", dodip}, {"pray", dopray}, {(char *)0, donull}};
 
-extern char *parse(void), quitchars[];
+extern char *parse(void);
 
 /* Modern: QWERTZ keyboards (Central Europe). With the qwertz option (off by
  * default) the physical key in the Y position (labelled Z) moves NW and the

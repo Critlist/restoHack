@@ -4,7 +4,6 @@
 
 #include "hack.h"
 
-extern struct monst youmonst;
 
 /* MODERN: CONST-CORRECTNESS: flash effect strings are read-only */
 const char *const fl[] = {"magic missile", "bolt of fire", "sleep ray",
@@ -350,7 +349,6 @@ struct monst *boomhit(int dx, int dy) {
   int i, ct;
   struct monst *mtmp;
   char sym = ')';
-  extern schar xdir[], ydir[];
 
   bhitpos.x = u.ux;
   bhitpos.y = u.uy;

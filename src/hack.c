@@ -12,8 +12,6 @@
 #include "hack.h"
 #include <stdio.h>
 
-extern const char
-    *nomovemsg; /* MODERN: const because assigned string literals */
 extern const char *exclam(int force);
 
 /* called on movement:

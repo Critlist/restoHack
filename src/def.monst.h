@@ -1,3 +1,6 @@
+#ifndef DEF_MONST_H
+#define DEF_MONST_H
+
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /* def.monst.h - version 1.0.2 */
 
@@ -59,3 +62,5 @@ struct monst *m_at(int x, int y);
 #define NAME(mtmp) (((char *)mtmp->mextra) + mtmp->mxlth)
 #define MREGEN "TVi1"
 #define UNDEAD "ZVW "
+
+#endif /* DEF_MONST_H */

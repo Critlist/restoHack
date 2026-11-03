@@ -6,7 +6,6 @@
 #include "hack.h"
 extern const char
     *nomovemsg; /* MODERN: const because assigned string literals */
-extern struct monst youmonst;
 
 int dodrink(void) {
   struct obj *otmp, *objs;
@@ -382,7 +381,6 @@ int dodip(void) {
 }
 
 void ghost_from_bottle(void) {
-  extern struct permonst pm_ghost;
   struct monst *mtmp;
 
   if (!(mtmp = makemon(PM_GHOST, u.ux, u.uy))) {

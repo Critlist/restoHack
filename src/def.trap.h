@@ -1,3 +1,6 @@
+#ifndef DEF_TRAP_H
+#define DEF_TRAP_H
+
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /* def.trap.h - version 1.0.2 */
 
@@ -25,3 +28,5 @@ struct trap *t_at(int x, int y);
 #define MIMIC 8   /* used only in mklev.c */
 #define TRAPNUM 9 /* if not less than 32, change sizeof(ttyp) */
                   /* see also mtrapseen (bit map) */
+
+#endif /* DEF_TRAP_H */

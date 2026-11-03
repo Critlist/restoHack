@@ -1,3 +1,6 @@
+#ifndef DEF_ESHK_H
+#define DEF_ESHK_H
+
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /* def.eshk.h - version 1.0.2 : added 'following' */
 
@@ -22,3 +25,5 @@ struct eshk {
   char customer[PL_NSIZ]; /* most recent customer */
   char shknam[PL_NSIZ];
 };
+
+#endif /* DEF_ESHK_H */

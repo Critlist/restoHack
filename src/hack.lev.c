@@ -248,7 +248,6 @@ void getlev(int fd, int pid, xchar lev) {
   {
     long tmoves = (moves > omoves) ? moves - omoves : 0;
     struct monst *mtmp, *mtmp2;
-    extern char genocided[];
 
     for (mtmp = fmon; mtmp; mtmp = mtmp2) {
       long newhp; /* tmoves may be very large */
@@ -318,7 +317,6 @@ void getlev(int fd, int pid, xchar lev) {
 
 void mread(int fd, char *buf, unsigned len) {
   int rlen;
-  extern boolean restoring;
 
   ssize_t read_result = read(fd, buf, (size_t)len); /* MODERN: proper POSIX types */
   rlen = (int)read_result; /* MODERN: cast ssize_t to int for compatibility */
@@ -334,7 +332,6 @@ void mread(int fd, char *buf, unsigned len) {
 }
 
 void mklev(void) {
-  extern boolean in_mklev;
 
   if (getbones())
     return;

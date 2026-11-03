@@ -28,9 +28,6 @@ coord
  */
 getpos(int force, const char *goal) {
   int cx, cy, i, c;
-  extern char sdir[];           /* defined in hack.c */
-  extern schar xdir[], ydir[];  /* idem */
-  extern char *visctrl(char c); /* see below */
   coord cc;
   pline("(For instructions type a ?)");
   cx = u.ux;

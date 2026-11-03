@@ -30,7 +30,6 @@
 #include <unistd.h>
 extern int CO, LI; /* usually COLNO and ROWNO+2 */
 extern char *CD;
-extern char quitchars[];
 
 /* Function prototypes for functions defined in this file */
 int dowhatis(void);
@@ -180,7 +179,6 @@ void set_pager(int mode) /* 0: open  1: wait+close  2: close */
 
 int page_line(const char *s) /* returns 1 if we should quit */
 {
-  extern char morc;
 
   if (cury == LI - 1) {
     if (!*s)
@@ -341,7 +339,6 @@ int page_file(const char *fnam,
       return (0);
     }
     if (child(1)) {
-      extern char *catmore;
 
       /* Now that child() does a setuid(getuid()) and a chdir(),
          we may not be able to open file fnam anymore, so make

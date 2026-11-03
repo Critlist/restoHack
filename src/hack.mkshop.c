@@ -115,7 +115,6 @@ gottype:
     /* This is said to happen sometimes, but I've never seen it. */
     if (wizard) {
       int j = sroom->doorct;
-      extern int doorindex;
 
       pline("Where is shopdoor?");
       pline("Room at (%d,%d),(%d,%d).", sroom->lx, sroom->ly, sroom->hx,
@@ -232,7 +231,6 @@ void mkzoo(int type) {
 }
 
 static struct permonst *morguemon(void) {
-  extern struct permonst pm_ghost;
   int i = rn2(100), hd = rn2(dlevel);
 
   if (hd > 10 && i < 10)
@@ -246,7 +244,6 @@ void mkswamp(void) /* Michiel Huisjes & Fred de Wilde */
 {
   struct mkroom *sroom;
   int sx, sy, i, eelct = 0;
-  extern struct permonst pm_eel;
 
   for (i = 0; i < 5; i++) { /* 5 tries */
     sroom = &rooms[rn2(nroom)];

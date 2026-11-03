@@ -37,7 +37,7 @@ void stealgold(struct monst *mtmp) {
 /* steal armor after he finishes taking it off */
 unsigned stealoid; /* object to be stolen */
 unsigned stealmid; /* monster doing the stealing */
-int stealarm() {
+int stealarm(void) {
   struct monst *mtmp;
   struct obj *otmp;
 

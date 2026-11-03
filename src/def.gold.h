@@ -9,5 +9,5 @@ struct gold {
 
 extern struct gold *fgold;
 struct gold *g_at(int x,
-                  int y); /* K&R function with proper parameter declaration */
+                  int y); /* gold on the floor at (x, y) */
 #define newgold() (struct gold *)alloc(sizeof(struct gold))

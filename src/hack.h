@@ -116,8 +116,7 @@ extern int rn1(int x, int y);
 extern void fracture_rock(struct obj *obj);
 
 /* PLAYER SYSTEM PROTOTYPES - from studying hack.u_init.c */
-/* K&R OBJECT CREATION SYSTEM - Forward declarations for authentic 1984
- * functions */
+/* OBJECT CREATION SYSTEM - forward declarations */
 extern struct obj *mkobj(int let);   /* Create object by symbol */
 extern struct obj *mksobj(int otyp); /* Create object by type */
 extern struct obj *mkobj_at(int let, int x,
@@ -126,7 +125,6 @@ extern struct obj *mksobj_at(int otyp, int x,
                              int y); /* Create specific object at position */
 extern int letter(int c);            /* Check if character is a letter */
 extern int probtype(int let);        /* Get probable object type from symbol */
-/* addinv() - K&R function, implicitly declared */
 extern int weight(struct obj *obj);
 extern void setworn(struct obj *obj, long mask);
 extern void init_objects(void);
@@ -244,9 +242,6 @@ extern void getlock(void);
 extern void setftty(void);
 extern int dorecover(int fd);
 extern int u_init();
-/* role_index() - K&R function, implicitly declared */
-/* ini_inv() - K&R function, implicitly declared */
-/* wiz_inv() - K&R function, implicitly declared */
 extern int dlevelp(int level);
 extern void mklev(void);
 extern void seeobjs(void);

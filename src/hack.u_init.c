@@ -14,8 +14,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+/* Original 1984: unused macros, kept for reference. */
+#if 0
 #define Strcpy (void)strcpy
 #define Strcat (void)strcat
+#endif
 #define UNDEF_TYP 0
 #define UNDEF_SPE '\177'
 /* addinv() declared in hack.h */

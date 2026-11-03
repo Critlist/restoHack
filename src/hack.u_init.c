@@ -101,7 +101,7 @@ struct trobj Wizard[] = {{ELVEN_CLOAK, 0, ARMOR_SYM, 1, 1},
                          {UNDEF_TYP, UNDEF_SPE, SCROLL_SYM, 3, 0},
                          {0, 0, 0, 0, 0}};
 
-int u_init() {
+int u_init(void) {
   int i;
   char exper = 'y', pc;
   extern char readchar();
@@ -276,9 +276,7 @@ got_suffix:
   return 1; /* MODERN: Return success indicator - was missing return value */
 }
 
-int ini_inv(trop)
-struct trobj *trop;
-{
+int ini_inv(struct trobj *trop) {
   struct obj *obj;
   /* mkobj() declared in hack.h */
   while (trop->trolet) {
@@ -340,7 +338,7 @@ struct trobj *trop;
 }
 
 #ifdef WIZARD
-int wiz_inv() {
+int wiz_inv(void) {
   struct trobj *trop = &Extra_objs[0];
   char *ep = getenv("INVENT");
   int type;
@@ -370,7 +368,7 @@ int wiz_inv() {
 }
 #endif /* WIZARD */
 
-int plnamesuffix() {
+int plnamesuffix(void) {
   char *p;
   if ((p = rindex(plname, '-'))) {
     *p = 0;

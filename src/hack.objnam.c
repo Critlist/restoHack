@@ -106,9 +106,7 @@ static inline void force_ellipsis(char *dst, size_t cap) {
 extern char *eos(char *s);
 extern int bases[];
 
-char *strprepend(s, pref)
-char *s, *pref;
-{
+char *strprepend(char *s, char *pref) {
   int i = strlen(pref);
   if (i > PREFIX) {
     pline("WARNING: prefix too short.");
@@ -119,17 +117,13 @@ char *s, *pref;
   return (s);
 }
 
-char *sitoa(a)
-int a;
-{
+char *sitoa(int a) {
   static char buf[13];
   (void)snprintf(buf, sizeof(buf), (a < 0) ? "%d" : "+%d", a);
   return (buf);
 }
 
-char *typename(otyp)
-int otyp;
-{
+char *typename(int otyp) {
   static char buf[BUFSZ];
   /* MODERN: Add bounds checking for objects array access */
   if (otyp < 0 || otyp >= NROFOBJECTS) {
@@ -184,9 +178,7 @@ int otyp;
   return (buf);
 }
 
-char *xname(obj)
-struct obj *obj;
-{
+char *xname(struct obj *obj) {
   static char bufr[BUFSZ];
   char *buf = &(bufr[PREFIX]); /* leave room for "17 -3 " */
   /* MODERN: Add bounds checking for objects array access */
@@ -360,9 +352,7 @@ nopl:
   return (buf);
 }
 
-char *doname(obj)
-struct obj *obj;
-{
+char *doname(struct obj *obj) {
   char prefix[PREFIX];
   char *bp = xname(obj);
   if (obj->quan != 1)
@@ -428,10 +418,7 @@ void setan(const char *str,
     Sprintf(buf, "a %s", str);
 }
 
-char *aobjnam(otmp, verb)
-struct obj *otmp;
-char *verb;
-{
+char *aobjnam(struct obj *otmp, char *verb) {
   char *bp = xname(otmp);
   char prefix[PREFIX];
   if (otmp->quan != 1) {
@@ -454,9 +441,7 @@ char *verb;
   return (bp);
 }
 
-char *Doname(obj)
-struct obj *obj;
-{
+char *Doname(struct obj *obj) {
   char *s = doname(obj);
 
   if ('a' <= *s && *s <= 'z')
@@ -468,9 +453,7 @@ struct obj *obj;
 const char *const wrp[] = {"wand", "ring", "potion", "scroll", "gem"};
 char wrpsym[] = {WAND_SYM, RING_SYM, POTION_SYM, SCROLL_SYM, GEM_SYM};
 
-struct obj *readobjnam(bp)
-char *bp;
-{
+struct obj *readobjnam(char *bp) {
   char *p;
   int i;
   int cnt, spe, spesgn, typ, heavy;

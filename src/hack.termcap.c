@@ -190,7 +190,7 @@ int xputc(int c) { return fputc(c, stdout); }
 
 void xputs(char *s) { tputs(s, 1, xputc); }
 
-void cl_end() {
+void cl_end(void) {
   if (CE)
     xputs(CE);
   else { /* no-CE fix - free after Harold Rynes */
@@ -206,7 +206,7 @@ void cl_end() {
   }
 }
 
-void clear_screen() {
+void clear_screen(void) {
   xputs(CL);
   curx = cury = 1;
 }
@@ -221,17 +221,17 @@ void home(void) {
   curx = cury = 1;
 }
 
-void standoutbeg() {
+void standoutbeg(void) {
   if (SO)
     xputs(SO);
 }
 
-void standoutend() {
+void standoutend(void) {
   if (SE)
     xputs(SE);
 }
 
-void backsp() {
+void backsp(void) {
   xputs(hack_BC);
   curx--;
 }

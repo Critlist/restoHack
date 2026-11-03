@@ -146,7 +146,7 @@ void makelevel(void) {
 #endif /* QUEST */
 }
 
-int makerooms() {
+int makerooms(void) {
   struct rectangle *rsp;
   int lx, ly, hx, hy, lowx, lowy, hix, hiy, dx, dy;
   int tryct = 0, xlim, ylim;
@@ -460,7 +460,7 @@ chk:
   return (1);
 }
 
-void makecorridors() {
+void makecorridors(void) {
   int a, b;
 
   nxcor = 0;
@@ -627,13 +627,13 @@ void join(int a, int b) {
     smeq[a] = smeq[b];
 }
 
-void make_niches() {
+void make_niches(void) {
   int ct = rnd(nroom / 2 + 1);
   while (ct--)
     makeniche(FALSE);
 }
 
-void makevtele() { makeniche(TRUE); }
+void makevtele(void) { makeniche(TRUE); }
 
 void makeniche(boolean with_trap) {
   struct mkroom *aroom;

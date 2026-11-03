@@ -340,7 +340,7 @@ void glibr(void) {
   }
 }
 
-struct obj *some_armor() {
+struct obj *some_armor(void) {
   struct obj *otmph = uarm;
   if (uarmh && (!otmph || !rn2(4)))
     otmph = uarmh;

@@ -32,7 +32,7 @@ Think resto-mod: the soul stays vintage, the internals get a precision rebuild.
 
 * **Modern Build System** – CMake replaces Makefiles. Clean builds on Linux, FreeBSD, and other Unix systems.
 * **Authentic Systems** – Over a dozen original systems restored from source, untouched in design.
-* **Complete K\&R Modernization** – Entire codebase converted to ANSI C (\~250 functions updated).
+* **Ongoing K\&R Modernization** – Most of the codebase is converted to ANSI C; some 1985-era definitions and unprototyped declarations remain.
 * **Unix/Linux Fixes** – No more hardcoded BSD paths or FS quirks.
 * **Cross-Platform Verified** – Linux (glibc/musl) and macOS are CI-tested on GitHub Actions; FreeBSD was CI-tested on Cirrus CI until that service shut down in June 2026.
 

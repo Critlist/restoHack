@@ -19,6 +19,9 @@ Run specific sanitizers individually:
 # Skip clean rebuild for faster iteration (may have stale objects)
 ./run-asan.py --no-clean --test-only
 
+# Valgrind memcheck (slow; save/resume paths need --enhanced)
+./run-valgrind.py --runs 5 --steps 60 --enhanced
+
 # Standalone fuzzer (see "Fuzzer" below; there is no run-fuzz.py)
 ./standalone-fuzzer.py --duration 120
 ```
@@ -87,6 +90,24 @@ fails on a sanitizer report (pty or log file), a signal, a non-zero exit,
 or a hung quit. The hardened lane has no sanitizer logs, so signals and
 exit status are its whole check.
 
+## Valgrind
+
+`run-valgrind.py` drives the same sessions under `valgrind --tool=memcheck`:
+invalid reads/writes, uninitialised values, and definite/indirect/possible
+leaks all fail the run. Still-reachable blocks and system-library leaks are
+ignored (`dev/valgrind.supp` covers ncurses/terminfo). Each run's report is
+written to `test-logs/valgrind-<timestamp>/valgrind_run<NNN>.<pid>.log`.
+
+Memcheck runs the game 20-50x slower, so the lane waits longer between keys
+(`VALGRIND_SETTLE` in `run-valgrind.py`) and is **not** part of the default
+`run-all.py` set. Ask for it explicitly:
+
+```bash
+./run-valgrind.py --runs 5 --steps 60 --enhanced   # save/resume + resize paths
+./run-all.py --valgrind --runs 5 --steps 60 --enhanced
+./run-all.py --all                                 # includes Valgrind
+```
+
 ## Orchestration Script
 
 Run multiple tests in sequence:
@@ -97,8 +118,9 @@ Run multiple tests in sequence:
 
 # Run specific combinations
 ./run-all.py --asan --ubsan      # Just ASan and UBSan
+./run-all.py --valgrind          # Just Valgrind memcheck (slow)
 ./run-all.py --fuzz             # Just fuzzer (runs standalone-fuzzer.py)
-./run-all.py --all              # Sanitizers plus fuzzer
+./run-all.py --all              # Sanitizers, Valgrind and fuzzer
 
 # With parameters
 ./run-all.py --debug --runs 25 --enhanced
@@ -119,6 +141,7 @@ Run multiple tests in sequence:
   - `run-ubsan.py` - UndefinedBehaviorSanitizer  
   - `run-asan-ubsan.py` - Combined ASan+UBSan
   - `run-hardened.py` - Hardened build, no sanitizers (signals + exit status)
+  - `run-valgrind.py` - Valgrind memcheck (errors and leaks)
 
 - `standalone-fuzzer.py` - Standalone libFuzzer targets (self-contained, no `src/` linkage)
 - `run-all.py` - Simple orchestration

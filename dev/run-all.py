@@ -56,6 +56,7 @@ Examples:
   %(prog)s --ubsan            # Run only UBSan  
   %(prog)s --asan-ubsan       # Run only ASan+UBSan combined
   %(prog)s --hardened         # Run only the hardened (no-sanitizer) lane
+  %(prog)s --valgrind         # Run only the Valgrind memcheck lane
   %(prog)s --fuzz             # Run only fuzzer
   %(prog)s --all              # Run all lanes + fuzzer
   %(prog)s --debug --runs 25  # Debug mode with 25 runs per sanitizer
@@ -68,6 +69,7 @@ Examples:
     parser.add_argument('--ubsan', action='store_true', help='Run UBSan only')
     parser.add_argument('--asan-ubsan', action='store_true', help='Run ASan+UBSan only')
     parser.add_argument('--hardened', action='store_true', help='Run hardened lane only')
+    parser.add_argument('--valgrind', action='store_true', help='Run Valgrind memcheck lane only')
     parser.add_argument('--fuzz', action='store_true', help='Run fuzzer only')
     parser.add_argument('--all', action='store_true', help='Run all lanes + fuzzer')
     
@@ -94,11 +96,13 @@ Examples:
     
     # Determine what to run: specific flags select only those; otherwise
     # every lane (plus the fuzzer with --all)
-    selected = any([args.asan, args.ubsan, args.asan_ubsan, args.hardened, args.fuzz])
+    selected = any([args.asan, args.ubsan, args.asan_ubsan, args.hardened,
+                    args.valgrind, args.fuzz])
     run_asan = args.asan if selected else True
     run_ubsan = args.ubsan if selected else True
     run_asan_ubsan = args.asan_ubsan if selected else True
     run_hardened = args.hardened if selected else True
+    run_valgrind = args.valgrind if selected else args.all
     run_fuzz = args.fuzz if selected else args.all
     
     # Build common arguments for sanitizer tests
@@ -151,6 +155,11 @@ Examples:
         success = run_script("run-hardened.py", common_args, "Hardened (no sanitizers)")
         results.append(("Hardened", success))
     
+    # Memcheck is slow (20-50x); opt in with --valgrind or --all
+    if run_valgrind:
+        success = run_script("run-valgrind.py", common_args, "Valgrind memcheck")
+        results.append(("Valgrind", success))
+
     # Run fuzzer
     if run_fuzz:
         fuzz_args = ['--duration', str(args.fuzz_duration)]

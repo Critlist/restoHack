@@ -423,6 +423,7 @@ target_compile_options(hack PRIVATE
   -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations
   -Wold-style-definition -Wnested-externs -Wbad-function-cast
   -Wswitch-enum -Wwrite-strings -Wundef -Wcast-qual
+  -Wredundant-decls
   -Wno-missing-field-initializers
   -fno-common
 )

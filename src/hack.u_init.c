@@ -14,8 +14,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#define Strcpy (void)strcpy
-#define Strcat (void)strcat
 #define UNDEF_TYP 0
 #define UNDEF_SPE '\177'
 /* addinv() declared in hack.h */

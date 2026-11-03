@@ -28,9 +28,6 @@
     }                                                                          \
   } while (0)
 
-#define Sprintf(buf, ...)                                                      \
-  (void)snprintf(buf, 200, __VA_ARGS__) /* MODERN: Increased from 128 to 200   \
-                                           to prevent truncation warnings */
 extern char plname[], pl_character[];
 
 /* Forward declarations for missing functions */

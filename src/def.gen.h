@@ -1,3 +1,6 @@
+#ifndef DEF_GEN_H
+#define DEF_GEN_H
+
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /* def.gen.h version 1.0.1: added ONCE flag */
 
@@ -13,3 +16,5 @@ struct gen {
 extern struct gen *fgold, *ftrap;
 struct gen *g_at();
 #define newgen() (struct gen *)alloc(sizeof(struct gen))
+
+#endif /* DEF_GEN_H */

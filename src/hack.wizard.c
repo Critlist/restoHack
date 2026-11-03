@@ -5,7 +5,6 @@
 /* wizard code - inspired by rogue code from Merlyn Leroy (digi-g!brian) */
 #include "hack.h"
 extern struct permonst pm_wizard;
-extern struct monst *makemon();
 
 #define WIZSHOT 6  /* one chance in WIZSHOT that wizard will try magic */
 #define BOLT_LIM 8 /* from this distance D and 1 will try to hit you */

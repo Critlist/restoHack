@@ -6,17 +6,14 @@
  * Object creation system for 1984 Hack - item spawning and generation
  * Original 1984 source: docs/historical/original-source/hack.mkobj.c
  *
- * Key modernizations: ANSI C function signatures, K&R notation preserved
+ * Key modernizations: ANSI C function signatures
  */
 
 #include "hack.h"
 
 char mkobjstr[] = "))[[!!!!????%%%%/=**))[[!!!!????%%%%/=**(%";
-/* K&R functions - implicitly declared when called */
 
-struct obj *mkobj_at(let, x, y)
-int let, x, y;
-{
+struct obj *mkobj_at(int let, int x, int y) {
   struct obj *otmp = mkobj(let);
   otmp->ox = (xchar)x; /* MODERN: explicit cast to xchar for coordinate */
   otmp->oy = (xchar)y; /* MODERN: explicit cast to xchar for coordinate */
@@ -25,9 +22,7 @@ int let, x, y;
   return (otmp);
 }
 
-struct obj *mksobj_at(otyp, x, y)
-int otyp, x, y;
-{
+struct obj *mksobj_at(int otyp, int x, int y) {
   struct obj *otmp = mksobj(otyp);
   otmp->ox = (xchar)x; /* MODERN: explicit cast to xchar for coordinate */
   otmp->oy = (xchar)y; /* MODERN: explicit cast to xchar for coordinate */
@@ -36,9 +31,7 @@ int otyp, x, y;
   return (otmp);
 }
 
-struct obj *mkobj(let)
-int let;
-{
+struct obj *mkobj(int let) {
   if (!let)
     let = mkobjstr[rn2(sizeof(mkobjstr) - 1)];
   return (mksobj(
@@ -49,9 +42,7 @@ int let;
 
 struct obj zeroobj;
 
-struct obj *mksobj(otyp)
-int otyp;
-{
+struct obj *mksobj(int otyp) {
   struct obj *otmp;
   /* MODERN: Add bounds checking for objects array access */
   if (otyp < 0 || otyp >= NROFOBJECTS) {
@@ -137,15 +128,11 @@ int otyp;
   return (otmp);
 }
 
-int letter(c)
-int c;
-{
+int letter(int c) {
   return (('@' <= c && c <= 'Z') || ('a' <= c && c <= 'z'));
 }
 
-int weight(obj)
-struct obj *obj;
-{
+int weight(struct obj *obj) {
   /* MODERN: Add bounds checking for objects array access */
   if (obj->otyp >= NROFOBJECTS) {
     return (obj->quan + 1) / 2; /* Safe fallback weight calculation */
@@ -154,10 +141,7 @@ struct obj *obj;
   return (wt ? wt * obj->quan : (obj->quan + 1) / 2);
 }
 
-struct gold *mkgold(num, x, y)
-long num;
-int x, y;
-{
+struct gold *mkgold(long num, int x, int y) {
   struct gold *gold;
   long amount = (num ? num : 1 + (rnd(dlevel + 2) * rnd(30)));
 

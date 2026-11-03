@@ -10,6 +10,7 @@
 
 #include "hack.h"
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef LINT
 
@@ -77,9 +78,13 @@ void *alloc(unsigned lth) {
 
   if (!(ptr = malloc(lth)))
     panic("Cannot get %d bytes", lth);
+  /* Zero the block: the save code writes whole structs to disk, and malloc
+   * leaves struct padding uninitialised, which would end up in save files. */
+  memset(ptr, 0, lth);
   return (ptr);
 }
 
+void *enlarge(char *ptr, unsigned lth);
 void *enlarge(char *ptr, unsigned lth) {
   char *nptr;
 

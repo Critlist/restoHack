@@ -1,3 +1,6 @@
+#ifndef DEF_WSEG_H
+#define DEF_WSEG_H
+
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /* def.wseg.h - version 1.0.2 */
 
@@ -11,3 +14,5 @@ struct wseg {
 
 #define newseg() (struct wseg *)alloc(sizeof(struct wseg))
 #endif /* NOWORM */
+
+#endif /* DEF_WSEG_H */

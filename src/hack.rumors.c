@@ -15,7 +15,7 @@ int n_rumors = 0;
 int n_used_rumors = -1;
 char *usedbits;
 
-void init_rumors(FILE *rumf) {
+static void init_rumors(FILE *rumf) {
   int i;
   n_used_rumors = 0;
   while (skipline(rumf))
@@ -45,7 +45,7 @@ int skipline(FILE *rumf) {
   }
 }
 
-void outline(FILE *rumf) {
+static void outline(FILE *rumf) {
   char line[COLNO];
   char *ep;
   if (!fgets(line, sizeof(line), rumf))
@@ -66,8 +66,10 @@ void outrumor(void) {
     return;
   if (n_used_rumors < 0)
     init_rumors(rumf);
-  if (!n_rumors)
-    goto none;
+  if (!n_rumors) {
+    (void)fclose(rumf);
+    return;
+  }
   rn = rn2(n_rumors - n_used_rumors);
   i = 0;
   while (rn || used(i)) {
@@ -87,7 +89,6 @@ void outrumor(void) {
     impossible("Rumor index out of bounds: i=%d byte_idx=%d", i, byte_idx);
   }
   outline(rumf);
-none:
   (void)fclose(rumf);
 }
 

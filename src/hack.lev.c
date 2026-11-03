@@ -13,18 +13,14 @@
 /* def.mkroom.h already included via hack.h */
 
 #include <unistd.h>
-extern struct monst *restmonchn();
-extern struct obj *restobjchn();
+extern struct monst *restmonchn(int fd);
+extern struct obj *restobjchn(int fd);
 extern struct obj *billobjs;
-extern char *itoa();
 extern char SAVEF[];
-extern int hackpid;
-extern xchar dlevel;
 extern char nul[];
 
 #ifndef NOWORM
 #include "def.wseg.h"
-extern struct wseg *wsegs[32], *wheads[32];
 extern long wgrowtime[32];
 #endif /* NOWORM */
 
@@ -148,7 +144,7 @@ void freelev(void) {
   setgd(); /* fmon is empty: clears the vault guard pointer */
 }
 
-void bwrite(int fd, char *loc, unsigned num) {
+void bwrite(int fd, const void *loc, unsigned num) {
   /* lint wants the 3rd arg of write to be an int; lint -p an unsigned */
   if (write(fd, loc, (size_t)num) != (ssize_t)num) /* MODERN: proper POSIX types */
     panic("cannot write %u bytes to file #%d", num, fd);
@@ -249,7 +245,6 @@ void getlev(int fd, int pid, xchar lev) {
   {
     long tmoves = (moves > omoves) ? moves - omoves : 0;
     struct monst *mtmp, *mtmp2;
-    extern char genocided[];
 
     for (mtmp = fmon; mtmp; mtmp = mtmp2) {
       long newhp; /* tmoves may be very large */
@@ -319,7 +314,6 @@ void getlev(int fd, int pid, xchar lev) {
 
 void mread(int fd, char *buf, unsigned len) {
   int rlen;
-  extern boolean restoring;
 
   ssize_t read_result = read(fd, buf, (size_t)len); /* MODERN: proper POSIX types */
   rlen = (int)read_result; /* MODERN: cast ssize_t to int for compatibility */
@@ -335,7 +329,6 @@ void mread(int fd, char *buf, unsigned len) {
 }
 
 void mklev(void) {
-  extern boolean in_mklev;
 
   if (getbones())
     return;

@@ -12,9 +12,6 @@
 #include "hack.h"
 #include <stdio.h>
 extern struct permonst li_dog, dog, la_dog;
-extern const char *exclam(int force);
-extern char *xname(struct obj *);
-extern struct obj *mkobj_at();
 
 static boolean far_noise;
 static long noisetime;
@@ -103,7 +100,6 @@ void mondied(struct monst *mdef) {
 
 /* drop a rock and remove monster */
 void monstone(struct monst *mdef) {
-  extern char mlarge[];
   if (index(mlarge, mdef->data->mlet))
     mksobj_at(ENORMOUS_ROCK, mdef->mx, mdef->my);
   else

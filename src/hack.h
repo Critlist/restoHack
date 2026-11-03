@@ -1,3 +1,6 @@
+#ifndef HACK_H
+#define HACK_H
+
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /* hack.h - version 1.0.3 */
 
@@ -52,6 +55,7 @@ typedef struct {
 
 #define BUFSZ 256  /* for getlin buffers */
 #define PL_NSIZ 32 /* name of player, ghost, shopkeeper */
+#define PL_CSIZ 20 /* sizeof pl_character */
 
 /**
  * MODERN ADDITION (2025): Safe object array access macros
@@ -116,8 +120,7 @@ extern int rn1(int x, int y);
 extern void fracture_rock(struct obj *obj);
 
 /* PLAYER SYSTEM PROTOTYPES - from studying hack.u_init.c */
-/* K&R OBJECT CREATION SYSTEM - Forward declarations for authentic 1984
- * functions */
+/* OBJECT CREATION SYSTEM - forward declarations */
 extern struct obj *mkobj(int let);   /* Create object by symbol */
 extern struct obj *mksobj(int otyp); /* Create object by type */
 extern struct obj *mkobj_at(int let, int x,
@@ -126,7 +129,6 @@ extern struct obj *mksobj_at(int otyp, int x,
                              int y); /* Create specific object at position */
 extern int letter(int c);            /* Check if character is a letter */
 extern int probtype(int let);        /* Get probable object type from symbol */
-/* addinv() - K&R function, implicitly declared */
 extern int weight(struct obj *obj);
 extern void setworn(struct obj *obj, long mask);
 extern void init_objects(void);
@@ -155,15 +157,10 @@ extern void nocmov(int x, int y);
 extern void home(void);
 
 /* MISSING FUNCTION PROTOTYPES - Essential for linking (non-conflicting only) */
-extern int cansee(int x, int y);
-extern int canseemon(struct monst *mtmp);
-extern int isok(int x, int y);
 extern char *eos(char *s);
 extern int letindex(char let);
 extern char *doname(struct obj *obj);
 extern void getlin(char *buf);
-/* MODERN: CONST-CORRECTNESS: xwaitforspace allowed chars is read-only */
-extern void xwaitforspace(const char *s);
 extern struct obj *splitobj(struct obj *obj, int cnt);
 extern void obfree(struct obj *obj, struct obj *merge);
 extern void oinit(void);
@@ -223,7 +220,7 @@ extern char *Amonnam(struct monst *mtmp, const char *adj);
 
 /* GLOBAL VARIABLES */
 extern char morc;
-extern struct wseg *wsegs[32];
+extern struct wseg *wsegs[32], *wheads[32];
 
 /* Function prototypes */
 /* MODERN: CONST-CORRECTNESS: error message is read-only */
@@ -239,14 +236,11 @@ extern void term_getsize(void);
 extern void cls(void);
 extern void gethdate(char *name);
 /* askname() defined in hack.main.c */
-extern int plnamesuffix();
+extern int plnamesuffix(void);
 extern void getlock(void);
 extern void setftty(void);
 extern int dorecover(int fd);
-extern int u_init();
-/* role_index() - K&R function, implicitly declared */
-/* ini_inv() - K&R function, implicitly declared */
-/* wiz_inv() - K&R function, implicitly declared */
+extern int u_init(void);
 extern int dlevelp(int level);
 extern void mklev(void);
 extern void seeobjs(void);
@@ -303,8 +297,10 @@ extern int identify(struct obj *otmp);
 extern int monstersym(char ch);
 extern int chwepon(struct obj *otmp, int amount);
 extern void charcat(char *s, char c);
-extern struct monst *bhit(int ddx, int ddy, int range, char sym, int (*fhitm)(),
-                          int (*fhito)(), struct obj *obj);
+extern struct monst *bhit(int ddx, int ddy, int range, char sym,
+                          int (*fhitm)(struct monst *, struct obj *),
+                          int (*fhito)(struct obj *, struct obj *),
+                          struct obj *obj);
 extern struct monst *boomhit(int dx, int dy);
 /* MODERN: CONST-CORRECTNESS: exclam returns read-only string literals */
 extern const char *exclam(int force);
@@ -417,7 +413,6 @@ extern void modern_cleanup_handler(int sig);
 extern void modern_save_handler(int sig);
 
 /* LEVEL GENERATION PROTOTYPES - from hack.mklev.c */
-extern void oinit(void);
 extern void makemaz(void);
 extern int makerooms(void);
 extern void mktrap(int num, int mazeflag, struct mkroom *croom);
@@ -425,9 +420,6 @@ extern struct gold *mkgold(long amount, int x, int y);
 extern void makecorridors(void);
 extern void make_niches(void);
 extern void makevtele(void);
-extern void mkshop(void);
-extern void mkzoo(int type);
-extern void mkswamp(void);
 extern int maker(schar lowx, schar dx, schar lowy, schar dy);
 extern int addrs(int lowx, int lowy, int hix, int hiy);
 extern int addrsx(int lx, int ly, int hx, int hy, boolean discarded);
@@ -435,29 +427,16 @@ extern int okdoor(int x, int y);
 extern void dosdoor(int x, int y, struct mkroom *aroom, int type);
 extern void join(int a, int b);
 extern void makeniche(boolean with_trap);
-/* MODERN: CONST-CORRECTNESS: make_engr_at text is read-only */
-extern void make_engr_at(int x, int y, const char *s);
-
 /* TERMCAP FUNCTION PROTOTYPES - from hack.termcap.c */
-extern void startup(void);
-extern void term_getsize(void);
 extern void start_screen(void);
 extern void end_screen(void);
 extern void curs(int x, int y);
-extern void nocmov(int x, int y);
-extern void cmov(int x, int y);
-extern int xputc(int c);
-extern void xputs(char *s);
 extern void cl_end(void);
 extern void clear_screen(void);
-extern void home(void);
 extern void standoutbeg(void);
 extern void standoutend(void);
 extern void backsp(void);
-extern void bell(void);
 extern void cl_eos(void);
-extern void setclipped(void);
-extern void getret(void);
 extern void set_whole_screen(void);
 
 /* Original 1984: extern xchar xdnstair, ydnstair, xupstair, yupstair; */
@@ -501,7 +480,7 @@ extern int sengr_at(const char *s, xchar x, xchar y);
 extern void del_engr(struct engr *ep);
 /* MODERN ADDITION (2025): Memory cleanup for sanitizers */
 extern void cleanup_all_engravings(void);
-extern void bwrite(int fd, char *loc, unsigned num);
+extern void bwrite(int fd, const void *loc, unsigned num);
 extern void mread(int fd, char *buf, unsigned len);
 extern int mhitu(struct monst *mtmp);
 extern int hitu(struct monst *mtmp, int dam);
@@ -542,7 +521,6 @@ extern void set_pager(int mode);
 extern int page_line(const char *line);
 extern void wormdead(struct monst *mtmp);
 extern void wormhit(struct monst *mtmp);
-extern void cutworm(struct monst *mtmp, xchar x, xchar y, uchar weptyp);
 
 #define newstring(x) (char *)alloc((unsigned)(x))
 #include "hack.onames.h"
@@ -565,7 +543,7 @@ struct prop {
 #define RIGHT_SIDE RIGHT_RING
 #define BOTH_SIDES (LEFT_SIDE | RIGHT_SIDE)
   long p_flgs;
-  int (*p_tofn)(); /* called after timeout */
+  int (*p_tofn)(void); /* called after timeout */
 };
 
 struct you {
@@ -640,23 +618,20 @@ extern struct you u;
 /* MODERN: CONST-CORRECTNESS: match traps[] definition (read-only string table)
  */
 extern const char *const traps[];
-extern char *aobjnam();
-extern char readchar();
+extern char *aobjnam(struct obj *otmp, const char *verb);
 
 /* inventory system functions */
-extern struct obj *addinv(struct obj *obj),
-    *splitobj(struct obj *otmp, int cnt);
-extern int assigninvlet(struct obj *otmp), carried(struct obj *obj),
-    carrying(int type);
+extern struct obj *addinv(struct obj *obj);
+extern int assigninvlet(struct obj *otmp), carried(struct obj *obj);
 extern char obj_to_let(struct obj *obj);
-extern void useup(struct obj *obj), freeinv(struct obj *obj),
-    delobj(struct obj *obj), freeobj(struct obj *obj);
+extern void useup(struct obj *obj), delobj(struct obj *obj),
+    freeobj(struct obj *obj);
 extern void freegold(struct gold *gold), deltrap(struct trap *trap),
     stackobj(struct obj *obj);
 extern void prinv(struct obj *obj), doinv(char *lets);
-extern int ddoinv(), dotypeinv(), dolook();
-extern int merged(struct obj *otmp, struct obj *obj, int lose), countgold(),
-    doprgold(), doprwep(), doprarm(), doprring();
+extern int ddoinv(void), dotypeinv(void), dolook(void);
+extern int merged(struct obj *otmp, struct obj *obj, int lose), countgold(void),
+    doprgold(void), doprwep(void), doprarm(void), doprring(void);
 /* MODERN: CONST-CORRECTNESS: ggetobj word parameter is read-only */
 extern int digit(char c), ckunpaid(struct obj *otmp),
     ggetobj(const char *word, int (*fn)(struct obj *), int max);
@@ -666,18 +641,13 @@ extern int askchain(struct obj *objchn, char *olets, int allflag,
 /* MODERN: CONST-CORRECTNESS: getobj parameters are read-only */
 extern struct obj *getobj(const char *let, const char *word),
     *o_on(unsigned int id, struct obj *objchn), *mkgoldobj(long q);
-extern struct monst *m_at(int x, int y);
-extern struct trap *t_at(int x, int y);
-extern struct gold *g_at(int x, int y);
 extern struct wseg *m_atseg;
-extern void setnotworn(struct obj *obj),
-    obfree(struct obj *obj, struct obj *other), unpobj(struct obj *obj);
+extern void setnotworn(struct obj *obj), unpobj(struct obj *obj);
 /* MODERN: CONST-CORRECTNESS: cornline text is read-only */
 extern void cornline(int mode, const char *text);
 extern int doinvbill(int mode);
 /* MODERN: CONST-CORRECTNESS: addtopl message is read-only */
-extern void getlin(char *buf), clrlin(void), addtopl(const char *s);
-extern char *doname(struct obj *obj);
+extern void clrlin(void), addtopl(const char *s);
 extern char vowels[];
 
 /* hack.do.c function prototypes */
@@ -687,6 +657,46 @@ extern void goto_level(int newlevel, boolean at_stairs);
 extern void dropx(struct obj *obj), dropy(struct obj *obj);
 extern void more_experienced(int exp, int rexp);
 extern void set_wounded_legs(long side, int timex), heal_legs(void);
+
+/* Command and gameplay prototypes (ANSI C) */
+extern int ddocall(void), dodip(void), dodrop(void), doengrave(void),
+    doidtrap(void), do_mname(void), dopay(void), dopickup(void),
+    doremarm(void), doremring(void), dosave(void), doset(void),
+    dosuspend(void), doversion(void), doweararm(void), dowearring(void),
+    dowield(void), dowhatis(void), dohelp(void), dodiscovered(void);
+extern char *Doname(struct obj *obj);
+extern int fightm(struct monst *mtmp);
+extern char *getdatestr(void);
+extern void getioctls(void), setioctls(void);
+extern boolean hmon(struct monst *mon, struct obj *obj, int thrown);
+extern struct monst *mkmon_at(char let, int x, int y);
+extern char news0(unsigned char x, unsigned char y);
+extern long newuexp(void);
+extern void outrip(void), paybill(void), savebones(void);
+extern void pwseg(struct wseg *wtmp);
+extern struct obj *readobjnam(char *bp);
+extern void replshk(struct monst *mtmp, struct monst *mtmp2);
+extern void shkdead(struct monst *mtmp);
+extern char *shkname(struct monst *mtmp);
+extern struct obj *some_armor(void);
+extern long somegold(void);
+extern char *typename(int otyp);
+extern char *Xmonnam(struct monst *mtmp);
+extern char *xname(struct obj *obj);
+extern void outrumor(void);
+
+/* Shared globals (one declaration for the whole program) */
+extern char sdir[], mlarge[], genocided[60], fut_geno[60];
+extern char plname[PL_NSIZ], pl_character[PL_CSIZ];
+extern schar xdir[], ydir[];
+extern int hackpid, locknum, doorindex, done_stopprint;
+extern char *hname, *catmore;
+extern struct monst youmonst, *mydogs;
+extern struct permonst pm_ghost, pm_eel, pm_mail_daemon;
+extern boolean in_mklev, restoring, level_exists[];
+extern int (*afternmv)(void), (*occupation)(void);
+extern const char *nomovemsg, *occtxt;
+extern char quitchars[];
 
 extern xchar curx, cury; /* cursor location on screen */
 
@@ -700,7 +710,7 @@ extern unsigned char seehx, seelx, seehy,
 extern char *save_cm;
 extern const char *killer;
 
-extern xchar dlevel, maxdlevel; /* dungeon level */
+extern xchar maxdlevel; /* highest dungeon level reached */
 
 extern long moves;
 
@@ -711,7 +721,8 @@ extern char lock[];
 #define DIST(x1, y1, x2, y2)                                                   \
   (((x1) - (x2)) * ((x1) - (x2)) + ((y1) - (y2)) * ((y1) - (y2)))
 
-#define PL_CSIZ 20       /* sizeof pl_character */
 #define MAX_CARR_CAP 120 /* so that boulders can be heavier */
 #define MAXLEVEL 40
 #define FAR (COLNO + 2) /* position outside screen */
+
+#endif /* HACK_H */

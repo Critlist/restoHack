@@ -416,12 +416,25 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Common warnings for all builds (sane, not noisy)
+# GCC and Clang share these; GCC-only diagnostics live in the block below.
 target_compile_options(hack PRIVATE
-  -Wall -Wextra -Wformat=2
+  -Wall -Wextra -Wformat=2 -pedantic
+  -Wshadow -Wpointer-arith
+  -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations
+  -Wold-style-definition -Wnested-externs -Wbad-function-cast
+  -Wswitch-enum -Wwrite-strings -Wundef -Wcast-qual
+  -Wredundant-decls
   -Wno-missing-field-initializers
-  -Wno-old-style-definition
   -fno-common
 )
+
+# GCC-only diagnostics (Clang would warn about unknown options).
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+  target_compile_options(hack PRIVATE
+    -Wlogical-op -Wjump-misses-init
+    -Wnull-dereference -Wduplicated-cond -Wduplicated-branches
+  )
+endif()
 
 # === Profiles ===
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -429,7 +442,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
   target_compile_options(hack PRIVATE -O2 -DNDEBUG)
 elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
   # Dev build = symbols + easy backtraces, warnings don’t kill flow
-  target_compile_options(hack PRIVATE -O0 -g3 -fno-omit-frame-pointer -Wwrite-strings -Wno-error)
+  target_compile_options(hack PRIVATE -O0 -g3 -fno-omit-frame-pointer -Wno-error)
   if(NOT EMSCRIPTEN)
     target_link_options(hack PRIVATE -rdynamic)
   endif()
@@ -437,7 +450,6 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
   # safe, strict, but do NOT fail on warnings
   target_compile_options(hack PRIVATE
     -O2 -fno-omit-frame-pointer -fPIE
-    -Wwrite-strings
     -Wno-error
   )
   # Fortify (3 if toolchain supports it; harmless if ignored)

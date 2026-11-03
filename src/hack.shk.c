@@ -31,8 +31,6 @@ char *shkname(void) { return (""); }
 #define NOTANGRY(mon) mon->mpeaceful
 #define ANGRY(mon) !NOTANGRY(mon)
 
-extern char plname[], *xname();
-extern struct obj *o_on();
 
 /* Descriptor of current shopkeeper. Note that the bill need not be
    per-shopkeeper, since it is valid only when in a shop. */
@@ -70,7 +68,7 @@ char *shkname(struct monst *mtmp) /* called in do_name.c */
   return (ESHK(mtmp)->shknam);
 }
 
-static void setpaid();
+static void setpaid(void);
 
 void shkdead(struct monst *mtmp) /* called in mon.c */
 {
@@ -491,7 +489,6 @@ struct obj *bp_to_obj(struct bill_x *bp) {
   return (obj);
 }
 
-static int getprice();
 
 /* called in hack.c when we pickup an object */
 void addtobill(struct obj *obj) {

@@ -14,15 +14,9 @@
 #include "def.eshk.h"
 #include <stdlib.h>
 #define ESHK ((struct eshk *)(&(shk->mextra[0])))
+static struct permonst *morguemon(void);
 
 /* Forward declarations for functions used but not properly visible */
-extern void findname(char *nampt, char let);
-extern int has_dnstairs(struct mkroom *sroom);
-extern int has_upstairs(struct mkroom *sroom);
-extern int isbig(struct mkroom *sroom);
-extern int nexttodoor(int sx, int sy);
-extern int dist2(int x0, int y0, int x1, int y1);
-extern int sq(int a);
 
 extern int nroom;
 extern char shtypes[]; /* = "=/)%?!["; 8 types: 7 specialized, 1 mixed */
@@ -114,7 +108,6 @@ gottype:
     /* This is said to happen sometimes, but I've never seen it. */
     if (wizard) {
       int j = sroom->doorct;
-      extern int doorindex;
 
       pline("Where is shopdoor?");
       pline("Room at (%d,%d),(%d,%d).", sroom->lx, sroom->ly, sroom->hx,
@@ -172,7 +165,6 @@ void mkzoo(int type) {
   int sh, sx, sy, i;
   int goldlim = 500 * dlevel;
   int moct = 0;
-  struct permonst *morguemon();
 
   i = nroom;
   for (sroom = &rooms[rn2(nroom)];; sroom++) {
@@ -231,8 +223,7 @@ void mkzoo(int type) {
     }
 }
 
-struct permonst *morguemon(void) {
-  extern struct permonst pm_ghost;
+static struct permonst *morguemon(void) {
   int i = rn2(100), hd = rn2(dlevel);
 
   if (hd > 10 && i < 10)
@@ -246,7 +237,6 @@ void mkswamp(void) /* Michiel Huisjes & Fred de Wilde */
 {
   struct mkroom *sroom;
   int sx, sy, i, eelct = 0;
-  extern struct permonst pm_eel;
 
   for (i = 0; i < 5; i++) { /* 5 tries */
     sroom = &rooms[rn2(nroom)];

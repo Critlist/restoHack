@@ -165,7 +165,6 @@ void aggravate(void) {
   struct monst *mtmp;
 
   for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
-    if (!mtmp) break; /* MODERN: null check prevents crash on corrupted monster list */
     mtmp->msleep = 0;
     if (mtmp->mfroz && !rn2(5))
       mtmp->mfroz = 0;

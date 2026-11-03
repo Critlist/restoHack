@@ -237,7 +237,7 @@ void gethdate(char *name) {
       np = (char *)(path + strlen(path)); /* point to end str - MODERN: Cast
                                              needed due to const path */
     if (np - path <= 1)                   /* %% */
-      (void)strcpy(filename, name);
+      (void)snprintf(filename, sizeof(filename), "%s", name);
     else {
       /* MODERN: Safe path construction with bounds checking */
       size_t path_len = np - path;

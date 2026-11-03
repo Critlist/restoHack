@@ -518,11 +518,11 @@ unlock:
 void outheader(void) {
   char linebuf[BUFSZ];
   char *bp;
-  (void)strcpy(linebuf, "Number Points  Name");
+  (void)snprintf(linebuf, sizeof(linebuf), "Number Points  Name");
   bp = eos(linebuf);
   while (bp < linebuf + COLNO - 9)
     *bp++ = ' ';
-  (void)strcpy(bp, "Hp [max]");
+  (void)snprintf(bp, (size_t)(linebuf + BUFSZ - bp), "Hp [max]");
   puts(linebuf);
 }
 
@@ -590,7 +590,7 @@ int outentry(int rank, struct toptenentry *t1, int so) {
     if (bp <= linebuf + hppos) {
       while (bp < linebuf + hppos)
         *bp++ = ' ';
-      (void)strcpy(bp, hpbuf);
+      (void)snprintf(bp, (size_t)(linebuf + BUFSZ - bp), "%s", hpbuf);
       /* MODERN: Bounds-checked append to prevent buffer*/
       char *append_pos = eos(bp);
       size_t remaining = BUFSZ - (append_pos - linebuf);

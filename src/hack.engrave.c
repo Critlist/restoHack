@@ -10,6 +10,7 @@
  */
 
 #include "hack.h"
+#include <stdio.h>
 #include <limits.h>
 
 extern const char
@@ -134,7 +135,7 @@ void make_engr_at(int x, int y, const char *s) {
   ep->engr_x = x;
   ep->engr_y = y;
   ep->engr_txt = (char *)(ep + 1);
-  (void)strcpy(ep->engr_txt, s);
+  (void)snprintf(ep->engr_txt, strlen(s) + 1, "%s", s);
   ep->engr_time = 0;
   ep->engr_type = DUST;
   ep->engr_lth = strlen(s) + 1;
@@ -279,8 +280,7 @@ int doengrave(void) {
     int oep_len = strlen(oep->engr_txt);
     int buf_len = strlen(buf);
     if (oep_len + buf_len + 1 <= len + 1) { /* +1 for null terminator */
-      (void)strcpy(sp, oep->engr_txt);
-      (void)strcat(sp, buf);
+      (void)snprintf(sp, (size_t)len + 1, "%s%s", oep->engr_txt, buf);
     } else {
       /* Truncate if combined length exceeds allocated space */
       (void)strncpy(sp, oep->engr_txt, len);

@@ -119,7 +119,7 @@ int do_mname(void) {
     monfree(mtmp2);
     return (1);
   }
-  (void)strcpy(NAME(mtmp2), buf);
+  (void)snprintf(NAME(mtmp2), mtmp2->mnamelth, "%s", buf);
   replmon(mtmp, mtmp2);
   return (1);
 }
@@ -146,7 +146,7 @@ static void do_oname(struct obj *obj) {
   otmp2 = newobj(lth);
   *otmp2 = *obj;
   otmp2->onamelth = (unsigned char)lth; /* MODERN: cast to bitfield type */
-  (void)strcpy(ONAME(otmp2), buf);
+  (void)snprintf(ONAME(otmp2), otmp2->onamelth, "%s", buf);
 
   setworn((struct obj *)0, obj->owornmask);
   setworn(otmp2, otmp2->owornmask);
@@ -204,7 +204,7 @@ void docall(struct obj *obj) {
   if (!*buf || *buf == '\033')
     return;
   str = newstring(strlen(buf) + 1);
-  (void)strcpy(str, buf);
+  (void)snprintf(str, strlen(buf) + 1, "%s", buf);
   str1 = &(SAFE_OBJECTS(obj->otyp)
                .oc_uname); /* MODERN: Bounds-checked object access */
   if (*str1)
@@ -248,7 +248,7 @@ static char *xmonnam(struct monst *mtmp, int vb) {
   } break;
   case '@':
     if (mtmp->isshk) {
-      (void)strcpy(buf, shkname(mtmp));
+      (void)snprintf(buf, BUFSZ, "%s", shkname(mtmp));
       break;
     }
     /* FALLTHROUGH */
@@ -262,7 +262,7 @@ static char *xmonnam(struct monst *mtmp, int vb) {
     /* MODERN: Safe concatenation with bounds checking */
     size_t buflen = strlen(buf);
     if (buflen + 8 < BUFSZ) { /* " called " = 8 chars */
-      (void)strcat(buf, " called ");
+      (void)snprintf(buf + buflen, BUFSZ - buflen, " called ");
       buflen += 8;
       if (buflen < BUFSZ - 1) {
         (void)strncat(buf, NAME(mtmp), BUFSZ - 1 - buflen);

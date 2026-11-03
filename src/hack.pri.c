@@ -650,7 +650,7 @@ void bot(void) {
   if (u.ustr > 18) {
     if (u.ustr > 117) {
       if (remaining > 5) { /* MODERN: Check space before strcat */
-        (void)strcat(newbot, "18/**");
+        (void)snprintf(newbot + len, (size_t)remaining, "18/**");
         len += 5;
         remaining -= 5;
       }
@@ -690,7 +690,8 @@ void bot(void) {
       hu_stat[u.uhs]) { /* MODERN: Check space and null pointer */
     int hu_len = strlen(hu_stat[u.uhs]);
     if (hu_len < remaining) {
-      (void)strcat(newbot, hu_stat[u.uhs]);
+      (void)snprintf(newbot + len, (size_t)remaining, "%s",
+                     hu_stat[u.uhs]);
       len += hu_len;
       remaining -= hu_len;
     }
@@ -718,7 +719,7 @@ void bot(void) {
     if (*nb)
       nb++;
   }
-  (void)strcpy(oldbot, newbot);
+  (void)snprintf(oldbot, sizeof(oldbot), "%s", newbot);
 }
 
 #ifdef WAN_PROBING

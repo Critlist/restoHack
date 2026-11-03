@@ -341,7 +341,7 @@ struct obj *getobj(const char *let, const char *word) {
   bp[foo] = 0;
   if (foo == 0 && bp > buf && bp[-1] == ' ')
     *--bp = 0;
-  (void)strcpy(lets, bp); /* necessary since we destroy buf */
+  (void)snprintf(lets, sizeof(lets), "%s", bp); /* we destroy buf */
   if (foo > 5) {          /* compactify string */
     foo = foo2 = 1;
     ilet2 = bp[0];

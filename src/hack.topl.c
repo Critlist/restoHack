@@ -136,6 +136,18 @@ void clrlin(void) {
   flags.toplin = 0;
 }
 
+/* Copy the rejected '%' sequence [start,p) as literal text.  Returns the new
+ * output position, or 0 if the sequence does not fit. */
+static char *neutralize_spec(char *d, char *end, const char *start,
+                             const char *p) {
+  size_t n = (size_t)(p - start);
+  if (d + n + 1 > end)
+    return (0);
+  *d++ = '%';
+  memcpy(d, start + 1, n - 1);
+  return (d + n - 1);
+}
+
 /* MODERN: Format sanitizer for 1984-ish printf. Neutralizes bad specs by making
  * them literal. */
 static void sanitize_format_1984(char *out, size_t outsz, const char *in) {
@@ -190,24 +202,17 @@ static void sanitize_format_1984(char *out, size_t outsz, const char *in) {
       /* Check if what follows 'l' is a valid conversion for 'l' modifier */
       if (!(*p && strchr("diouxX", *p))) {
         /* 'l' not followed by valid integer conversion - neutralize */
-        size_t n = (size_t)(p - start);
-        if (d + n + 1 > end)
+        d = neutralize_spec(d, end, start, p);
+        if (!d)
           break;
-        *d++ = '%';
-        memcpy(d, start + 1, n - 1);
-        d += n - 1;
         continue;
       }
     } else if (*p == 'h' || *p == 'z' || *p == 'j' || *p == 't' || *p == 'L' ||
                *p == 'q') {
-      /* reject modern/other length modifiers */
-      /* neutralize: print the original sequence literally */
-      size_t n = (size_t)(p - start);
-      if (d + n + 1 > end)
+      /* reject modern/other length modifiers; print them literally */
+      d = neutralize_spec(d, end, start, p);
+      if (!d)
         break;
-      *d++ = '%';
-      memcpy(d, start + 1, n - 1);
-      d += n - 1;
       continue;
     }
 
@@ -249,12 +254,9 @@ static void sanitize_format_1984(char *out, size_t outsz, const char *in) {
 
     if (!allowed || c == '\0') {
       /* neutralize: print the original sequence literally */
-      size_t n = (size_t)(p - start);
-      if (d + n + 1 > end)
+      d = neutralize_spec(d, end, start, p);
+      if (!d)
         break;
-      *d++ = '%';
-      memcpy(d, start + 1, n - 1);
-      d += n - 1;
       continue;
     }
 

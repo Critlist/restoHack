@@ -224,19 +224,17 @@ void gethdate(char *name) {
     return;
   }
 
-  char *np;
+  const char *np;
   const char *path; /* MODERN: const because can point to getenv() result or
                        string literal */
   char filename[MAXPATHLEN + 1];
-  if (index(name, '/') != NULL || (path = getenv("PATH")) == NULL)
+  if (strchr(name, '/') != NULL || (path = getenv("PATH")) == NULL)
     path = "";
 
   for (;;) {
-    if ((np = (char *)index(path, ':')) ==
-        NULL) /* MODERN: Cast needed due to const path */
-      np = (char *)(path + strlen(path)); /* point to end str - MODERN: Cast
-                                             needed due to const path */
-    if (np - path <= 1)                   /* %% */
+    if ((np = strchr(path, ':')) == NULL)
+      np = path + strlen(path); /* point to end of string */
+    if (np - path <= 1)         /* %% */
       (void)snprintf(filename, sizeof(filename), "%s", name);
     else {
       /* MODERN: Safe path construction with bounds checking */

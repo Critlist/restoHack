@@ -418,7 +418,7 @@ void setan(const char *str,
     Sprintf(buf, "a %s", str);
 }
 
-char *aobjnam(struct obj *otmp, char *verb) {
+char *aobjnam(struct obj *otmp, const char *verb) {
   char *bp = xname(otmp);
   char prefix[PREFIX];
   if (otmp->quan != 1) {

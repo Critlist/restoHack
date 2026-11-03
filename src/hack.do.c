@@ -330,7 +330,7 @@ int dothrow(void) {
                : (!Punished || obj != uball) ? 8
                : !u.ustuck                   ? 5
                                              : 1,
-               obj->olet, (int (*)())0, (int (*)())0, obj);
+               obj->olet, 0, 0, obj);
   }
   if (mon) {
     /* awake monster if sleeping */

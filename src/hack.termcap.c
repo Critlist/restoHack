@@ -11,6 +11,12 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
+/* Some build systems define HAVE_DELAY_OUTPUT; default it so -Wundef stays
+ * quiet on the ones that don't. */
+#ifndef HAVE_DELAY_OUTPUT
+#define HAVE_DELAY_OUTPUT 0
+#endif
+
 static char tbuf[512];
 static char *HO, *CL, *CE, *hack_UP, *CM, *ND, *XD, *hack_BC, *SO, *SE, *TI,
     *TE;

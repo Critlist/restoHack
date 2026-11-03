@@ -488,7 +488,7 @@ extern int sengr_at(const char *s, xchar x, xchar y);
 extern void del_engr(struct engr *ep);
 /* MODERN ADDITION (2025): Memory cleanup for sanitizers */
 extern void cleanup_all_engravings(void);
-extern void bwrite(int fd, char *loc, unsigned num);
+extern void bwrite(int fd, const void *loc, unsigned num);
 extern void mread(int fd, char *buf, unsigned len);
 extern int mhitu(struct monst *mtmp);
 extern int hitu(struct monst *mtmp, int dam);
@@ -626,7 +626,7 @@ extern struct you u;
 /* MODERN: CONST-CORRECTNESS: match traps[] definition (read-only string table)
  */
 extern const char *const traps[];
-extern char *aobjnam(struct obj *otmp, char *verb);
+extern char *aobjnam(struct obj *otmp, const char *verb);
 extern char readchar(void);
 
 /* inventory system functions */

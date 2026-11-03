@@ -1,3 +1,6 @@
+#ifndef DEF_PERMONST_H
+#define DEF_PERMONST_H
+
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /* def.permonst.h - version 1.0.2 */
 
@@ -33,3 +36,5 @@ extern struct permonst mons[];
 #define PM_EEL &pm_eel
 #define PM_WIZARD &pm_wizard
 #define CMNUM 55 /* number of common monsters */
+
+#endif /* DEF_PERMONST_H */

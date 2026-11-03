@@ -1,3 +1,6 @@
+#ifndef HACK_MFNDPOS_H
+#define HACK_MFNDPOS_H
+
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /* hack.mfndpos.h - version 1.0.2 */
 
@@ -10,3 +13,5 @@
 #define ALLOW_ROCK 020000
 #define NOTONL 040000
 #define NOGARLIC 0100000
+
+#endif /* HACK_MFNDPOS_H */

@@ -690,7 +690,6 @@ void mktrap(int num, int mazeflag, struct mkroom *croom) {
   int kind, nopierc, nomimic, fakedoor, fakegold, tryct = 0;
   /* Original 1984: xchar mx,my; */
   unsigned char mx, my; /* MODERN: unsigned to prevent buffer underflow */
-  extern char fut_geno[];
 
   if (!num || num >= TRAPNUM) {
     nopierc = (dlevel < 4) ? 1 : 0;

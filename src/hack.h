@@ -1,3 +1,6 @@
+#ifndef HACK_H
+#define HACK_H
+
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /* hack.h - version 1.0.3 */
 
@@ -712,6 +715,19 @@ extern char *Xmonnam(struct monst *mtmp);
 extern char *xname(struct obj *obj);
 extern void outrumor(void);
 
+/* Shared globals (one declaration for the whole program) */
+extern char sdir[], mlarge[], genocided[60], fut_geno[60];
+extern char plname[PL_NSIZ], pl_character[];
+extern schar xdir[], ydir[];
+extern int hackpid, locknum, doorindex, done_stopprint;
+extern char *hname, *catmore;
+extern struct monst youmonst, *mydogs;
+extern struct permonst pm_ghost, pm_eel, pm_mail_daemon;
+extern boolean in_mklev, restoring, level_exists[];
+extern int (*afternmv)(void), (*occupation)(void);
+extern const char *nomovemsg, *occtxt;
+extern char quitchars[];
+
 extern xchar curx, cury; /* cursor location on screen */
 
 extern coord bhitpos; /* place where thrown weapon falls to the ground */
@@ -739,3 +755,5 @@ extern char lock[];
 #define MAX_CARR_CAP 120 /* so that boulders can be heavier */
 #define MAXLEVEL 40
 #define FAR (COLNO + 2) /* position outside screen */
+
+#endif /* HACK_H */

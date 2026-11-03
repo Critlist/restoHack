@@ -177,7 +177,6 @@ void done(const char *st1) {
       u.urexp += 1000 * ((maxdlevel > 30) ? 10 : maxdlevel - 20);
   }
   if (*st1 == 'e') {
-    extern struct monst *mydogs;
     struct monst *mtmp;
     struct obj *otmp;
     int i;
@@ -711,7 +710,6 @@ void charcat(char *s, char c) {
  */
 void prscore(int argc, char **argv) {
   reset_topten_arena(); /* MODERN: Reset arena for fresh allocation */
-  extern char *hname;
   char **players;
   int playerct;
   int rank;

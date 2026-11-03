@@ -13,11 +13,6 @@
 #include <limits.h> /* MODERN: For SCHAR_MAX to prevent stat overflow */
 #include <stdio.h>
 char POISONOUS[] = "ADKSVabhks";
-extern const char
-    *nomovemsg; /* MODERN: const because assigned string literals */
-extern int (*afternmv)(void);
-extern int (*occupation)(void);
-extern const char *occtxt; /* MODERN: const because assigned string literals */
 
 /* Forward declarations for functions in this file */
 void gethungry(void);

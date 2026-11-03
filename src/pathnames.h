@@ -1,3 +1,6 @@
+#ifndef PATHNAMES_H
+#define PATHNAMES_H
+
 /*-
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -50,3 +53,5 @@
  * ADDS: Development-friendly local execution without system installation
  */
 #define _PATH_HACK "./hackdir"
+
+#endif /* PATHNAMES_H */

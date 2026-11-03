@@ -1,3 +1,6 @@
+#ifndef DEF_OBJECTS_H
+#define DEF_OBJECTS_H
+
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /* def.objects.h - version 1.0.3 */
 
@@ -274,3 +277,5 @@ char obj_symbols[] = {ILLOBJ_SYM, AMULET_SYM, FOOD_SYM, WEAPON_SYM, TOOL_SYM,
                       BALL_SYM,   CHAIN_SYM,  ROCK_SYM, ARMOR_SYM,  POTION_SYM,
                       SCROLL_SYM, WAND_SYM,   RING_SYM, GEM_SYM,    0};
 int bases[sizeof(obj_symbols)];
+
+#endif /* DEF_OBJECTS_H */

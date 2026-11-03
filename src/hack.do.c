@@ -16,9 +16,6 @@
 #include <unistd.h> /* for close() function */
 
 extern boolean level_exists[];
-extern struct monst youmonst;
-extern const char
-    *nomovemsg; /* MODERN: const because assigned string literals */
 
 static int drop(struct obj *obj);
 
@@ -172,7 +169,6 @@ void goto_level(int newlevel, boolean at_stairs) {
   if (dlevel >= 0 && dlevel <= MAXLEVEL && !level_exists[(int)dlevel]) /* MODERN: safe array indexing */
     mklev();
   else {
-    extern int hackpid;
 
     if ((fd = open(lock, 0)) < 0) {
       pline("Cannot open level file."); /* MODERN: safe message prevents format string attack */
@@ -478,7 +474,6 @@ struct obj *splitobj(struct obj *obj, int num) {
 }
 
 void more_experienced(int exp, int rexp) {
-  extern char pl_character[];
 
   u.uexp += exp;
   u.urexp += 4 * exp + rexp;

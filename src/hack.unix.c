@@ -319,7 +319,6 @@ static int veryold(int fd) {
 }
 
 void getlock(void) {
-  extern int hackpid, locknum;
   int i = 0, fd;
 
   (void)fflush(stdout);
@@ -489,10 +488,6 @@ void newmail(void) {
   /* produce a scroll of mail */
   struct obj *obj;
   struct monst *md;
-  extern char plname[];
-  extern struct obj *mksobj(), *addinv();
-  extern struct monst *makemon();
-  extern struct permonst pm_mail_daemon;
 
   obj = mksobj(SCR_MAIL);
   if (md = makemon(&pm_mail_daemon, u.ux, u.uy)) /* always succeeds */

@@ -39,7 +39,6 @@ struct monst *makemon(struct permonst *ptr, int x, int y) {
   struct monst *mtmp;
   int tmp, ct;
   boolean anything = (!ptr);
-  extern boolean in_mklev;
 
   if (x != 0 || y != 0)
     if (m_at(x, y))

@@ -1,3 +1,6 @@
+#ifndef DEF_OBJCLASS_H
+#define DEF_OBJCLASS_H
+
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /* def.objclass.h - version 1.0.3 */
 
@@ -58,3 +61,5 @@ extern struct objclass objects[];
  * hack.invent.c:          if(index("!%?[)=*(0/\"", sym)){
  * hack.invent.c:    || index("%?!*",otmp->olet))){
  */
+
+#endif /* DEF_OBJCLASS_H */

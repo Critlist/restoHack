@@ -79,7 +79,6 @@ void outrip(void) {
         x++;
       curs(x, y);
       while (dpx[x] && dpx[x] != ' ') {
-        extern int done_stopprint;
         if (done_stopprint)
           return;
         curx++;

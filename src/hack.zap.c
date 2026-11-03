@@ -4,7 +4,6 @@
 
 #include "hack.h"
 
-extern struct monst youmonst;
 
 static int goodpos(int x, int y) {
   return (!(x < 1 || x > COLNO - 2 || y < 1 || y > ROWNO - 2 || m_at(x, y) ||
@@ -356,7 +355,6 @@ struct monst *boomhit(int dx, int dy) {
   int i, ct;
   struct monst *mtmp;
   char sym = ')';
-  extern schar xdir[], ydir[];
 
   bhitpos.x = u.ux;
   bhitpos.y = u.uy;

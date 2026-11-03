@@ -442,8 +442,6 @@ int dosave0(int hu) {
   sw_bytes(fd, fut_geno, sizeof fut_geno);
   savenames(fd);
   for (tmp = 1; tmp <= maxdlevel; tmp++) {
-    extern int hackpid;
-    extern boolean level_exists[];
 
     if (tmp == dlevel || !level_exists[tmp])
       continue;
@@ -499,7 +497,6 @@ int dorecover(int fd) {
       0; /* Modern: Initialize to prevent uninitialized use warning */
   rh_u32_t has_ustuck = 0; /* Modern: Track if save file contains ustuck data */
   struct obj *otmp;
-  extern boolean restoring;
 
   restoring = TRUE;
   getlev(fd, 0, 0);

@@ -12,9 +12,6 @@
 #include "hack.h"
 #include "def.edog.h"
 static struct monst *bchit(int ddx, int ddy, int range, char sym);
-extern int (*occupation)(void);
-extern const char *occtxt; /* MODERN: const because assigned string literals */
-extern char quitchars[];
 extern char pl_character[];
 
 static void use_camera(struct obj *obj), use_ice_box(struct obj *obj),
@@ -351,7 +348,6 @@ void dighole(void) {
 
 static int use_pick_axe(struct obj *obj) {
   char dirsyms[12];
-  extern char sdir[];
   char *dsp = dirsyms, *sdp = sdir;
   struct monst *mtmp;
   struct rm *lev;

@@ -11,9 +11,6 @@
 
 #include "hack.h"
 
-extern const char
-    *nomovemsg; /* MODERN: const because assigned string literals */
-extern char quitchars[];
 
 static void off_msg(struct obj *otmp) {
   pline("You were wearing %s.", doname(otmp));

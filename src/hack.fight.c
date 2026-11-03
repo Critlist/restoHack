@@ -101,7 +101,6 @@ void mondied(struct monst *mdef) {
 
 /* drop a rock and remove monster */
 void monstone(struct monst *mdef) {
-  extern char mlarge[];
   if (index(mlarge, mdef->data->mlet))
     mksobj_at(ENORMOUS_ROCK, mdef->mx, mdef->my);
   else

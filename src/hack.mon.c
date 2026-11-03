@@ -148,9 +148,6 @@ void movemon(void) {
       const char *rr; /* MODERN: const because assigned string literals */
       /* MODERN: Defensive bounds check for array access while preserving game
        * logic */
-      // int display_level = (warnlevel < 0) ? 0 : warnlevel;
-      // if (warnlevel < 0) /* MODERN: prevent negative array index */
-      //     warnlevel = 0;
       switch (Warning & (LEFT_RING | RIGHT_RING)) {
       case LEFT_RING:
         rr = "Your left ring glows";
@@ -765,7 +762,6 @@ void killed(struct monst *mtmp) {
   nk = 1;            /* in case we cannot find it in mons */
   tmp = mdat - mons; /* index in mons array (if not 'd', '@', ...) */
   if (tmp >= 0 && tmp < CMNUM + 2) {
-    extern char fut_geno[];
     u.nr_killed[tmp]++;
     if ((nk = u.nr_killed[tmp]) > MAXMONNO && !index(fut_geno, mdat->mlet))
       charcat(fut_geno, mdat->mlet);

@@ -177,7 +177,6 @@ int doread(void) {
     break;
   }
   case SCR_GENOCIDE: {
-    extern char genocided[], fut_geno[];
     char buf[BUFSZ];
     struct monst *mtmp, *mtmp2;
 
@@ -542,7 +541,6 @@ do_it:
 int monstersym(char ch) /* arnold@ucsfcgl */
 {
   struct permonst *mp;
-  extern struct permonst pm_eel;
 
   /*
    * can't genocide certain monsters

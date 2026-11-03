@@ -10,6 +10,7 @@
  */
 
 #include "hack.h"
+#include <stdio.h>
 #include "hack.mfndpos.h"
 #include "def.edog.h"
 
@@ -440,8 +441,7 @@ int tamedog(struct monst *mtmp, struct obj *obj) {
   *mtmp2 = *mtmp;
   mtmp2->mxlth = sizeof(struct edog);
   if (mtmp->mnamelth)
-    (void)strcpy(NAME(mtmp2),
-                 NAME(mtmp)); /* MODERN: Safe - allocated exact size */
+    (void)snprintf(NAME(mtmp2), mtmp->mnamelth, "%s", NAME(mtmp));
   initedog(mtmp2);
   replmon(mtmp, mtmp2);
   return (1);

@@ -64,8 +64,7 @@ void remember_topl(void) {
       (unsigned)(strlen(toplines) + sizeof(struct topl) + 1));
   tl->next_topl = old_toplines;
   tl->topl_text = (char *)(tl + 1);
-  (void)strcpy(tl->topl_text,
-               toplines); /* MODERN: Safe - allocated exact size */
+  (void)snprintf(tl->topl_text, strlen(toplines) + 1, "%s", toplines);
   old_toplines = tl;
   while (cnt && tl) {
     cnt--;
@@ -365,7 +364,9 @@ pline(const char *line, ...) {
       if (n0 && tl[0]) {
         if (tl - toplines + (ptrdiff_t)strlen(tl) + 1 <
             BUFSZ) /* MODERN: cast strlen to ptrdiff_t */
-          (void)strcat(tl, "\n");
+          (void)snprintf(tl + strlen(tl),
+                         BUFSZ - (size_t)(tl - toplines) - strlen(tl),
+                         "\n");
       }
     } else {
       /* Buffer full - truncate gracefully */

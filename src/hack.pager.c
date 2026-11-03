@@ -248,7 +248,7 @@ void cornline(int mode, const char *text) {
                    1)); /* MODERN: cast to size_t for calculation */
     tl->next_line = 0;
     tl->line_text = (char *)(tl + 1);
-    (void)strcpy(tl->line_text, text);
+    memcpy(tl->line_text, text, (size_t)len + 1);
     if (!texthead)
       texthead = tl;
     else

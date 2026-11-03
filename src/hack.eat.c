@@ -15,14 +15,8 @@
 char POISONOUS[] = "ADKSVabhks";
 
 /* Forward declarations for functions in this file */
-void gethungry(void);
-void morehungry(int num);
-void lesshungry(int num);
 int eatcorpse(struct obj *otmp);
-void outrumor(void);
-void pluslvl(void);
 void newuhs(boolean flag);
-void losestr(int num);
 int Breadeatdone(void);
 int Potatoeatdone(void);
 int unfaint(void);

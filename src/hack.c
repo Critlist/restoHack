@@ -12,7 +12,6 @@
 #include "hack.h"
 #include <stdio.h>
 
-extern const char *exclam(int force);
 
 /* called on movement:
         1. when throwing ball+chain far away

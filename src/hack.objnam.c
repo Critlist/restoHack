@@ -105,7 +105,6 @@ static inline void force_ellipsis(char *dst, size_t cap) {
 #define PREFIX_Strcat(dest, src) safe_strcat(dest, PREFIX, src)
 #define PREFIX_Strcpy(dest, src) safe_strcpy(dest, PREFIX, src)
 #define PREFIX 15
-extern char *eos(char *s);
 extern int bases[];
 
 static char *strprepend(char *s, char *pref) {

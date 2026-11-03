@@ -10,7 +10,6 @@
 
 #include "hack.h"
 #include "def.eshk.h"
-extern char plname[PL_NSIZ];
 
 struct permonst mons[CMNUM + 2] = {
     {"bat", 'B', 1, 22, 8, 1, 4, 0},

@@ -15,7 +15,6 @@
 #include <fcntl.h>  /* for open() function */
 #include <unistd.h> /* for close() function */
 
-extern boolean level_exists[];
 
 static int drop(struct obj *obj);
 

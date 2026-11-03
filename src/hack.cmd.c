@@ -13,21 +13,9 @@
 #include "hack.h"
 #include "def.func_tab.h"
 
-int doredraw(void), doredotopl(void), dodrop(void), dodrink(void),
-    doread(void), dopickup(void), doversion(void), doweararm(void),
-    dowearring(void), doremarm(void), doremring(void), dopay(void),
-    doapply(void), dosave(void), dowield(void), ddoinv(void), dozap(void),
-    ddocall(void), dowhatis(void), doengrave(void), dotele(void), dohelp(void),
-    doeat(void), doddrop(void), do_mname(void), doidtrap(void), doprwep(void),
-    doprarm(void), doprring(void), doprgold(void), dodiscovered(void),
-    dotypeinv(void), dolook(void), doset(void), doup(void), dodown(void),
-    donull(void), dothrow(void), doextcmd(void), dodip(void), dopray(void);
 #ifdef SHELL
 int dosh(void);
 #endif /* SHELL */
-#ifdef SUSPEND
-int dosuspend(void);
-#endif /* SUSPEND */
 
 struct func_tab cmdlist[] = {
     {'\020', doredotopl},

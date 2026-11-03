@@ -4,8 +4,6 @@
 /* $FreeBSD$ */
 
 #include "hack.h"
-extern const char
-    *nomovemsg; /* MODERN: const because assigned string literals */
 
 int dodrink(void) {
   struct obj *otmp, *objs;

@@ -170,8 +170,6 @@ void setctty(void);
 /* MODERN: CONST-CORRECTNESS: cgetret text is read-only */
 void cgetret(const char *s);
 char *parse(void);
-extern void getioctls(void);
-extern void setioctls(void);
 
 /*
  * Get initial state of terminal, set ospeed (for termcap routines)

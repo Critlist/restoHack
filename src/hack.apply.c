@@ -12,7 +12,6 @@
 #include "hack.h"
 #include "def.edog.h"
 static struct monst *bchit(int ddx, int ddy, int range, char sym);
-extern char pl_character[];
 
 static void use_camera(struct obj *obj), use_ice_box(struct obj *obj),
     use_whistle(struct obj *obj), use_magic_whistle(struct obj *obj);

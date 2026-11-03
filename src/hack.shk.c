@@ -31,7 +31,6 @@ char *shkname(void) { return (""); }
 #define NOTANGRY(mon) mon->mpeaceful
 #define ANGRY(mon) !NOTANGRY(mon)
 
-extern char plname[];
 
 /* Descriptor of current shopkeeper. Note that the bill need not be
    per-shopkeeper, since it is valid only when in a shop. */

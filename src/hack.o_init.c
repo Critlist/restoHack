@@ -15,15 +15,7 @@
 #include "hack.onames.h" /* for LAST_GEM */
 #include <stdio.h>
 #include <string.h>
-/* Function prototypes */
-/* MODERN: Signatures must match hack.lev.c/hack.h exactly (void return,
- * unsigned length). Conflicting declarations are UB. */
-extern void bwrite(int fd, char *buf, unsigned len);
-extern void mread(int fd, char *buf, unsigned len);
-/* MODERN: CONST-CORRECTNESS: error message is read-only */
-extern void error(const char *s, ...);
-/* MODERN: CONST-CORRECTNESS: panic message is read-only */
-extern void panic(const char *str, ...);
+/* Function prototypes (bwrite/mread/error/panic are in hack.h) */
 extern int rn2(int x);
 extern void *alloc(unsigned lth);
 /* MODERN: CONST-CORRECTNESS: cornline text is read-only */

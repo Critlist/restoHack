@@ -18,7 +18,7 @@ int fd;
 char string[STRSZ];
 
 /* Function prototypes */
-int skipuntil(char *s);
+int skipuntil(const char *s);
 int getentry(void);
 int capitalize(char *sp);
 int letter(char ch);
@@ -100,8 +100,9 @@ static char nextchar(void) {
   return ((lp == lpe) ? 0 : *lp++);
 }
 
-int skipuntil(char *s) {
-  char *sp0, *sp1;
+int skipuntil(const char *s) {
+  const char *sp0;
+  char *sp1;
 loop:
   while (*s != nextchar())
     if (eof) {

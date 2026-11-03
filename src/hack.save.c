@@ -81,7 +81,7 @@ static void sw_i32(int fd, rh_i32_t val) { sw_u32(fd, (rh_u32_t)val); }
 static rh_i32_t sr_i32(int fd) { return (rh_i32_t)sr_u32(fd); }
 
 static void sw_bytes(int fd, const void *data, size_t len) {
-  bwrite(fd, (char *)data, len);
+  bwrite(fd, data, len);
 }
 
 static void sr_bytes(int fd, void *data, size_t len) {

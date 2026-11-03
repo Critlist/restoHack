@@ -147,7 +147,7 @@ void freelev(void) {
   setgd(); /* fmon is empty: clears the vault guard pointer */
 }
 
-void bwrite(int fd, char *loc, unsigned num) {
+void bwrite(int fd, const void *loc, unsigned num) {
   /* lint wants the 3rd arg of write to be an int; lint -p an unsigned */
   if (write(fd, loc, (size_t)num) != (ssize_t)num) /* MODERN: proper POSIX types */
     panic("cannot write %u bytes to file #%d", num, fd);

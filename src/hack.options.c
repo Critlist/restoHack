@@ -218,7 +218,7 @@ bad:
       return;
     }
     pline("Bad option: %.50s.", opts); /* MODERN: Limit format string length to prevent attacks */
-    pline("Type `o help<cr>' for help.");
+    pline("Type `O help<cr>' for help.");
     return;
   }
   puts("Bad syntax in HACKOPTIONS.");

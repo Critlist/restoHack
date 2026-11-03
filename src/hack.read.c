@@ -12,15 +12,10 @@
 
 #include "hack.h"
 
-extern struct monst *makemon();
-extern struct obj *mkobj_at();
-int identify();
-
 int doread(void) {
   struct obj *scroll;
   boolean confused = (Confusion != 0);
   boolean known = FALSE;
-  extern struct obj *some_armor();
 
   scroll = getobj("?", "read");
   if (!scroll)

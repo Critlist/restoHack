@@ -28,7 +28,7 @@ struct engr {
 #define BURN 3
 } *head_engr;
 
-struct engr *engr_at(xchar x, xchar y) {
+static struct engr *engr_at(xchar x, xchar y) {
   struct engr *ep = head_engr;
   while (ep) {
     if (x == ep->engr_x && y == ep->engr_y)

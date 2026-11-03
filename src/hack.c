@@ -12,12 +12,9 @@
 #include "hack.h"
 #include <stdio.h>
 
-extern char news0();
 extern const char
     *nomovemsg; /* MODERN: const because assigned string literals */
 extern const char *exclam(int force);
-extern struct obj *addinv();
-extern boolean hmon();
 
 /* called on movement:
         1. when throwing ball+chain far away
@@ -466,7 +463,6 @@ int pickup(int all) {
       if (wt > 0) {
         if (obj->quan > 1) {
           /* see how many we can lift */
-          extern struct obj *splitobj();
           int savequan = obj->quan;
           int iw = inv_weight();
           int qq;
@@ -875,7 +871,6 @@ void losehp_m(int n, struct monst *mtmp) {
 void losexp(void) /* hit by V or W */
 {
   int num;
-  extern long newuexp();
 
   if (u.ulevel > 1)
     pline("Goodbye level %u.", u.ulevel--);

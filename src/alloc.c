@@ -80,6 +80,7 @@ void *alloc(unsigned lth) {
   return (ptr);
 }
 
+void *enlarge(char *ptr, unsigned lth);
 void *enlarge(char *ptr, unsigned lth) {
   char *nptr;
 

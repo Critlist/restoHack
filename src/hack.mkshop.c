@@ -14,6 +14,7 @@
 #include "def.eshk.h"
 #include <stdlib.h>
 #define ESHK ((struct eshk *)(&(shk->mextra[0])))
+static struct permonst *morguemon(void);
 
 /* Forward declarations for functions used but not properly visible */
 extern void findname(char *nampt, char let);
@@ -172,7 +173,6 @@ void mkzoo(int type) {
   int sh, sx, sy, i;
   int goldlim = 500 * dlevel;
   int moct = 0;
-  struct permonst *morguemon();
 
   i = nroom;
   for (sroom = &rooms[rn2(nroom)];; sroom++) {
@@ -231,7 +231,7 @@ void mkzoo(int type) {
     }
 }
 
-struct permonst *morguemon(void) {
+static struct permonst *morguemon(void) {
   extern struct permonst pm_ghost;
   int i = rn2(100), hd = rn2(dlevel);
 

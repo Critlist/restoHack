@@ -130,7 +130,7 @@ static void seed_prng(void) {
 
 void setrandom(void) { seed_prng(); }
 
-struct tm *getlt(void) {
+static struct tm *getlt(void) {
   time_t date;
 
   (void)time(&date);
@@ -283,7 +283,7 @@ int uptodate(int fd) {
 }
 
 /* see whether we should throw away this xlock file */
-int veryold(int fd) {
+static int veryold(int fd) {
   int i;
   time_t date;
 
@@ -293,7 +293,6 @@ int veryold(int fd) {
     return (0); /* not an xlock file */
   (void)time(&date);
   if (date - buf.st_mtime < 3L * 24L * 60L * 60L) { /* recent */
-    extern int errno;
     int lockedpid; /* should be the same size as hackpid */
 
     if (read(fd, (char *)&lockedpid, sizeof(lockedpid)) != sizeof(lockedpid))
@@ -320,7 +319,7 @@ int veryold(int fd) {
 }
 
 void getlock(void) {
-  extern int errno, hackpid, locknum;
+  extern int hackpid, locknum;
   int i = 0, fd;
 
   (void)fflush(stdout);

@@ -37,7 +37,7 @@ void stealgold(struct monst *mtmp) {
 /* steal armor after he finishes taking it off */
 unsigned stealoid; /* object to be stolen */
 unsigned stealmid; /* monster doing the stealing */
-int stealarm(void) {
+static int stealarm(void) {
   struct monst *mtmp;
   struct obj *otmp;
 
@@ -120,7 +120,7 @@ struct obj *steal(struct monst *mtmp) {
         if (multi < 0) {
           extern const char
               *nomovemsg; /* MODERN: const because assigned string literals */
-          extern int (*afternmv)();
+          extern int (*afternmv)(void);
           /*
           multi = 0;
           nomovemsg = 0;

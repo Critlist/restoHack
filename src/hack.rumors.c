@@ -15,7 +15,7 @@ int n_rumors = 0;
 int n_used_rumors = -1;
 char *usedbits;
 
-void init_rumors(FILE *rumf) {
+static void init_rumors(FILE *rumf) {
   int i;
   n_used_rumors = 0;
   while (skipline(rumf))
@@ -45,7 +45,7 @@ int skipline(FILE *rumf) {
   }
 }
 
-void outline(FILE *rumf) {
+static void outline(FILE *rumf) {
   char line[COLNO];
   char *ep;
   if (!fgets(line, sizeof(line), rumf))

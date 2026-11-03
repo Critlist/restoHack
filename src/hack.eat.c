@@ -15,10 +15,9 @@
 char POISONOUS[] = "ADKSVabhks";
 extern const char
     *nomovemsg; /* MODERN: const because assigned string literals */
-extern int (*afternmv)();
-extern int (*occupation)();
+extern int (*afternmv)(void);
+extern int (*occupation)(void);
 extern const char *occtxt; /* MODERN: const because assigned string literals */
-extern struct obj *splitobj(), *addinv();
 
 /* Forward declarations for functions in this file */
 void gethungry(void);
@@ -71,7 +70,7 @@ static struct {
   int usedtime, reqtime;
 } tin;
 
-int opentin(void) {
+static int opentin(void) {
   int r;
 
   if (!carried(tin.tin)) /* perhaps it was stolen? */
@@ -109,7 +108,7 @@ int opentin(void) {
   return (0);
 }
 
-int Meatdone(void) {
+static int Meatdone(void) {
   u.usym = '@';
   prme();
   return 0;
@@ -166,7 +165,6 @@ gotit:
         pline("The tin slips out of your hands.");
         if (otmp->quan > 1) {
           struct obj *obj;
-          extern struct obj *splitobj();
 
           obj = splitobj(otmp, 1);
           if (otmp == uwep)

@@ -11,7 +11,6 @@
 
 #include "hack.h"
 
-extern struct monst *makemon();
 
 char vowels[] = "aeiou";
 
@@ -291,8 +290,7 @@ void vtele(void) {
 }
 
 void tele(void) {
-  extern coord getpos();
-  coord cc;
+    coord cc;
   int nux, nuy;
 
   if (Teleport_control) {

@@ -8,9 +8,6 @@
 
 #include "hack.h"
 
-extern struct monst *makemon();
-extern struct obj *mkobj_at();
-extern struct trap *maketrap();
 
 #define somex() ((random() % (croom->hx - croom->lx + 1)) + croom->lx)
 #define somey() ((random() % (croom->hy - croom->ly + 1)) + croom->ly)
@@ -20,7 +17,9 @@ boolean secret; /* TRUE while making a vault: increase [XY]LIM */
 int smeq[MAXNROFROOMS + 1];
 int doorindex;
 struct rm zerorm;
-int comp();
+static int comp(const void *x, const void *y);
+static coord finddpos(int xl, int yl, int xh, int yh);
+static void dodoor(int x, int y, struct mkroom *aroom);
 schar nxcor;
 boolean goldseen;
 int nroom;
@@ -284,7 +283,7 @@ int addrsx(int lx, int ly, int hx, int hy,
   return 1;
 }
 
-int comp(const void *x, const void *y) {
+static int comp(const void *x, const void *y) {
   const struct mkroom *a = (const struct mkroom *)x;
   const struct mkroom *b = (const struct mkroom *)y;
   if (a->lx < b->lx)
@@ -292,7 +291,7 @@ int comp(const void *x, const void *y) {
   return (a->lx > b->lx);
 }
 
-coord finddpos(int xl, int yl, int xh, int yh) {
+static coord finddpos(int xl, int yl, int xh, int yh) {
   coord ff;
   int x, y;
 
@@ -334,7 +333,7 @@ int okdoor(int x, int y) {
   return (1);
 }
 
-void dodoor(int x, int y, struct mkroom *aroom) {
+static void dodoor(int x, int y, struct mkroom *aroom) {
   if (doorindex >= DOORMAX) {
     impossible("DOORMAX exceeded?", 0, 0);
     return;
@@ -729,7 +728,6 @@ void mktrap(int num, int mazeflag, struct mkroom *croom) {
           mx = somex();
         }
       } else if (mazeflag) {
-        extern coord mazexy();
         coord mm;
         mm = mazexy();
         mx = mm.x;
@@ -753,7 +751,6 @@ void mktrap(int num, int mazeflag, struct mkroom *croom) {
     if (++tryct > 200)
       return;
     if (mazeflag) {
-      extern coord mazexy();
       coord mm;
       mm = mazexy();
       mx = mm.x;

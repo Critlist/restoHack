@@ -59,7 +59,6 @@ int dowhatis(void) {
   FILE *fp;
   char bufr[BUFSZ + 6];
   char *buf = &bufr[6], *ep, q;
-  extern char readchar();
 
   if (!(fp = fopen(DATAFILE, "r")))
     pline("Cannot open data file!");

@@ -14,9 +14,10 @@
 extern const char
     *nomovemsg; /* MODERN: const because assigned string literals */
 extern char quitchars[];
-extern char *Doname();
 
-void off_msg(struct obj *otmp) { pline("You were wearing %s.", doname(otmp)); }
+static void off_msg(struct obj *otmp) {
+  pline("You were wearing %s.", doname(otmp));
+}
 
 int doremarm(void) {
   struct obj *otmp;

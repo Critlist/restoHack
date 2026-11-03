@@ -19,7 +19,6 @@
 #define UNDEF_TYP 0
 #define UNDEF_SPE '\177'
 /* addinv() declared in hack.h */
-extern char *eos();
 extern char plname[];
 
 struct you zerou;
@@ -104,8 +103,7 @@ struct trobj Wizard[] = {{ELVEN_CLOAK, 0, ARMOR_SYM, 1, 1},
 int u_init(void) {
   int i;
   char exper = 'y', pc;
-  extern char readchar();
-  if (flags.female) /* should have been set in HACKOPTIONS */
+    if (flags.female) /* should have been set in HACKOPTIONS */
     roles[4] = role_cavewoman;
   else
     roles[4] = role_caveman;

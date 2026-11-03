@@ -34,9 +34,6 @@
 extern char plname[], pl_character[];
 
 /* Forward declarations for missing functions */
-extern void paybill(void);
-extern void savebones(void);
-extern void outrip(void);
 /* MODERN: CONST-CORRECTNESS: settty message is read-only */
 extern void settty(const char *);
 
@@ -75,14 +72,14 @@ void done1(int sig) {
 int done_stopprint;
 int done_hup;
 
-void done_intr(int sig) {
+static void done_intr(int sig) {
   (void)sig;
   done_stopprint++;
   (void)signal(SIGINT, SIG_IGN);
   (void)signal(SIGQUIT, SIG_IGN);
 }
 
-void done_hangup(int sig) {
+static void done_hangup(int sig) {
   done_hup++;
   (void)signal(SIGHUP, SIG_IGN);
   done_intr(sig);
@@ -289,7 +286,7 @@ static void reset_topten_arena(void) {
   memset(arena, 0, sizeof(arena));
 }
 
-struct toptenentry *newttentry(void) {
+static struct toptenentry *newttentry(void) {
   if (arena_used >= ENTRYMAX + 2) {
     panic("topten arena exhausted");
   }
@@ -316,7 +313,6 @@ void topten(void) {
                     compiled */
   FILE *rfile;
   int flg = 0;
-  extern char *getdatestr();
 #define HUP if (!done_hup)
 
   /**

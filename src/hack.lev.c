@@ -13,10 +13,9 @@
 /* def.mkroom.h already included via hack.h */
 
 #include <unistd.h>
-extern struct monst *restmonchn();
-extern struct obj *restobjchn();
+extern struct monst *restmonchn(int fd);
+extern struct obj *restobjchn(int fd);
 extern struct obj *billobjs;
-extern char *itoa();
 extern char SAVEF[];
 extern int hackpid;
 extern xchar dlevel;

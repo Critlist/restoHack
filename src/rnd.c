@@ -10,6 +10,11 @@
 
 #include <stdlib.h>
 
+int rn1(int x, int y);
+int rn2(int x);
+int rnd(int x);
+int d(int n, int x);
+
 /* Original 1984: #define RND(x) (random() % x) */
 /**
  * MODERN ADDITION (2026): Guard the RND() modulus

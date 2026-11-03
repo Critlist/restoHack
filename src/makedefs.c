@@ -92,7 +92,7 @@ int readline(void) {
   return (int)n; /* Original 1984: return bytes read as int */
 }
 
-char nextchar(void) {
+static char nextchar(void) {
   if (lp == lpe) {
     readline();
     lp = lp0;

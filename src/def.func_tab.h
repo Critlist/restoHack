@@ -3,14 +3,14 @@
 
 struct func_tab {
   char f_char;
-  int (*f_funct)();
+  int (*f_funct)(void);
 };
 
 extern struct func_tab cmdlist[];
 
 struct ext_func_tab {
   const char *ef_txt; /* MODERN: const because points to string literals */
-  int (*ef_funct)();
+  int (*ef_funct)(void);
 };
 
 extern struct ext_func_tab extcmdlist[];

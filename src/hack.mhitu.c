@@ -336,7 +336,6 @@ int hitu(struct monst *mtmp, int dam) {
     mtmp->mundetected = 0;
     if (!Blind) {
       struct obj *obj;
-      extern char *Xmonnam();
       if ((obj = o_at(mtmp->mx, mtmp->my)))
         pline("%s was hidden under %s!", Xmonnam(mtmp), doname(obj));
     }

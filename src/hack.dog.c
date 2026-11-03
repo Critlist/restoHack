@@ -11,7 +11,6 @@
 
 #include "hack.h"
 #include "hack.mfndpos.h"
-extern struct monst *makemon();
 #include "def.edog.h"
 
 struct permonst li_dog = {"little dog",       'd', 2, 18, 6, 1, 6,
@@ -88,7 +87,7 @@ void fall_down(struct monst *mtmp) {
 #define APPORT 4
 #define POISON 5
 #define UNDEF 6
-int dogfood(struct obj *obj) {
+static int dogfood(struct obj *obj) {
   switch (obj->olet) {
   case FOOD_SYM:
     return ((obj->otyp == TRIPE_RATION) ? DOGFOOD
@@ -278,7 +277,6 @@ int dog_move(struct monst *mtmp, int after) {
     appr = 0;
 
   if (gx == u.ux && gy == u.uy && (dogroom != uroom || dogroom < 0)) {
-    extern coord *gettrack();
     coord *cp;
     cp = gettrack(omx, omy);
     if (cp) {

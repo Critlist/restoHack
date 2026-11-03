@@ -34,8 +34,8 @@ extern char plname[PL_NSIZ], pl_character[PL_CSIZ];
 extern struct permonst mons[CMNUM + 2];
 extern char genocided[60], fut_geno[];
 
-int (*afternmv)();
-int (*occupation)();
+int (*afternmv)(void);
+int (*occupation)(void);
 const char *occtxt; /* MODERN: const because assigned string literals */
 
 void done1(int sig);

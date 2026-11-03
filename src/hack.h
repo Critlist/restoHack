@@ -60,6 +60,7 @@ typedef struct {
 #define SAFE_BUF_SIZE (BUFSZ - 15)
 #define Sprintf(buf, ...) (void)snprintf(buf, SAFE_BUF_SIZE, __VA_ARGS__)
 #define PL_NSIZ 32 /* name of player, ghost, shopkeeper */
+#define PL_CSIZ 20 /* sizeof pl_character */
 
 /**
  * MODERN ADDITION (2025): Safe object array access macros
@@ -107,6 +108,8 @@ extern int getdir(boolean s);
 extern coord getpos(int force, const char *goal);
 extern int dist(int x1, int y1);
 extern int cansee(int x, int y);
+extern int canseemon(struct monst *mtmp);
+extern int isok(int x, int y);
 extern void setmangry(struct monst *mtmp);
 extern int rn2(int x);
 extern int rnd(int x);
@@ -161,13 +164,10 @@ extern void nocmov(int x, int y);
 extern void home(void);
 
 /* MISSING FUNCTION PROTOTYPES - Essential for linking (non-conflicting only) */
-extern int canseemon(struct monst *mtmp);
-extern int isok(int x, int y);
 extern char *eos(char *s);
 extern int letindex(char let);
 extern char *doname(struct obj *obj);
 extern void getlin(char *buf);
-/* MODERN: CONST-CORRECTNESS: xwaitforspace allowed chars is read-only */
 extern struct obj *splitobj(struct obj *obj, int cnt);
 extern void obfree(struct obj *obj, struct obj *merge);
 extern void oinit(void);
@@ -227,7 +227,7 @@ extern char *Amonnam(struct monst *mtmp, const char *adj);
 
 /* GLOBAL VARIABLES */
 extern char morc;
-extern struct wseg *wsegs[32];
+extern struct wseg *wsegs[32], *wheads[32];
 
 /* Function prototypes */
 /* MODERN: CONST-CORRECTNESS: error message is read-only */
@@ -433,8 +433,6 @@ extern int okdoor(int x, int y);
 extern void dosdoor(int x, int y, struct mkroom *aroom, int type);
 extern void join(int a, int b);
 extern void makeniche(boolean with_trap);
-/* MODERN: CONST-CORRECTNESS: make_engr_at text is read-only */
-
 /* TERMCAP FUNCTION PROTOTYPES - from hack.termcap.c */
 extern void start_screen(void);
 extern void end_screen(void);
@@ -627,16 +625,13 @@ extern struct you u;
  */
 extern const char *const traps[];
 extern char *aobjnam(struct obj *otmp, const char *verb);
-extern char readchar(void);
 
 /* inventory system functions */
-extern struct obj *addinv(struct obj *obj),
-    *splitobj(struct obj *otmp, int cnt);
-extern int assigninvlet(struct obj *otmp), carried(struct obj *obj),
-    carrying(int type);
+extern struct obj *addinv(struct obj *obj);
+extern int assigninvlet(struct obj *otmp), carried(struct obj *obj);
 extern char obj_to_let(struct obj *obj);
-extern void useup(struct obj *obj), freeinv(struct obj *obj),
-    delobj(struct obj *obj), freeobj(struct obj *obj);
+extern void useup(struct obj *obj), delobj(struct obj *obj),
+    freeobj(struct obj *obj);
 extern void freegold(struct gold *gold), deltrap(struct trap *trap),
     stackobj(struct obj *obj);
 extern void prinv(struct obj *obj), doinv(char *lets);
@@ -652,10 +647,8 @@ extern int askchain(struct obj *objchn, char *olets, int allflag,
 /* MODERN: CONST-CORRECTNESS: getobj parameters are read-only */
 extern struct obj *getobj(const char *let, const char *word),
     *o_on(unsigned int id, struct obj *objchn), *mkgoldobj(long q);
-extern struct gold *g_at(int x, int y);
 extern struct wseg *m_atseg;
-extern void setnotworn(struct obj *obj),
-    obfree(struct obj *obj, struct obj *other), unpobj(struct obj *obj);
+extern void setnotworn(struct obj *obj), unpobj(struct obj *obj);
 /* MODERN: CONST-CORRECTNESS: cornline text is read-only */
 extern void cornline(int mode, const char *text);
 extern int doinvbill(int mode);
@@ -676,7 +669,7 @@ extern int ddocall(void), dodip(void), dodrop(void), doengrave(void),
     doidtrap(void), do_mname(void), dopay(void), dopickup(void),
     doremarm(void), doremring(void), dosave(void), doset(void),
     dosuspend(void), doversion(void), doweararm(void), dowearring(void),
-    dowield(void);
+    dowield(void), dowhatis(void), dohelp(void), dodiscovered(void);
 extern char *Doname(struct obj *obj);
 extern int fightm(struct monst *mtmp);
 extern char *getdatestr(void);
@@ -700,7 +693,7 @@ extern void outrumor(void);
 
 /* Shared globals (one declaration for the whole program) */
 extern char sdir[], mlarge[], genocided[60], fut_geno[60];
-extern char plname[PL_NSIZ], pl_character[];
+extern char plname[PL_NSIZ], pl_character[PL_CSIZ];
 extern schar xdir[], ydir[];
 extern int hackpid, locknum, doorindex, done_stopprint;
 extern char *hname, *catmore;
@@ -723,7 +716,7 @@ extern unsigned char seehx, seelx, seehy,
 extern char *save_cm;
 extern const char *killer;
 
-extern xchar dlevel, maxdlevel; /* dungeon level */
+extern xchar maxdlevel; /* highest dungeon level reached */
 
 extern long moves;
 
@@ -734,7 +727,6 @@ extern char lock[];
 #define DIST(x1, y1, x2, y2)                                                   \
   (((x1) - (x2)) * ((x1) - (x2)) + ((y1) - (y2)) * ((y1) - (y2)))
 
-#define PL_CSIZ 20       /* sizeof pl_character */
 #define MAX_CARR_CAP 120 /* so that boulders can be heavier */
 #define MAXLEVEL 40
 #define FAR (COLNO + 2) /* position outside screen */

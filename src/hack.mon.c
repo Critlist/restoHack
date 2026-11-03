@@ -19,56 +19,17 @@
 /* extern struct obj *mkobj_at(); - declared below with proper signature */
 
 /* Forward declarations for functions not yet prototyped in hack.h */
-extern void charcat(char *s, char c);
-extern int getwn(struct monst *mtmp);
-extern void initworm(struct monst *mtmp);
-extern int fightm(struct monst *mtmp);
 /* wipe_engr_at() and sengr_at() now declared in hack.h */
-extern int mhitu(struct monst *mtmp);
-extern int mintrap(struct monst *mtmp);
-extern int dog_move(struct monst *mtmp, int after);
-extern int shk_move(struct monst *mtmp);
-extern int gd_move(void);
-extern void inrange(struct monst *mtmp);
-extern coord *gettrack(int x, int y);
-extern void mpickobj(struct monst *mtmp, struct obj *otmp);
-extern void newsym(int x, int y);
-extern int hitmm(struct monst *mtmp1, struct monst *mtmp2);
-extern int hitu(struct monst *mtmp, int d);
-extern void worm_move(struct monst *mtmp);
-extern void worm_nomove(struct monst *mtmp);
-extern void freegold(struct gold *gold);
-extern void freeobj(struct obj *obj);
-extern void shkdead(struct monst *mtmp);
-extern void gddead(void);
-extern void wormdead(struct monst *mtmp);
-extern void replshk(struct monst *old, struct monst *new);
-extern void replgd(struct monst *old, struct monst *new);
-extern void more_experienced(int exp, int rexp);
 /* mksobj_at already declared in hack.h with correct signature */
-extern void stackobj(struct obj *obj);
-extern struct obj *mkobj_at(int let, int x, int y);
 /* atl already declared in hack.h with correct signature */
-extern void prme(void);
-extern int inroom(int x, int y);
 
 /* Forward declarations for functions defined later in this file */
 int dochugw(struct monst *mtmp);
-int dochug(struct monst *mtmp);
 void dmonsfree(void);
-void kludge(const char *str, const char *arg);
-void relmon(struct monst *mon);
-void monfree(struct monst *mtmp);
-void unstuck(struct monst *mtmp);
-int newcham(struct monst *mtmp, struct permonst *mdat);
-int mfndpos(struct monst *mon, coord poss[9], int info[9], int flag);
 void mpickgold(struct monst *mtmp);
 void mpickgems(struct monst *mtmp);
 
 /* Additional missing function declarations */
-extern int online(int x, int y);
-extern void losestr(int n);
-extern void relobj(struct monst *mtmp, int flag);
 
 int warnlevel; /* used by movemon and dochugw */
 long lastwarntime;

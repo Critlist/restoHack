@@ -21,7 +21,6 @@
 
 /* Forward declarations for functions not properly visible */
 /* MODERN: CONST-CORRECTNESS: settty message is read-only */
-extern void settty(const char *s);
 
 #ifdef __EMSCRIPTEN__
 /* Terminal state is managed through termios in hack.tty.c. */

@@ -10,19 +10,11 @@
  */
 
 #include "hack.h"
-extern char fut_geno[];
 /* MODERN: removed bogus extern for index() - provided by string.h/compat.h */
-extern struct obj *mkobj_at(int let, int x, int y);
 
 /* Function prototypes for missing functions */
-extern int d(int n, int x);
-extern int newcham(struct monst *mtmp, struct permonst *mdat);
-extern int getwn(struct monst *mtmp);
-extern void initworm(struct monst *mtmp);
 
 /* Forward declarations for functions defined in this file */
-void rloc(struct monst *mtmp);
-coord enexto(xchar xx, xchar yy);
 
 struct monst zeromonst;
 

@@ -17,13 +17,10 @@ extern struct monst *restmonchn(int fd);
 extern struct obj *restobjchn(int fd);
 extern struct obj *billobjs;
 extern char SAVEF[];
-extern int hackpid;
-extern xchar dlevel;
 extern char nul[];
 
 #ifndef NOWORM
 #include "def.wseg.h"
-extern struct wseg *wsegs[32], *wheads[32];
 extern long wgrowtime[32];
 #endif /* NOWORM */
 

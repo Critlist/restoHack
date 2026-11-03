@@ -19,7 +19,6 @@
 #define UNDEF_TYP 0
 #define UNDEF_SPE '\177'
 /* addinv() declared in hack.h */
-extern char plname[];
 
 struct you zerou;
 char pl_character[PL_CSIZ];

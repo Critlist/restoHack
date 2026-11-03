@@ -32,11 +32,7 @@ extern int CO, LI; /* usually COLNO and ROWNO+2 */
 extern char *CD;
 
 /* Function prototypes for functions defined in this file */
-int dowhatis(void);
 void page_more(FILE *fp, int strip);
-void set_pager(int mode);
-int page_line(const char *s);
-int dohelp(void);
 /* MODERN: CONST-CORRECTNESS: page_file filename is read-only */
 int page_file(const char *fnam, boolean silent);
 void intruph(int sig);
@@ -52,7 +48,6 @@ int child(int wt);
 /* MODERN: CONST-CORRECTNESS: cgetret text is read-only */
 extern void cgetret(const char *text);
 /* MODERN: CONST-CORRECTNESS: settty message is read-only */
-extern void settty(const char *arg);
 
 int dowhatis(void) {
   FILE *fp;

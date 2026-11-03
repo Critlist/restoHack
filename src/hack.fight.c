@@ -12,7 +12,6 @@
 #include "hack.h"
 #include <stdio.h>
 extern struct permonst li_dog, dog, la_dog;
-extern const char *exclam(int force);
 
 static boolean far_noise;
 static long noisetime;

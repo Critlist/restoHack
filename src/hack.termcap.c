@@ -116,7 +116,6 @@ void end_screen(void) {
 }
 
 /* Cursor movements */
-extern xchar curx, cury;
 
 void curs(int x, int y) /* not xchar: perhaps xchar is unsigned and
                            curx-x would be unsigned as well */

@@ -28,11 +28,9 @@
     }                                                                          \
   } while (0)
 
-extern char plname[], pl_character[];
 
 /* Forward declarations for missing functions */
 /* MODERN: CONST-CORRECTNESS: settty message is read-only */
-extern void settty(const char *);
 
 /* Forward declarations for functions in this file */
 void topten(void);
@@ -40,8 +38,6 @@ void outheader(void);
 void clearlocks(void);
 char *itoa(int a);
 const char *ordin(int n); /* MODERN: const because returns string literals */
-char *eos(char *s);
-void charcat(char *s, char c);
 
 xchar maxdlevel = 1;
 

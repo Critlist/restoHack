@@ -328,8 +328,6 @@ void pru(void) {
 
 #ifndef NOWORM
 #include "def.wseg.h"
-extern struct wseg *m_atseg;
-extern void pwseg(struct wseg *wseg);
 #endif /* NOWORM */
 
 /* print a position that is visible for @ */

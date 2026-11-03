@@ -3,8 +3,6 @@
 /* $FreeBSD$ */
 
 #include "hack.h"
-extern char genocided[60]; /* defined in Decl.c */
-extern char fut_geno[60];  /* idem */
 #include <fcntl.h>
 #include <signal.h>
 #include <stdint.h>
@@ -256,7 +254,6 @@ static int check_save_header(int fd, rh_hdr_t *hdr) {
 /* Function pointer serialization for property timeouts
  * EXHAUSTIVE SEARCH RESULT: Only float_down is assigned in codebase
  * (see src/hack.potion.c:184) */
-extern int float_down(void);
 
 typedef int (*timeout_fn_t)(void);
 
@@ -294,14 +291,12 @@ static int (*restore_timeout_fn(rh_u32_t id))(void) {
 }
 
 extern char SAVEF[], nul[];
-extern char pl_character[PL_CSIZ];
 extern struct obj *restobjchn(int fd);
 extern struct monst *restmonchn(int fd);
 extern int dosave0(int hu);
 extern void savenames(int fd);
 extern void restnames(int fd);
 /* MODERN: CONST-CORRECTNESS: settty message is read-only */
-extern void settty(const char *s);
 
 int dosave(void) {
   if (dosave0(0)) {

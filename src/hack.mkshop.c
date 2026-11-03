@@ -17,13 +17,6 @@
 static struct permonst *morguemon(void);
 
 /* Forward declarations for functions used but not properly visible */
-extern void findname(char *nampt, char let);
-extern int has_dnstairs(struct mkroom *sroom);
-extern int has_upstairs(struct mkroom *sroom);
-extern int isbig(struct mkroom *sroom);
-extern int nexttodoor(int sx, int sy);
-extern int dist2(int x0, int y0, int x1, int y1);
-extern int sq(int a);
 
 extern int nroom;
 extern char shtypes[]; /* = "=/)%?!["; 8 types: 7 specialized, 1 mixed */

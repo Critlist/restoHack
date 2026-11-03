@@ -14,7 +14,6 @@
 #include <stdbool.h>
 #include <stddef.h> /* MODERN: for ptrdiff_t */
 #include <stdio.h>
-extern char *eos(char *s);
 extern int CO;
 
 char toplines[BUFSZ];

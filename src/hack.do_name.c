@@ -11,7 +11,6 @@
 
 #include "hack.h"
 #include <stdio.h>
-extern char plname[];
 
 static char *xmonnam(struct monst *mtmp, int vb);
 static char *lmonnam(struct monst *mtmp);

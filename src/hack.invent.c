@@ -11,14 +11,11 @@
 
 #include "hack.h"
 #include <stdio.h>
-extern struct obj *splitobj(struct obj *otmp, int cnt);
 extern struct obj zeroobj;
-extern char morc;
 static char *xprname(struct obj *obj, char let);
 
 #ifndef NOWORM
 #include "def.wseg.h"
-extern struct wseg *wsegs[32];
 #endif /* NOWORM */
 
 #define NOINVSYM '#'

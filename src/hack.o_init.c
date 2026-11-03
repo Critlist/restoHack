@@ -16,23 +16,13 @@
 #include <stdio.h>
 #include <string.h>
 /* Function prototypes (bwrite/mread/error/panic are in hack.h) */
-extern int rn2(int x);
-extern void *alloc(unsigned lth);
 /* MODERN: CONST-CORRECTNESS: cornline text is read-only */
-extern void cornline(int mode, const char *text);
 /* MODERN: CONST-CORRECTNESS: pline message is read-only */
-extern void pline(const char *line, ...);
-extern char *typename(int otyp);
 
 /* Forward declarations for functions defined in this file */
-int letindex(char let);
-void init_objects(void);
-int probtype(int let);
 void setgemprobs(void);
-void oinit(void);
 void savenames(int fd);
 void restnames(int fd);
-int dodiscovered(void);
 int interesting_to_discover(int i);
 
 int letindex(char let) {

@@ -24,8 +24,6 @@ schar nxcor;
 boolean goldseen;
 int nroom;
 /* Original 1984: extern xchar xdnstair,xupstair,ydnstair,yupstair; */
-extern unsigned char xdnstair, xupstair, ydnstair,
-    yupstair; /* MODERN: unsigned to prevent buffer underflow */
 
 /* Definitions used by makerooms() and addrs() */
 #define MAXRS 50 /* max lth of temp rectangle table - arbitrary */

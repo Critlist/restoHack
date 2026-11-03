@@ -16,7 +16,6 @@
 #define NULL (char *)0
 #endif
 
-extern struct monst *makemon();
 /* extern struct obj *mkobj_at(); - declared below with proper signature */
 
 /* Forward declarations for functions not yet prototyped in hack.h */
@@ -45,7 +44,6 @@ extern void gddead(void);
 extern void wormdead(struct monst *mtmp);
 extern void replshk(struct monst *old, struct monst *new);
 extern void replgd(struct monst *old, struct monst *new);
-extern long newuexp(void);
 extern void more_experienced(int exp, int rexp);
 /* mksobj_at already declared in hack.h with correct signature */
 extern void stackobj(struct obj *obj);
@@ -398,7 +396,6 @@ not_special:
      should use mtmp->msmell or sth
    */
   if (msym == '@' || ('a' <= msym && msym <= 'z')) {
-    extern coord *gettrack();
     coord *cp;
     schar mroom;
     mroom = inroom(omx, omy);
@@ -747,7 +744,6 @@ void killed(struct monst *mtmp) {
   int tmp, tmp2, nk, x, y;
   (void)tmp2; /* Original 1984: used in NEW_SCORING (lint mode only) */
   struct permonst *mdat;
-  extern long newuexp();
 
   if (mtmp->cham)
     mtmp->data = PM_CHAMELEON;
@@ -949,7 +945,7 @@ void mnexto(
   pmon(mtmp);
 }
 
-int ishuman(struct monst *mtmp) { return (mtmp->data->mlet == '@'); }
+static int ishuman(struct monst *mtmp) { return (mtmp->data->mlet == '@'); }
 
 void setmangry(struct monst *mtmp) {
   if (!mtmp->mpeaceful)

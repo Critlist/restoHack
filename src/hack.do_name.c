@@ -13,6 +13,9 @@
 #include <stdio.h>
 extern char plname[];
 
+static char *xmonnam(struct monst *mtmp, int vb);
+static char *lmonnam(struct monst *mtmp);
+
 coord
 /**
  * MODERN ADDITION (2025): const-qualified goal parameter
@@ -70,7 +73,6 @@ int do_mname(void) {
   unsigned
       i; /* MODERN: Match mxlth unsigned type to avoid sign-compare warning */
   struct monst *mtmp, *mtmp2;
-  extern char *lmonnam();
   cc = getpos(0, "the monster you want to name");
   cx = cc.x;
   cy = cc.y;
@@ -130,7 +132,7 @@ int do_mname(void) {
  * when there might be pointers around in unknown places. For now: only
  * when  obj  is in the inventory.
  */
-void do_oname(struct obj *obj) {
+static void do_oname(struct obj *obj) {
   struct obj *otmp, *otmp2;
   int lth;
   char buf[BUFSZ];
@@ -193,7 +195,6 @@ void docall(struct obj *obj) {
   char buf[BUFSZ];
   struct obj otemp;
   char **str1;
-  extern char *xname();
   char *str;
 
   otemp = *obj;
@@ -222,10 +223,9 @@ const char *const ghostnames[] = {/* these names should have length < PL_NSIZ */
                                   "maud",   "michiel", "mike",    "peter",
                                   "robert", "ron",     "tom",     "wilmar"};
 
-char *xmonnam(struct monst *mtmp, int vb) {
+static char *xmonnam(struct monst *mtmp, int vb) {
   static char buf[BUFSZ]; /* MODERN: Static buffer reuse issue - overwrites on
                              each call */
-  extern char *shkname();
   if (mtmp->mnamelth && !vb) {
     (void)strncpy(buf, NAME(mtmp), BUFSZ - 1); /* MODERN: Safe copy */
     buf[BUFSZ - 1] = 0;
@@ -276,7 +276,7 @@ char *xmonnam(struct monst *mtmp, int vb) {
   return (buf);
 }
 
-char *lmonnam(struct monst *mtmp) { return (xmonnam(mtmp, 1)); }
+static char *lmonnam(struct monst *mtmp) { return (xmonnam(mtmp, 1)); }
 char *monnam(struct monst *mtmp) { return (xmonnam(mtmp, 0)); }
 
 char *Monnam(struct monst *mtmp) {

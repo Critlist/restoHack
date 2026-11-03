@@ -13,7 +13,6 @@
 #include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
-extern char *eos();
 
 /* Forward declaration */
 void parseoptions(char *opts, boolean from_env);

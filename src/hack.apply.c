@@ -12,15 +12,14 @@
 #include "hack.h"
 #include "def.edog.h"
 static struct monst *bchit(int ddx, int ddy, int range, char sym);
-extern struct obj *addinv();
-extern struct trap *maketrap();
-extern int (*occupation)();
+extern int (*occupation)(void);
 extern const char *occtxt; /* MODERN: const because assigned string literals */
 extern char quitchars[];
 extern char pl_character[];
 
-static void use_camera(), use_ice_box(), use_whistle(), use_magic_whistle();
-static int use_pick_axe();
+static void use_camera(struct obj *obj), use_ice_box(struct obj *obj),
+    use_whistle(struct obj *obj), use_magic_whistle(struct obj *obj);
+static int use_pick_axe(struct obj *obj);
 
 int doapply(void) {
   struct obj *obj;

@@ -11,7 +11,6 @@
 
 #include "hack.h"
 extern struct permonst pm_wizard;
-extern coord mazexy();
 
 /* Forward declarations for local functions */
 void walkfrom(int x, int y);

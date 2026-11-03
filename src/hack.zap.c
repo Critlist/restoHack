@@ -4,8 +4,7 @@
 
 #include "hack.h"
 
-extern struct obj *mkobj_at();
-extern struct monst *makemon(), *mkmon_at(), youmonst;
+extern struct monst youmonst;
 
 /* MODERN: CONST-CORRECTNESS: flash effect strings are read-only */
 const char *const fl[] = {"magic missile", "bolt of fire", "sleep ray",
@@ -13,7 +12,7 @@ const char *const fl[] = {"magic missile", "bolt of fire", "sleep ray",
 
 /* Routines for IMMEDIATE wands. */
 /* bhitm: monster mtmp was hit by the effect of wand otmp */
-int bhitm(struct monst *mtmp, struct obj *otmp) {
+static int bhitm(struct monst *mtmp, struct obj *otmp) {
   wakeup(mtmp);
   switch (otmp->otyp) {
   case WAN_STRIKING:
@@ -68,7 +67,7 @@ int bhitm(struct monst *mtmp, struct obj *otmp) {
   return 1; /* MODERN: Return success indicator - was missing return value */
 }
 
-int bhito(struct obj *obj,
+static int bhito(struct obj *obj,
           struct obj *otmp) /* object obj was hit by the effect of wand otmp */
 {                           /* returns TRUE if sth was done */
   int res = TRUE;
@@ -170,8 +169,7 @@ int dozap(void) {
     case WAN_WISHING: {
       char buf[BUFSZ];
       struct obj *otmp;
-      extern struct obj *readobjnam(), *addinv();
-      if (u.uluck + rn2(5) < 0) {
+            if (u.uluck + rn2(5) < 0) {
         pline("Unfortunately, nothing happens.");
         break;
       }
@@ -301,8 +299,10 @@ void miss(const char *str, struct monst *mtmp) {
    these an argument function is called. */
 /* check !u.uswallow before calling bhit() */
 
-struct monst *bhit(int ddx, int ddy, int range, char sym, int (*fhitm)(),
-                   int (*fhito)(), struct obj *obj) { /* direction and range */
+struct monst *bhit(int ddx, int ddy, int range, char sym,
+                   int (*fhitm)(struct monst *, struct obj *),
+                   int (*fhito)(struct obj *, struct obj *),
+                   struct obj *obj) { /* direction and range */
   /* symbol displayed on path */
   /* fns called when mon/obj hit */
   /* 2nd arg to fhitm/fhito */
@@ -395,7 +395,7 @@ struct monst *boomhit(int dx, int dy) {
   return (0);
 }
 
-char dirlet(int dx, int dy) {
+static char dirlet(int dx, int dy) {
   return (dx == dy) ? '\\' : (dx && dy) ? '/' : dx ? '-' : '|';
 }
 

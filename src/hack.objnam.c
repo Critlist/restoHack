@@ -106,7 +106,7 @@ static inline void force_ellipsis(char *dst, size_t cap) {
 extern char *eos(char *s);
 extern int bases[];
 
-char *strprepend(char *s, char *pref) {
+static char *strprepend(char *s, char *pref) {
   int i = strlen(pref);
   if (i > PREFIX) {
     pline("WARNING: prefix too short.");
@@ -117,7 +117,7 @@ char *strprepend(char *s, char *pref) {
   return (s);
 }
 
-char *sitoa(int a) {
+static char *sitoa(int a) {
   static char buf[13];
   (void)snprintf(buf, sizeof(buf), (a < 0) ? "%d" : "+%d", a);
   return (buf);
@@ -658,8 +658,7 @@ any:
   typ = probtype(let);
 typfnd: {
   struct obj *otmp;
-  extern struct obj *mksobj();
-  let = objects[typ].oc_olet;
+    let = objects[typ].oc_olet;
   otmp = mksobj(typ);
   if (heavy)
     otmp->owt += 15;

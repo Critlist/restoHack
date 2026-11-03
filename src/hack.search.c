@@ -4,7 +4,6 @@
 
 #include "hack.h"
 
-extern struct monst *makemon();
 
 int findit(void) /* returns number of things found */
 {

@@ -240,11 +240,11 @@ extern void term_getsize(void);
 extern void cls(void);
 extern void gethdate(char *name);
 /* askname() defined in hack.main.c */
-extern int plnamesuffix();
+extern int plnamesuffix(void);
 extern void getlock(void);
 extern void setftty(void);
 extern int dorecover(int fd);
-extern int u_init();
+extern int u_init(void);
 extern int dlevelp(int level);
 extern void mklev(void);
 extern void seeobjs(void);
@@ -301,8 +301,10 @@ extern int identify(struct obj *otmp);
 extern int monstersym(char ch);
 extern int chwepon(struct obj *otmp, int amount);
 extern void charcat(char *s, char c);
-extern struct monst *bhit(int ddx, int ddy, int range, char sym, int (*fhitm)(),
-                          int (*fhito)(), struct obj *obj);
+extern struct monst *bhit(int ddx, int ddy, int range, char sym,
+                          int (*fhitm)(struct monst *, struct obj *),
+                          int (*fhito)(struct obj *, struct obj *),
+                          struct obj *obj);
 extern struct monst *boomhit(int dx, int dy);
 /* MODERN: CONST-CORRECTNESS: exclam returns read-only string literals */
 extern const char *exclam(int force);
@@ -546,7 +548,7 @@ struct prop {
 #define RIGHT_SIDE RIGHT_RING
 #define BOTH_SIDES (LEFT_SIDE | RIGHT_SIDE)
   long p_flgs;
-  int (*p_tofn)(); /* called after timeout */
+  int (*p_tofn)(void); /* called after timeout */
 };
 
 struct you {
@@ -621,8 +623,8 @@ extern struct you u;
 /* MODERN: CONST-CORRECTNESS: match traps[] definition (read-only string table)
  */
 extern const char *const traps[];
-extern char *aobjnam();
-extern char readchar();
+extern char *aobjnam(struct obj *otmp, char *verb);
+extern char readchar(void);
 
 /* inventory system functions */
 extern struct obj *addinv(struct obj *obj),
@@ -635,9 +637,9 @@ extern void useup(struct obj *obj), freeinv(struct obj *obj),
 extern void freegold(struct gold *gold), deltrap(struct trap *trap),
     stackobj(struct obj *obj);
 extern void prinv(struct obj *obj), doinv(char *lets);
-extern int ddoinv(), dotypeinv(), dolook();
-extern int merged(struct obj *otmp, struct obj *obj, int lose), countgold(),
-    doprgold(), doprwep(), doprarm(), doprring();
+extern int ddoinv(void), dotypeinv(void), dolook(void);
+extern int merged(struct obj *otmp, struct obj *obj, int lose), countgold(void),
+    doprgold(void), doprwep(void), doprarm(void), doprring(void);
 /* MODERN: CONST-CORRECTNESS: ggetobj word parameter is read-only */
 extern int digit(char c), ckunpaid(struct obj *otmp),
     ggetobj(const char *word, int (*fn)(struct obj *), int max);
@@ -665,6 +667,33 @@ extern void goto_level(int newlevel, boolean at_stairs);
 extern void dropx(struct obj *obj), dropy(struct obj *obj);
 extern void more_experienced(int exp, int rexp);
 extern void set_wounded_legs(long side, int timex), heal_legs(void);
+
+/* Command and gameplay prototypes (ANSI C) */
+extern int ddocall(void), dodip(void), dodrop(void), doengrave(void),
+    doidtrap(void), do_mname(void), dopay(void), dopickup(void),
+    doremarm(void), doremring(void), dosave(void), doset(void),
+    dosuspend(void), doversion(void), doweararm(void), dowearring(void),
+    dowield(void);
+extern char *Doname(struct obj *obj);
+extern int fightm(struct monst *mtmp);
+extern char *getdatestr(void);
+extern void getioctls(void), setioctls(void);
+extern boolean hmon(struct monst *mon, struct obj *obj, int thrown);
+extern struct monst *mkmon_at(char let, int x, int y);
+extern char news0(unsigned char x, unsigned char y);
+extern long newuexp(void);
+extern void outrip(void), paybill(void), savebones(void);
+extern void pwseg(struct wseg *wtmp);
+extern struct obj *readobjnam(char *bp);
+extern void replshk(struct monst *mtmp, struct monst *mtmp2);
+extern void shkdead(struct monst *mtmp);
+extern char *shkname(struct monst *mtmp);
+extern struct obj *some_armor(void);
+extern long somegold(void);
+extern char *typename(int otyp);
+extern char *Xmonnam(struct monst *mtmp);
+extern char *xname(struct obj *obj);
+extern void outrumor(void);
 
 extern xchar curx, cury; /* cursor location on screen */
 

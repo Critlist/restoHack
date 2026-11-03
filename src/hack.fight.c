@@ -13,8 +13,6 @@
 #include <stdio.h>
 extern struct permonst li_dog, dog, la_dog;
 extern const char *exclam(int force);
-extern char *xname(struct obj *);
-extern struct obj *mkobj_at();
 
 static boolean far_noise;
 static long noisetime;

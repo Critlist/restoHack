@@ -13,18 +13,20 @@
 #include "hack.h"
 #include "def.func_tab.h"
 
-int doredraw(), doredotopl(), dodrop(), dodrink(), doread(), dopickup(),
-    doversion(), doweararm(), dowearring(), doremarm(), doremring(), dopay(),
-    doapply(), dosave(), dowield(), ddoinv(), dozap(), ddocall(), dowhatis(),
-    doengrave(), dotele(), dohelp(), doeat(), doddrop(), do_mname(), doidtrap(),
-    doprwep(), doprarm(), doprring(), doprgold(), dodiscovered(), dotypeinv(),
-    dolook(), doset(), doup(), dodown(), donull(), dothrow(), doextcmd(),
-    dodip(), dopray();
+int doredraw(void), doredotopl(void), dodrop(void), dodrink(void),
+    doread(void), dopickup(void), doversion(void), doweararm(void),
+    dowearring(void), doremarm(void), doremring(void), dopay(void),
+    doapply(void), dosave(void), dowield(void), ddoinv(void), dozap(void),
+    ddocall(void), dowhatis(void), doengrave(void), dotele(void), dohelp(void),
+    doeat(void), doddrop(void), do_mname(void), doidtrap(void), doprwep(void),
+    doprarm(void), doprring(void), doprgold(void), dodiscovered(void),
+    dotypeinv(void), dolook(void), doset(void), doup(void), dodown(void),
+    donull(void), dothrow(void), doextcmd(void), dodip(void), dopray(void);
 #ifdef SHELL
-int dosh();
+int dosh(void);
 #endif /* SHELL */
 #ifdef SUSPEND
-int dosuspend();
+int dosuspend(void);
 #endif /* SUSPEND */
 
 struct func_tab cmdlist[] = {
@@ -94,7 +96,7 @@ struct func_tab cmdlist[] = {
 struct ext_func_tab extcmdlist[] = {
     {"dip", dodip}, {"pray", dopray}, {(char *)0, donull}};
 
-extern char *parse(), quitchars[];
+extern char *parse(void), quitchars[];
 
 /* Modern: QWERTZ keyboards (Central Europe). With the qwertz option (off by
  * default) the physical key in the Y position (labelled Z) moves NW and the

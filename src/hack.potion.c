@@ -7,7 +7,6 @@
 extern const char
     *nomovemsg; /* MODERN: const because assigned string literals */
 extern struct monst youmonst;
-extern struct monst *makemon();
 
 int dodrink(void) {
   struct obj *otmp, *objs;
@@ -211,7 +210,6 @@ void pluslvl(void) {
   u.uhpmax += num;
   u.uhp += num;
   if (u.ulevel < 14) {
-    extern long newuexp();
 
     u.uexp = newuexp() + 1;
     pline("Welcome to experience level %u.", ++u.ulevel);
@@ -235,7 +233,6 @@ const char *const bottlenames[] = {"bottle", "phial", "flagon", "carafe",
                                    "flask",  "jar",   "vial"};
 
 void potionhit(struct monst *mon, struct obj *obj) {
-  extern char *xname();
   const char *botlnam = bottlenames[rn2(SIZE(bottlenames))];
   boolean uclose, isyou = (mon == &youmonst);
 

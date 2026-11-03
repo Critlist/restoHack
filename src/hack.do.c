@@ -15,15 +15,12 @@
 #include <fcntl.h>  /* for open() function */
 #include <unistd.h> /* for close() function */
 
-extern struct obj *splitobj(), *addinv();
-extern boolean hmon();
 extern boolean level_exists[];
 extern struct monst youmonst;
-extern char *Doname();
 extern const char
     *nomovemsg; /* MODERN: const because assigned string literals */
 
-static int drop();
+static int drop(struct obj *obj);
 
 int dodrop(void) { return (drop(getobj("0$#", "drop"))); }
 

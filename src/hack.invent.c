@@ -811,7 +811,7 @@ int merged(struct obj *otmp, struct obj *obj, int lose) {
  * it may take a while before you have counted it all.
  * [Bug: d$ and pickup still tell you how much it was.]
  */
-extern int (*occupation)();
+extern int (*occupation)(void);
 extern const char *occtxt; /* MODERN: const because assigned string literals */
 static long goldcounted;
 

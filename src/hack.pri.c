@@ -651,20 +651,17 @@ void bot(void) {
     if (u.ustr > 117) {
       if (remaining > 5) { /* MODERN: Check space before strcat */
         (void)strcat(newbot, "18/**");
-        len += 5;
         remaining -= 5;
       }
     } else {
       int added = snprintf(eos(newbot), remaining, "18/%02d", u.ustr - 18);
       if (added > 0 && added < remaining) {
-        len += added;
         remaining -= added;
       }
     }
   } else {
     int added = snprintf(eos(newbot), remaining, "%-2d   ", u.ustr);
     if (added > 0 && added < remaining) {
-      len += added;
       remaining -= added;
     }
   }
@@ -673,7 +670,6 @@ void bot(void) {
     int added =
         snprintf(eos(newbot), remaining, "  Exp %2u/%-5ld ", u.ulevel, u.uexp);
     if (added > 0 && added < remaining) {
-      len += added;
       remaining -= added;
     }
   }
@@ -681,7 +677,6 @@ void bot(void) {
   if (remaining > 0) {
     int added = snprintf(eos(newbot), remaining, "   Exp %2u  ", u.ulevel);
     if (added > 0 && added < remaining) {
-      len += added;
       remaining -= added;
     }
   }
@@ -691,7 +686,6 @@ void bot(void) {
     int hu_len = strlen(hu_stat[u.uhs]);
     if (hu_len < remaining) {
       (void)strcat(newbot, hu_stat[u.uhs]);
-      len += hu_len;
       remaining -= hu_len;
     }
   }

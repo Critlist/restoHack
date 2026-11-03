@@ -360,8 +360,7 @@ int dothrow(void) {
 #ifndef NOWORM
           cutworm(mon, bhitpos.x, bhitpos.y, obj->otyp);
 #endif /* NOWORM */
-        } else
-          mon = 0;
+        }
         /* weapons thrown disappear sometimes */
         if (obj->otyp < BOOMERANG && rn2(3)) {
           /* check bill; free */
@@ -384,8 +383,7 @@ int dothrow(void) {
       if (u.utrap)
         tmp -= 2;
       if (u.uswallow || tmp >= rnd(20)) {
-        if (hmon(mon, obj, 1) == FALSE)
-          mon = 0; /* he died */
+        (void)hmon(mon, obj, 1);
       } else
         miss("iron ball", mon);
     } else if (obj->olet == POTION_SYM && u.ulevel > rn2(15)) {

@@ -819,7 +819,7 @@ int dolook() {
 
 void stackobj(obj) struct obj *obj;
 {
-  struct obj *otmp = fobj;
+  struct obj *otmp;
   for (otmp = fobj; otmp; otmp = otmp->nobj)
     if (otmp != obj)
       if (otmp->ox == obj->ox && otmp->oy == obj->oy && merged(obj, otmp, 1))

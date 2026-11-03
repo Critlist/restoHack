@@ -72,9 +72,9 @@ int hitmm(struct monst *magr, struct monst *mdef) {
       magr->mhpmax += (schar)(1 + rn2(pd->mlevel + 1)); /* MODERN: Safe cast - level-based increment */
       if (magr->mtame && magr->mhpmax > 8 * pa->mlevel) {
         if (pa == &li_dog)
-          magr->data = pa = &dog;
+          magr->data = &dog;
         else if (pa == &dog)
-          magr->data = pa = &la_dog;
+          magr->data = &la_dog;
       }
       if (vis)
         pline("%s is killed!", Monnam(mdef));

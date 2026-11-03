@@ -206,11 +206,8 @@ static struct monst *bchit(int ddx, int ddy, int range, char sym) {
     if ((mtmp = m_at(bchx, bchy)))
       break;
     /* MODERN: Add bounds checking before levl access */
-    if (!isok(bchx, bchy) || !ZAP_POS(levl[bchx][bchy].typ)) {
-      bchx -= ddx;
-      bchy -= ddy;
+    if (!isok(bchx, bchy) || !ZAP_POS(levl[bchx][bchy].typ))
       break;
-    }
     if (sym)
       Tmp_at((schar)bchx, (schar)bchy); /* MODERN: Safe cast - coordinates bounded by map size */
   }

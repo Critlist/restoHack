@@ -744,8 +744,11 @@ void killed(struct monst *mtmp) {
 #ifdef lint
 #define NEW_SCORING
 #endif /* lint */
-  int tmp, tmp2, nk, x, y;
+  int tmp, tmp2, x, y;
   (void)tmp2; /* Original 1984: used in NEW_SCORING (lint mode only) */
+#ifdef NEW_SCORING
+  int nk = 1; /* in case we cannot find it in mons */
+#endif
   struct permonst *mdat;
   extern long newuexp();
 
@@ -766,12 +769,14 @@ void killed(struct monst *mtmp) {
 
   /* count killed monsters */
 #define MAXMONNO 100
-  nk = 1;            /* in case we cannot find it in mons */
   tmp = mdat - mons; /* index in mons array (if not 'd', '@', ...) */
   if (tmp >= 0 && tmp < CMNUM + 2) {
     extern char fut_geno[];
     u.nr_killed[tmp]++;
-    if ((nk = u.nr_killed[tmp]) > MAXMONNO && !index(fut_geno, mdat->mlet))
+#ifdef NEW_SCORING
+    nk = u.nr_killed[tmp];
+#endif
+    if (u.nr_killed[tmp] > MAXMONNO && !index(fut_geno, mdat->mlet))
       charcat(fut_geno, mdat->mlet);
   }
 

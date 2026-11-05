@@ -26,7 +26,6 @@
  * - Uses actual buffer capacity, not global macros
  * - Safe for ASCII only (no UTF-8 multibyte considerations in 1984 codebase)
  */
-#define SAFE_BUF_SIZE (BUFSZ - PREFIX) /* Available space after prefix */
 
 /* Safe string concatenation: returns 0 on success, 1 on truncation */
 /**
@@ -97,14 +96,13 @@ static inline void force_ellipsis(char *dst, size_t cap) {
 }
 
 /* Legacy macro compatibility - now uses safe functions */
-#define Sprintf(buf, ...) (void)snprintf(buf, SAFE_BUF_SIZE, __VA_ARGS__)
 #define Strcat(dest, src) (void)safe_strcat(dest, SAFE_BUF_SIZE, src)
 #define Strcpy(dest, src) (void)safe_strcpy(dest, SAFE_BUF_SIZE, src)
 
 /* Prefix buffer operations with truncation detection */
 #define PREFIX_Strcat(dest, src) safe_strcat(dest, PREFIX, src)
 #define PREFIX_Strcpy(dest, src) safe_strcpy(dest, PREFIX, src)
-#define PREFIX 15
+#define PREFIX 15 /* must match SAFE_BUF_SIZE's reservation in hack.h */
 extern char *eos(char *s);
 extern int bases[];
 

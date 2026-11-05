@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 /* Modern debugging overlay - non-invasive logging for learning */
@@ -51,6 +52,10 @@ typedef struct {
 #define plur(x) (((x) == 1) ? "" : "s")
 
 #define BUFSZ 256  /* for getlin buffers */
+/* Space available in a doname() buffer after its "17 -3 " prefix. Shared so
+ * Sprintf() uses the same bound in every translation unit. */
+#define SAFE_BUF_SIZE (BUFSZ - 15)
+#define Sprintf(buf, ...) (void)snprintf(buf, SAFE_BUF_SIZE, __VA_ARGS__)
 #define PL_NSIZ 32 /* name of player, ghost, shopkeeper */
 
 /**

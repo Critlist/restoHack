@@ -80,12 +80,4 @@ void *alloc(unsigned lth) {
   return (ptr);
 }
 
-void *enlarge(char *ptr, unsigned lth) {
-  char *nptr;
-
-  if (!(nptr = realloc(ptr, lth)))
-    panic("Cannot reallocate %d bytes", lth);
-  return (nptr);
-}
-
 #endif /* LINT */

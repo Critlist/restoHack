@@ -384,6 +384,7 @@ extern void settrack(void);
 extern coord *gettrack(int x, int y);
 extern void movemon(void);
 extern struct monst *makemon(struct permonst *ptr, int x, int y);
+extern int goodpos(int x, int y);
 extern void monfree(struct monst *mtmp);
 extern void rloc(struct monst *mtmp);
 extern coord enexto(xchar xx, xchar yy);

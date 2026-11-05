@@ -21,7 +21,6 @@ extern int getwn(struct monst *mtmp);
 extern void initworm(struct monst *mtmp);
 
 /* Forward declarations for functions defined in this file */
-static int goodpos(int x, int y);
 void rloc(struct monst *mtmp);
 coord enexto(xchar xx, xchar yy);
 
@@ -186,7 +185,7 @@ foofull:
   return (foo[rn2((int)(tfoo - foo))]); /* MODERN: cast pointer diff to int */
 }
 
-int goodpos(int x, int y) /* used only in mnexto and rloc */
+int goodpos(int x, int y) /* shared by monster placement and wand zaps */
 {
   return (!(x < 1 || x > COLNO - 2 || y < 1 || y > ROWNO - 2 || m_at(x, y) ||
             !ACCESSIBLE(levl[x][y].typ) || (x == u.ux && y == u.uy) ||

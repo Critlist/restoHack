@@ -7,12 +7,6 @@
 extern struct obj *mkobj_at();
 extern struct monst *makemon(), *mkmon_at(), youmonst;
 
-static int goodpos(int x, int y) {
-  return (!(x < 1 || x > COLNO - 2 || y < 1 || y > ROWNO - 2 || m_at(x, y) ||
-            !ACCESSIBLE(levl[x][y].typ) || (x == u.ux && y == u.uy) ||
-            sobj_at(ENORMOUS_ROCK, x, y)));
-}
-
 /* MODERN: CONST-CORRECTNESS: flash effect strings are read-only */
 const char *const fl[] = {"magic missile", "bolt of fire", "sleep ray",
                           "bolt of cold", "death ray"};

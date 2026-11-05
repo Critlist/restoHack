@@ -20,8 +20,6 @@
 
 /* MODERN ADDITION (2025): Terminal size globals for resize protection */
 extern int CO, LI;         /* Defined in hack.termcap.c */
-extern void startup(void); /* Re-initialize termcap - hack.termcap.c */
-extern void term_getsize(void); /* Non-fatal size re-query - hack.termcap.c */
 extern void docrt(void);   /* Complete screen redraw - hack.pri.c */
 
 #ifdef QUEST

@@ -200,7 +200,7 @@ bad:
       pline("%s%s%s",
             "To set options use `HACKOPTIONS=\"<options>\"' in your "
             "environment, or ",
-            "give the command 'o' followed by the line `<options>' while "
+            "give the command 'O' followed by the line `<options>' while "
             "playing. ",
             "Here <options> is a list of <option>s separated by commas.");
       pline("%s%s%s",
@@ -218,7 +218,7 @@ bad:
       return;
     }
     pline("Bad option: %.50s.", opts); /* MODERN: Limit format string length to prevent attacks */
-    pline("Type `o help<cr>' for help.");
+    pline("Type `O help<cr>' for help.");
     return;
   }
   puts("Bad syntax in HACKOPTIONS.");

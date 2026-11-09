@@ -200,17 +200,19 @@ static void sanitize_format_1984(char *out, size_t outsz, const char *in) {
       /* Check if what follows 'l' is a valid conversion for 'l' modifier */
       if (!(*p && strchr("diouxX", *p))) {
         /* 'l' not followed by valid integer conversion - neutralize */
-        d = neutralize_spec(d, end, start, p);
-        if (!d)
-          break;
+        char *nd = neutralize_spec(d, end, start, p);
+        if (!nd)
+          break; /* d is still valid; do not clobber it with NULL */
+        d = nd;
         continue;
       }
     } else if (*p == 'h' || *p == 'z' || *p == 'j' || *p == 't' || *p == 'L' ||
                *p == 'q') {
       /* reject modern/other length modifiers; print them literally */
-      d = neutralize_spec(d, end, start, p);
-      if (!d)
-        break;
+      char *nd = neutralize_spec(d, end, start, p);
+      if (!nd)
+        break; /* d is still valid; do not clobber it with NULL */
+      d = nd;
       continue;
     }
 
@@ -252,9 +254,10 @@ static void sanitize_format_1984(char *out, size_t outsz, const char *in) {
 
     if (!allowed || c == '\0') {
       /* neutralize: print the original sequence literally */
-      d = neutralize_spec(d, end, start, p);
-      if (!d)
-        break;
+      char *nd = neutralize_spec(d, end, start, p);
+      if (!nd)
+        break; /* d is still valid; do not clobber it with NULL */
+      d = nd;
       continue;
     }
 

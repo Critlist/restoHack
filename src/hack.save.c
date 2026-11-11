@@ -296,6 +296,85 @@ extern struct monst *restmonchn(int fd);
 extern int dosave0(int hu);
 extern void savenames(int fd);
 extern void restnames(int fd);
+extern int descr_perm_count(void);
+extern int get_descr_perm(unsigned *perm, int n);
+extern int set_descr_perm(const unsigned *perm, int n);
+
+/**
+ * MODERN ADDITION (2026): Object description block at the end of the save
+ * WHY: The shuffled potion/scroll/wand/ring/gem appearances were lost on
+ *      restore (see hack.o_init.c), so restored games showed the defaults.
+ * HOW: After the last saved level, dosave0() writes
+ *        int  RH_DESCR_TAG        (native int, like the level numbers)
+ *        u32  RH_DESCR_VERSION    (big-endian, like the other sw_u32 fields)
+ *        u32  count               (must equal SIZE(objects))
+ *        u32  perm[count]         (default-description index, or 0xFFFFFFFF)
+ *      dorecover()'s level loop reads a level number before each level and
+ *      stops at end of file, so the tag sits where the next level number
+ *      would be; it can never be a valid level (1..MAXLEVEL).
+ * PRESERVES: The existing stream layout. Saves without the block (written
+ *      before this change) still end at the last level and load as before,
+ *      with default descriptions.
+ * ADDS: Restored games keep their own appearances. A bad or truncated block
+ *      is ignored (defaults are kept) instead of aborting the restore.
+ */
+#define RH_DESCR_TAG 0x52484453 /* "RHDS" */
+#define RH_DESCR_VERSION 1
+
+/* Modern: Write the description block (nothing if the shuffle is unknown) */
+static void save_descr_block(int fd) {
+  int n = descr_perm_count();
+  int tag = RH_DESCR_TAG;
+  unsigned *perm = (unsigned *)alloc((unsigned)n * sizeof(unsigned));
+
+  if (get_descr_perm(perm, n)) {
+    bwrite(fd, (char *)&tag, sizeof tag);
+    sw_u32(fd, RH_DESCR_VERSION);
+    sw_u32(fd, (rh_u32_t)n);
+    for (int i = 0; i < n; i++)
+      sw_u32(fd, (rh_u32_t)perm[i]);
+  }
+  free(perm);
+}
+
+/* Modern: Like sr_u32() but returns 0 on a short read instead of aborting */
+static int sr_u32_try(int fd, rh_u32_t *val) {
+  unsigned char buf[4];
+  if (read(fd, (char *)buf, 4) != 4)
+    return (0);
+  *val = ((rh_u32_t)buf[0] << 24) | ((rh_u32_t)buf[1] << 16) |
+         ((rh_u32_t)buf[2] << 8) | buf[3];
+  return (1);
+}
+
+/* Modern: Read the description block (tag already consumed) and apply it if
+ * it is valid; otherwise the default descriptions stay in place. */
+static void rest_descr_block(int fd) {
+  int n = descr_perm_count();
+  rh_u32_t version, count, val;
+  unsigned *perm;
+  int ok = 1;
+
+  if (!sr_u32_try(fd, &version) || version != RH_DESCR_VERSION ||
+      !sr_u32_try(fd, &count) || count != (rh_u32_t)n)
+    ok = 0;
+  if (ok) {
+    perm = (unsigned *)alloc((unsigned)n * sizeof(unsigned));
+    for (int i = 0; i < n; i++) {
+      if (!sr_u32_try(fd, &val)) {
+        ok = 0;
+        break;
+      }
+      perm[i] = (unsigned)val;
+    }
+    if (ok)
+      ok = set_descr_perm(perm, n);
+    free(perm);
+  }
+  if (!ok)
+    pline("Warning: object descriptions in save file unusable - using "
+          "defaults.");
+}
 /* MODERN: CONST-CORRECTNESS: settty message is read-only */
 
 int dosave(void) {
@@ -456,6 +535,7 @@ int dosave0(int hu) {
     savelev(fd, tmp);                     /* actual level */
     (void)unlink(lock);
   }
+  save_descr_block(fd); /* Modern: must stay last, see RH_DESCR_TAG */
 
   /* Ensure data is written to disk before atomic rename */
 #ifdef HAVE_FSYNC
@@ -642,6 +722,11 @@ int dorecover(int fd) {
   while (1) {
     if (read(fd, (char *)&tmp, sizeof tmp) != sizeof tmp)
       break;
+    /* Modern: trailing object description block, written after all levels */
+    if (tmp == RH_DESCR_TAG) {
+      rest_descr_block(fd);
+      break;
+    }
     getlev(fd, 0, tmp);
     glo(tmp);
     if ((nfd = creat(lock, FMASK)) < 0)

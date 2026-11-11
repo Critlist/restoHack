@@ -24,6 +24,105 @@ void setgemprobs(void);
 void savenames(int fd);
 void restnames(int fd);
 int interesting_to_discover(int i);
+void snapshot_default_descr(void);
+int descr_perm_count(void);
+int get_descr_perm(unsigned *perm, int n);
+int set_descr_perm(const unsigned *perm, int n);
+
+/**
+ * MODERN ADDITION (2026): Save/restore of the shuffled object descriptions
+ * WHY: The original savenames() wrote objects[] (including the raw oc_descr
+ *      pointers that init_objects() shuffles) and restnames() read them back,
+ *      which only worked because every run loaded at the same addresses.
+ *      restnames() now keeps the running binary's pointers instead, and on
+ *      the restore path init_objects() is never called, so every restored
+ *      game showed the unshuffled default appearances (e.g. "sky blue
+ *      potion") and items changed their names after a restore.
+ * HOW: Remember the default (unshuffled) oc_descr pointers before anything
+ *      shuffles or overwrites them. When saving, describe the shuffle as an
+ *      index per object: "object i shows the default description of object
+ *      j". On restore, validate that list and rebuild oc_descr from this
+ *      binary's own default strings. The I/O lives in hack.save.c.
+ * PRESERVES: init_objects() shuffle, the original savenames()/restnames()
+ *      stream layout, and the loading of saves that lack the new block.
+ * ADDS: Restored games keep the appearances they were saved with.
+ */
+#define DESCR_NONE 0xFFFFFFFFu /* Modern: object has no description */
+static const char *default_descr[SIZE(objects)]; /* Modern: unshuffled */
+static boolean have_default_descr = FALSE;
+
+/* Modern: Record the unshuffled descriptions once. The first call happens
+ * either in init_objects() before the shuffle (new game) or in restnames()
+ * before the saved objects[] is read (restore); both see the defaults. */
+void snapshot_default_descr(void) {
+  int i;
+  if (have_default_descr)
+    return;
+  for (i = 0; i < SIZE(objects); i++)
+    default_descr[i] = objects[i].oc_descr;
+  have_default_descr = TRUE;
+}
+
+/* Modern: Number of entries in a description permutation (SIZE(objects) is
+ * only known in this file, which includes def.objects.h). */
+int descr_perm_count(void) { return (SIZE(objects)); }
+
+/* Modern: Fill perm[i] with the index j whose default description object i
+ * currently shows (DESCR_NONE if it has none). Returns 1 on success, 0 if
+ * the mapping cannot be expressed (then nothing should be saved). */
+int get_descr_perm(unsigned *perm, int n) {
+  int i, j;
+  boolean used[SIZE(objects)];
+
+  if (!have_default_descr || n != SIZE(objects))
+    return (0);
+  for (j = 0; j < n; j++)
+    used[j] = FALSE;
+  for (i = 0; i < n; i++) {
+    perm[i] = DESCR_NONE;
+    if (objects[i].oc_descr == NULL)
+      continue;
+    /* Same class only; identical strings (e.g. gem colours) may share a
+     * pointer, so take the first unused match to keep it a permutation. */
+    for (j = 0; j < n; j++)
+      if (!used[j] && default_descr[j] == objects[i].oc_descr &&
+          objects[j].oc_olet == objects[i].oc_olet)
+        break;
+    if (j == n)
+      return (0);
+    used[j] = TRUE;
+    perm[i] = (unsigned)j;
+  }
+  return (1);
+}
+
+/* Modern: Apply a saved permutation after validating all of it. Returns 1
+ * if applied, 0 if rejected (oc_descr is then left untouched). */
+int set_descr_perm(const unsigned *perm, int n) {
+  int i;
+  boolean used[SIZE(objects)];
+
+  if (!have_default_descr || n != SIZE(objects))
+    return (0);
+  for (i = 0; i < n; i++)
+    used[i] = FALSE;
+  for (i = 0; i < n; i++) {
+    if (perm[i] == DESCR_NONE) {
+      if (default_descr[i] != NULL)
+        return (0);
+      continue;
+    }
+    if (perm[i] >= (unsigned)n || default_descr[perm[i]] == NULL ||
+        default_descr[i] == NULL || used[perm[i]] ||
+        objects[perm[i]].oc_olet != objects[i].oc_olet)
+      return (0);
+    used[perm[i]] = TRUE;
+  }
+  for (i = 0; i < n; i++)
+    objects[i].oc_descr =
+        (perm[i] == DESCR_NONE) ? NULL : default_descr[perm[i]];
+  return (1);
+}
 
 int letindex(char let) {
   int i = 0;
@@ -40,6 +139,7 @@ void init_objects(void) {
   const char *tmp; /* MODERN: const to match oc_descr field type */
   /* init base; if probs given check that they add up to 100,
      otherwise compute probs; shuffle descriptions */
+  snapshot_default_descr(); /* Modern: remember them before the shuffle */
   end = SIZE(objects);
   first = 0;
   while (first < end) {
@@ -168,6 +268,10 @@ void restnames(int fd) {
      If init_objects() ever moves, ensure snapshot happens after it. */
   const char *saved_names[SIZE(objects)];
   const char *saved_descr[SIZE(objects)];
+  /* Modern: init_objects() is not called when restoring, so these are still
+     the unshuffled defaults; the saved shuffle is applied later from the
+     block at the end of the save file (see dorecover()). */
+  snapshot_default_descr();
   for (i = 0; i < SIZE(objects); i++) {
     saved_names[i] = objects[i].oc_name;
     saved_descr[i] = objects[i].oc_descr;

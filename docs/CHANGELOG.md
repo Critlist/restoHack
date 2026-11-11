@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Restoring a saved game no longer resets unidentified potions, scrolls, wands, rings and gems to their default appearances (every restored game showed e.g. "sky blue potions", and items changed names after a restore). The shuffle is now saved as an index list in a tagged block at the end of the save file and validated on restore. Saves from earlier versions still load, with default appearances; a damaged block falls back to the defaults with a warning.
+
 ## [1.1.8] - 2026-10-28
 
 ### Added

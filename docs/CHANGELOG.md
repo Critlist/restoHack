@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CORRECTNESS**: The options help and the "Bad option" message told players to press `o` (open) for options; the command is `O` (`doset`). Also in the original code. (#45)
 - **STABILITY**: `sanitize_format_1984()` wrote its terminator through a NULL cursor when `neutralize_spec()` could not fit a rejected sequence; the cursor is now kept. Found with `-Wnull-dereference`. (#59)
 - **STABILITY**: `alloc()` now zeroes new blocks, so save files no longer carry heap residue in struct padding. Found with Valgrind. (#59)
+- **CORRECTNESS**: Restoring a saved game reset unidentified potions, scrolls, wands, rings and gems to their default appearances, so items changed names after a restore and every restored game shared one mapping (since v1.1.4). The shuffle is now saved as an index list in a tagged block at the end of the save file and validated on restore. Saves from earlier versions still load, with default appearances; a damaged block falls back to the defaults with a warning. (#62)
 
 ## [1.1.8] - 2026-10-28
 

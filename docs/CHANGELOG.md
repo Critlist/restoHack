@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- WebAssembly port: play in the browser, offline, with saves kept in IndexedDB (IDBFS under `/save`). Built with Emscripten 3.1.47 (pinned) via `wasm/build-wasm.sh` into a self-contained bundle with SHA-256-verified xterm.js 5.5.0 / xterm-pty 0.12.0. The termcap shim, pty bridge and bundle staging come from the `unix-tui-to-wasm` template, pinned as the `wasm/utw` submodule (Critlist fork, `333eda3`). `__EMSCRIPTEN__` guards skip `gethdate()`'s executable stat, the BSD tty ioctls and `SUSPEND`; native builds are unchanged. Contributed by [@neuhaus](https://github.com/neuhaus). (#31)
+- Raspberry Pi Pico (RP2040) images `hack.uf2` and `hack-volume.uf2`, built from `v1.1.8` by [@neuhaus](https://github.com/neuhaus), are attached to the v1.1.8 release with `SHA256SUMS-pico.txt`; the README now links there. (#27, #43)
+
+### Changed
+
+- K&R-to-ANSI conversion finished: every function has an ANSI definition and prototype, headers are idempotent (include guards), shared globals are declared once, 39 block-scope `extern`s moved to headers, unbounded `strcpy`/`strcat` calls replaced with bounded copies, `index()` replaced with ISO `strchr()`. Original lines that were removed are kept as `/* Original 1984: ... */` comments, and `outrumor()` keeps its original `goto`. Contributed by [@neuhaus](https://github.com/neuhaus). (#59, #60)
+- Stricter warnings: `-pedantic`, `-Wredundant-decls`, `-Wold-style-definition`, `-Wstrict-prototypes` and other portable checks (GCC-only flags compiler-guarded); clean on GCC, Clang, aarch64 cross and the wasm build. (#59)
+- dev/: opt-in Valgrind memcheck lane (`dev/run-valgrind.py`). (#59)
+- Cleanups: one definition of `goodpos()` (#46); the three copies of the format-neutralizing code in `sanitize_format_1984()` factored into `neutralize_spec()`, output unchanged (#47); one `Sprintf()` bound shared via `hack.h` (#48); duplicate prototypes removed from `hack.h` (#49); unused modern `enlarge()` removed, the `#if 0` original stays (#50); unreachable bounds checks in `makemon()` and `aggravate()` removed (#51); unused original `Strcpy`/`Strcat` macros in `hack.u_init.c` disabled with `#if 0` (#53). Contributed by [@neuhaus](https://github.com/neuhaus).
+- Repo: stopped tracking the runtime `hackdir/record_lock` (#56); removed the duplicate `hackdir/hh` and stale `hackdir/help`, CMake copies the root assets (#58).
+- README: K&R modernization claim reworded. (#54)
+
+### Fixed
+
+- **CORRECTNESS**: `somegold()` was defined `long long` (a stray `long` from the K&R-to-ANSI conversion) but declared `long` in `hack.bones.c`; where `long` is 32 bits (wasm32, i386) the two disagreed. Restored the original `long`. (#42)
+- **CORRECTNESS**: The options help and the "Bad option" message told players to press `o` (open) for options; the command is `O` (`doset`). Also in the original code. (#45)
+- **STABILITY**: `sanitize_format_1984()` wrote its terminator through a NULL cursor when `neutralize_spec()` could not fit a rejected sequence; the cursor is now kept. Found with `-Wnull-dereference`. (#59)
+- **STABILITY**: `alloc()` now zeroes new blocks, so save files no longer carry heap residue in struct padding. Found with Valgrind. (#59)
+- **CORRECTNESS**: Restoring a saved game reset unidentified potions, scrolls, wands, rings and gems to their default appearances, so items changed names after a restore and every restored game shared one mapping (since v1.1.4). The shuffle is now saved as an index list in a tagged block at the end of the save file and validated on restore. Saves from earlier versions still load, with default appearances; a damaged block falls back to the defaults with a warning. (#62)
+
 ## [1.1.8] - 2026-10-28
 
 ### Added

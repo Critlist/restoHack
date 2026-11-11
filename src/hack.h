@@ -373,6 +373,11 @@ extern void regularize(char *s);
 extern void center(int line, char *text);
 extern int getyear(void);
 extern int uptodate(int fd);
+/* Modern: out-of-date save handling, see hack.main.c */
+#define OUTDATED_NSIZ (PL_NSIZ + 32) /* SAVEF + ".outdated.999" + slack */
+extern int move_outdated_save(void);
+extern int outdated_save_stuck;
+extern char outdated_save_name[];
 extern int inshop(void);
 extern void setsee(void);
 extern void makedog(void);

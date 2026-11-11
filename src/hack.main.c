@@ -13,6 +13,7 @@
 #include <stdio.h>
 /* MODERN ADDITION (2025): Added for ANSI C standard library compatibility */
 #include "hack.h"
+#include <errno.h> /* Modern: errno for move_outdated_save() */
 #include <fcntl.h> /* for open */
 #include <stdlib.h>
 #include <sys/stat.h> /* for umask */
@@ -70,6 +71,52 @@ char SAVEF[PL_NSIZ + 11] = "save/"; /* save/99999player */
 char *hname;                        /* name of the game (argv[0] of call) */
 char obuf[BUFSIZ];                  /* BUFSIZ is defined in stdio.h */
 
+/**
+ * MODERN ADDITION (2026): Keep out-of-date saves instead of deleting them
+ * WHY: The original start-up code unlink()ed SAVEF whenever uptodate() said
+ *      the save was older than the hack binary, so every update of the game
+ *      (e.g. a package upgrade) silently destroyed the player's saved game.
+ *      Such saves cannot safely be restored yet (some data is still stored
+ *      as raw pointers), but they must not be lost either.
+ * HOW: move_outdated_save() renames SAVEF to SAVEF.outdated, or to
+ *      SAVEF.outdated.1, .2, ... .999 if that name is taken; it never
+ *      replaces an existing file. If the move fails the file is left alone,
+ *      outdated_save_stuck is set and dosave0() refuses to save over it
+ *      (after retrying the move).
+ * PRESERVES: Up-to-date saves restore exactly as before; an out-of-date save
+ *      still starts a new game.
+ * ADDS: The old save is kept (or, failing that, protected from being
+ *      overwritten) and the player is told where it is.
+ */
+int outdated_save_stuck = 0; /* old save could not be moved aside */
+char outdated_save_name[OUTDATED_NSIZ]; /* where the old save was moved */
+
+/* Modern: rename SAVEF to a free "<SAVEF>.outdated[.N]"; 1 on success */
+int move_outdated_save(void) {
+  char newname[OUTDATED_NSIZ];
+  struct stat st;
+  int n, len;
+
+  for (n = 0; n <= 999; n++) {
+    if (n == 0)
+      len = snprintf(newname, sizeof(newname), "%s.outdated", SAVEF);
+    else
+      len = snprintf(newname, sizeof(newname), "%s.outdated.%d", SAVEF, n);
+    if (len < 0 || (size_t)len >= sizeof(newname))
+      return (0); /* name would be truncated */
+    if (stat(newname, &st) == 0)
+      continue; /* taken: never clobber an existing file */
+    if (errno != ENOENT)
+      return (0); /* cannot tell whether it exists; do not risk it */
+    if (rename(SAVEF, newname) != 0)
+      return (0);
+    (void)snprintf(outdated_save_name, sizeof(outdated_save_name), "%s",
+                   newname);
+    return (1);
+  }
+  return (0); /* no free name */
+}
+
 extern long wailmsg;
 
 #ifdef CHDIR
@@ -79,6 +126,7 @@ static void chdirx(const char *dir,
 
 int main(int argc, char *argv[]) {
   int fd;
+  int outdated = 0; /* Modern: 1 = old save moved aside, 2 = could not */
 #ifdef CHDIR
   char *dir;
 #endif
@@ -309,7 +357,22 @@ int main(int argc, char *argv[]) {
                  plname); /* MODERN: Safe sprintf replacement - identical
                              output, prevents overflow */
   regularize(SAVEF + 5);  /* avoid . or / in name */
-  if ((fd = open(SAVEF, 0)) >= 0 && (uptodate(fd) || unlink(SAVEF) == 666)) {
+  /* Original 1984:
+   * if ((fd = open(SAVEF, 0)) >= 0 && (uptodate(fd) || unlink(SAVEF) == 666)) {
+   */
+  /* Modern: an out-of-date save is moved aside (or, if that fails, left
+   * alone), never deleted; see move_outdated_save() above. */
+  if ((fd = open(SAVEF, 0)) >= 0 && !uptodate(fd)) {
+    (void)close(fd); /* Modern: the original leaked this fd */
+    fd = -1;
+    if (move_outdated_save())
+      outdated = 1;
+    else {
+      outdated = 2;
+      outdated_save_stuck = 1;
+    }
+  }
+  if (fd >= 0) {
     (void)signal(SIGINT, done1);
     pline("Restoring old save file...");
     (void)fflush(stdout);
@@ -349,6 +412,17 @@ int main(int argc, char *argv[]) {
 
     /* give welcome message before pickup messages */
     pline("Hello %s, welcome to %s!", plname, gamename);
+
+    /* Modern: tell the player what happened to an out-of-date save */
+    if (outdated) {
+      pline("Your saved game is from an older version and can't be restored yet.");
+      if (outdated == 1)
+        pline("It was kept as %s.", outdated_save_name);
+      else {
+        pline("Could not move it; %s is untouched.", SAVEF);
+        pline("This game cannot be saved until you move that file.");
+      }
+    }
 
     pickup(1);
     read_engr_at(u.ux, u.uy);

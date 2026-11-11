@@ -11,12 +11,18 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
+/* Some build systems define HAVE_DELAY_OUTPUT; default it so -Wundef stays
+ * quiet on the ones that don't. */
+#ifndef HAVE_DELAY_OUTPUT
+#define HAVE_DELAY_OUTPUT 0
+#endif
+
 static char tbuf[512];
 static char *HO, *CL, *CE, *hack_UP, *CM, *ND, *XD, *hack_BC, *SO, *SE, *TI,
     *TE;
 static char *VS, *VE;
 static int SG;
-static char hack_PC = '\0';
+/* Original 1984: static char PC = '\0';  (terminfo pad character, never read) */
 char *CD;   /* tested in pri.c: docorner() */
 int CO, LI; /* used in pri.c and whatis.c */
 
@@ -42,7 +48,7 @@ void term_getsize(void) {
 void startup(void) {
   char *term;
   char *tptr;
-  char *tbufptr, *pc;
+  char *tbufptr; /* Original 1984: char *tbufptr, *pc; */
 
   tptr = (char *)alloc(1024);
 
@@ -53,8 +59,10 @@ void startup(void) {
     error("Unknown terminal type: %s.", term);
   if (tgetflag("NP") || tgetflag("nx"))
     flags.nonull = 1;
-  if ((pc = tgetstr("pc", &tbufptr)))
-    hack_PC = *pc;
+  /* Original 1984:
+	if(pc = tgetstr("pc", &tbufptr))
+		PC = *pc;
+     Nothing ever read it, so the static and the store are gone. */
   if (!(hack_BC = tgetstr("bc", &tbufptr))) {
     if (!tgetflag("bs"))
       error("Terminal must backspace.");
@@ -110,7 +118,6 @@ void end_screen(void) {
 }
 
 /* Cursor movements */
-extern xchar curx, cury;
 
 void curs(int x, int y) /* not xchar: perhaps xchar is unsigned and
                            curx-x would be unsigned as well */
@@ -190,7 +197,7 @@ int xputc(int c) { return fputc(c, stdout); }
 
 void xputs(char *s) { tputs(s, 1, xputc); }
 
-void cl_end() {
+void cl_end(void) {
   if (CE)
     xputs(CE);
   else { /* no-CE fix - free after Harold Rynes */
@@ -206,7 +213,7 @@ void cl_end() {
   }
 }
 
-void clear_screen() {
+void clear_screen(void) {
   xputs(CL);
   curx = cury = 1;
 }
@@ -221,17 +228,17 @@ void home(void) {
   curx = cury = 1;
 }
 
-void standoutbeg() {
+void standoutbeg(void) {
   if (SO)
     xputs(SO);
 }
 
-void standoutend() {
+void standoutend(void) {
   if (SE)
     xputs(SE);
 }
 
-void backsp() {
+void backsp(void) {
   xputs(hack_BC);
   curx--;
 }

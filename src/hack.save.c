@@ -3,8 +3,6 @@
 /* $FreeBSD$ */
 
 #include "hack.h"
-extern char genocided[60]; /* defined in Decl.c */
-extern char fut_geno[60];  /* idem */
 #include <fcntl.h>
 #include <signal.h>
 #include <stdint.h>
@@ -81,7 +79,7 @@ static void sw_i32(int fd, rh_i32_t val) { sw_u32(fd, (rh_u32_t)val); }
 static rh_i32_t sr_i32(int fd) { return (rh_i32_t)sr_u32(fd); }
 
 static void sw_bytes(int fd, const void *data, size_t len) {
-  bwrite(fd, (char *)data, len);
+  bwrite(fd, data, len);
 }
 
 static void sr_bytes(int fd, void *data, size_t len) {
@@ -256,7 +254,6 @@ static int check_save_header(int fd, rh_hdr_t *hdr) {
 /* Function pointer serialization for property timeouts
  * EXHAUSTIVE SEARCH RESULT: Only float_down is assigned in codebase
  * (see src/hack.potion.c:184) */
-extern int float_down(void);
 
 typedef int (*timeout_fn_t)(void);
 
@@ -294,14 +291,12 @@ static int (*restore_timeout_fn(rh_u32_t id))(void) {
 }
 
 extern char SAVEF[], nul[];
-extern char pl_character[PL_CSIZ];
 extern struct obj *restobjchn(int fd);
 extern struct monst *restmonchn(int fd);
 extern int dosave0(int hu);
 extern void savenames(int fd);
 extern void restnames(int fd);
 /* MODERN: CONST-CORRECTNESS: settty message is read-only */
-extern void settty(const char *s);
 
 int dosave(void) {
   if (dosave0(0)) {
@@ -442,8 +437,6 @@ int dosave0(int hu) {
   sw_bytes(fd, fut_geno, sizeof fut_geno);
   savenames(fd);
   for (tmp = 1; tmp <= maxdlevel; tmp++) {
-    extern int hackpid;
-    extern boolean level_exists[];
 
     if (tmp == dlevel || !level_exists[tmp])
       continue;
@@ -499,7 +492,6 @@ int dorecover(int fd) {
       0; /* Modern: Initialize to prevent uninitialized use warning */
   rh_u32_t has_ustuck = 0; /* Modern: Track if save file contains ustuck data */
   struct obj *otmp;
-  extern boolean restoring;
 
   restoring = TRUE;
   getlev(fd, 0, 0);

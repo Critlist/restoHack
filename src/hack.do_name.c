@@ -11,7 +11,9 @@
 
 #include "hack.h"
 #include <stdio.h>
-extern char plname[];
+
+static char *xmonnam(struct monst *mtmp, int vb);
+static char *lmonnam(struct monst *mtmp);
 
 coord
 /**
@@ -25,9 +27,6 @@ coord
  */
 getpos(int force, const char *goal) {
   int cx, cy, i, c;
-  extern char sdir[];           /* defined in hack.c */
-  extern schar xdir[], ydir[];  /* idem */
-  extern char *visctrl(char c); /* see below */
   coord cc;
   pline("(For instructions type a ?)");
   cx = u.ux;
@@ -70,7 +69,6 @@ int do_mname(void) {
   unsigned
       i; /* MODERN: Match mxlth unsigned type to avoid sign-compare warning */
   struct monst *mtmp, *mtmp2;
-  extern char *lmonnam();
   cc = getpos(0, "the monster you want to name");
   cx = cc.x;
   cy = cc.y;
@@ -120,7 +118,7 @@ int do_mname(void) {
     monfree(mtmp2);
     return (1);
   }
-  (void)strcpy(NAME(mtmp2), buf);
+  (void)snprintf(NAME(mtmp2), mtmp2->mnamelth, "%.62s", buf);
   replmon(mtmp, mtmp2);
   return (1);
 }
@@ -130,7 +128,7 @@ int do_mname(void) {
  * when there might be pointers around in unknown places. For now: only
  * when  obj  is in the inventory.
  */
-void do_oname(struct obj *obj) {
+static void do_oname(struct obj *obj) {
   struct obj *otmp, *otmp2;
   int lth;
   char buf[BUFSZ];
@@ -147,7 +145,7 @@ void do_oname(struct obj *obj) {
   otmp2 = newobj(lth);
   *otmp2 = *obj;
   otmp2->onamelth = (unsigned char)lth; /* MODERN: cast to bitfield type */
-  (void)strcpy(ONAME(otmp2), buf);
+  (void)snprintf(ONAME(otmp2), otmp2->onamelth, "%.62s", buf);
 
   setworn((struct obj *)0, obj->owornmask);
   setworn(otmp2, otmp2->owornmask);
@@ -193,7 +191,6 @@ void docall(struct obj *obj) {
   char buf[BUFSZ];
   struct obj otemp;
   char **str1;
-  extern char *xname();
   char *str;
 
   otemp = *obj;
@@ -206,7 +203,7 @@ void docall(struct obj *obj) {
   if (!*buf || *buf == '\033')
     return;
   str = newstring(strlen(buf) + 1);
-  (void)strcpy(str, buf);
+  (void)snprintf(str, strlen(buf) + 1, "%s", buf);
   str1 = &(SAFE_OBJECTS(obj->otyp)
                .oc_uname); /* MODERN: Bounds-checked object access */
   if (*str1)
@@ -222,10 +219,9 @@ const char *const ghostnames[] = {/* these names should have length < PL_NSIZ */
                                   "maud",   "michiel", "mike",    "peter",
                                   "robert", "ron",     "tom",     "wilmar"};
 
-char *xmonnam(struct monst *mtmp, int vb) {
+static char *xmonnam(struct monst *mtmp, int vb) {
   static char buf[BUFSZ]; /* MODERN: Static buffer reuse issue - overwrites on
                              each call */
-  extern char *shkname();
   if (mtmp->mnamelth && !vb) {
     (void)strncpy(buf, NAME(mtmp), BUFSZ - 1); /* MODERN: Safe copy */
     buf[BUFSZ - 1] = 0;
@@ -251,7 +247,7 @@ char *xmonnam(struct monst *mtmp, int vb) {
   } break;
   case '@':
     if (mtmp->isshk) {
-      (void)strcpy(buf, shkname(mtmp));
+      (void)snprintf(buf, BUFSZ, "%s", shkname(mtmp));
       break;
     }
     /* FALLTHROUGH */
@@ -265,7 +261,7 @@ char *xmonnam(struct monst *mtmp, int vb) {
     /* MODERN: Safe concatenation with bounds checking */
     size_t buflen = strlen(buf);
     if (buflen + 8 < BUFSZ) { /* " called " = 8 chars */
-      (void)strcat(buf, " called ");
+      (void)snprintf(buf + buflen, BUFSZ - buflen, " called ");
       buflen += 8;
       if (buflen < BUFSZ - 1) {
         (void)strncat(buf, NAME(mtmp), BUFSZ - 1 - buflen);
@@ -276,7 +272,7 @@ char *xmonnam(struct monst *mtmp, int vb) {
   return (buf);
 }
 
-char *lmonnam(struct monst *mtmp) { return (xmonnam(mtmp, 1)); }
+static char *lmonnam(struct monst *mtmp) { return (xmonnam(mtmp, 1)); }
 char *monnam(struct monst *mtmp) { return (xmonnam(mtmp, 0)); }
 
 char *Monnam(struct monst *mtmp) {

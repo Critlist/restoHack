@@ -130,7 +130,7 @@ static void seed_prng(void) {
 
 void setrandom(void) { seed_prng(); }
 
-struct tm *getlt(void) {
+static struct tm *getlt(void) {
   time_t date;
 
   (void)time(&date);
@@ -224,20 +224,18 @@ void gethdate(char *name) {
     return;
   }
 
-  char *np;
+  const char *np;
   const char *path; /* MODERN: const because can point to getenv() result or
                        string literal */
   char filename[MAXPATHLEN + 1];
-  if (index(name, '/') != NULL || (path = getenv("PATH")) == NULL)
+  if (strchr(name, '/') != NULL || (path = getenv("PATH")) == NULL)
     path = "";
 
   for (;;) {
-    if ((np = (char *)index(path, ':')) ==
-        NULL) /* MODERN: Cast needed due to const path */
-      np = (char *)(path + strlen(path)); /* point to end str - MODERN: Cast
-                                             needed due to const path */
-    if (np - path <= 1)                   /* %% */
-      (void)strcpy(filename, name);
+    if ((np = strchr(path, ':')) == NULL)
+      np = path + strlen(path); /* point to end of string */
+    if (np - path <= 1)         /* %% */
+      (void)snprintf(filename, sizeof(filename), "%s", name);
     else {
       /* MODERN: Safe path construction with bounds checking */
       size_t path_len = np - path;
@@ -283,7 +281,7 @@ int uptodate(int fd) {
 }
 
 /* see whether we should throw away this xlock file */
-int veryold(int fd) {
+static int veryold(int fd) {
   int i;
   time_t date;
 
@@ -293,7 +291,6 @@ int veryold(int fd) {
     return (0); /* not an xlock file */
   (void)time(&date);
   if (date - buf.st_mtime < 3L * 24L * 60L * 60L) { /* recent */
-    extern int errno;
     int lockedpid; /* should be the same size as hackpid */
 
     if (read(fd, (char *)&lockedpid, sizeof(lockedpid)) != sizeof(lockedpid))
@@ -320,7 +317,6 @@ int veryold(int fd) {
 }
 
 void getlock(void) {
-  extern int errno, hackpid, locknum;
   int i = 0, fd;
 
   (void)fflush(stdout);
@@ -490,10 +486,6 @@ void newmail(void) {
   /* produce a scroll of mail */
   struct obj *obj;
   struct monst *md;
-  extern char plname[];
-  extern struct obj *mksobj(), *addinv();
-  extern struct monst *makemon();
-  extern struct permonst pm_mail_daemon;
 
   obj = mksobj(SCR_MAIL);
   if (md = makemon(&pm_mail_daemon, u.ux, u.uy)) /* always succeeds */

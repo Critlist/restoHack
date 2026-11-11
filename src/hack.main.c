@@ -20,7 +20,6 @@
 
 /* MODERN ADDITION (2025): Terminal size globals for resize protection */
 extern int CO, LI;         /* Defined in hack.termcap.c */
-extern void docrt(void);   /* Complete screen redraw - hack.pri.c */
 
 #ifdef QUEST
 #define gamename "quest"
@@ -28,16 +27,11 @@ extern void docrt(void);   /* Complete screen redraw - hack.pri.c */
 #define gamename "hack"
 #endif
 
-extern char plname[PL_NSIZ], pl_character[PL_CSIZ];
-extern struct permonst mons[CMNUM + 2];
-extern char genocided[60], fut_geno[];
 
-int (*afternmv)();
-int (*occupation)();
+int (*afternmv)(void);
+int (*occupation)(void);
 const char *occtxt; /* MODERN: const because assigned string literals */
 
-void done1(int sig);
-void hangup(int sig);
 
 /**
  * MODERN ADDITION (2025): Terminal resize protection handler
@@ -76,8 +70,6 @@ char SAVEF[PL_NSIZ + 11] = "save/"; /* save/99999player */
 char *hname;                        /* name of the game (argv[0] of call) */
 char obuf[BUFSIZ];                  /* BUFSIZ is defined in stdio.h */
 
-extern const char
-    *nomovemsg; /* MODERN: const because assigned string literals */
 extern long wailmsg;
 
 #ifdef CHDIR

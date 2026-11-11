@@ -14,7 +14,6 @@
 #include <stdbool.h>
 #include <stddef.h> /* MODERN: for ptrdiff_t */
 #include <stdio.h>
-extern char *eos(char *s);
 extern int CO;
 
 char toplines[BUFSZ];
@@ -64,8 +63,7 @@ void remember_topl(void) {
       (unsigned)(strlen(toplines) + sizeof(struct topl) + 1));
   tl->next_topl = old_toplines;
   tl->topl_text = (char *)(tl + 1);
-  (void)strcpy(tl->topl_text,
-               toplines); /* MODERN: Safe - allocated exact size */
+  (void)snprintf(tl->topl_text, strlen(toplines) + 1, "%s", toplines);
   old_toplines = tl;
   while (cnt && tl) {
     cnt--;
@@ -202,17 +200,19 @@ static void sanitize_format_1984(char *out, size_t outsz, const char *in) {
       /* Check if what follows 'l' is a valid conversion for 'l' modifier */
       if (!(*p && strchr("diouxX", *p))) {
         /* 'l' not followed by valid integer conversion - neutralize */
-        d = neutralize_spec(d, end, start, p);
-        if (!d)
-          break;
+        char *nd = neutralize_spec(d, end, start, p);
+        if (!nd)
+          break; /* d is still valid; do not clobber it with NULL */
+        d = nd;
         continue;
       }
     } else if (*p == 'h' || *p == 'z' || *p == 'j' || *p == 't' || *p == 'L' ||
                *p == 'q') {
       /* reject modern/other length modifiers; print them literally */
-      d = neutralize_spec(d, end, start, p);
-      if (!d)
-        break;
+      char *nd = neutralize_spec(d, end, start, p);
+      if (!nd)
+        break; /* d is still valid; do not clobber it with NULL */
+      d = nd;
       continue;
     }
 
@@ -254,9 +254,10 @@ static void sanitize_format_1984(char *out, size_t outsz, const char *in) {
 
     if (!allowed || c == '\0') {
       /* neutralize: print the original sequence literally */
-      d = neutralize_spec(d, end, start, p);
-      if (!d)
-        break;
+      char *nd = neutralize_spec(d, end, start, p);
+      if (!nd)
+        break; /* d is still valid; do not clobber it with NULL */
+      d = nd;
       continue;
     }
 
@@ -367,7 +368,9 @@ pline(const char *line, ...) {
       if (n0 && tl[0]) {
         if (tl - toplines + (ptrdiff_t)strlen(tl) + 1 <
             BUFSZ) /* MODERN: cast strlen to ptrdiff_t */
-          (void)strcat(tl, "\n");
+          (void)snprintf(tl + strlen(tl),
+                         BUFSZ - (size_t)(tl - toplines) - strlen(tl),
+                         "\n");
       }
     } else {
       /* Buffer full - truncate gracefully */

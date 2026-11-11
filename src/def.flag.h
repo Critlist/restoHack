@@ -1,3 +1,6 @@
+#ifndef DEF_FLAG_H
+#define DEF_FLAG_H
+
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /* def.flag.h - version 1.0.3 */
 
@@ -39,3 +42,5 @@ struct flag {
 };
 
 extern struct flag flags;
+
+#endif /* DEF_FLAG_H */

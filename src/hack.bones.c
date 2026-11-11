@@ -12,10 +12,6 @@
 #include "hack.h"
 #include <fcntl.h>
 #include <unistd.h>
-extern char plname[PL_NSIZ];
-extern long somegold();
-extern struct monst *makemon();
-extern struct permonst pm_ghost;
 
 char bones[] = "bones_xx";
 

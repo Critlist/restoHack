@@ -13,19 +13,9 @@
 #include "hack.h"
 #include "def.func_tab.h"
 
-int doredraw(), doredotopl(), dodrop(), dodrink(), doread(), dopickup(),
-    doversion(), doweararm(), dowearring(), doremarm(), doremring(), dopay(),
-    doapply(), dosave(), dowield(), ddoinv(), dozap(), ddocall(), dowhatis(),
-    doengrave(), dotele(), dohelp(), doeat(), doddrop(), do_mname(), doidtrap(),
-    doprwep(), doprarm(), doprring(), doprgold(), dodiscovered(), dotypeinv(),
-    dolook(), doset(), doup(), dodown(), donull(), dothrow(), doextcmd(),
-    dodip(), dopray();
 #ifdef SHELL
-int dosh();
+int dosh(void);
 #endif /* SHELL */
-#ifdef SUSPEND
-int dosuspend();
-#endif /* SUSPEND */
 
 struct func_tab cmdlist[] = {
     {'\020', doredotopl},
@@ -94,7 +84,7 @@ struct func_tab cmdlist[] = {
 struct ext_func_tab extcmdlist[] = {
     {"dip", dodip}, {"pray", dopray}, {(char *)0, donull}};
 
-extern char *parse(), quitchars[];
+extern char *parse(void);
 
 /* Modern: QWERTZ keyboards (Central Europe). With the qwertz option (off by
  * default) the physical key in the Y position (labelled Z) moves NW and the

@@ -13,7 +13,6 @@
 #include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
-extern char *eos();
 
 /* Forward declaration */
 void parseoptions(char *opts, boolean from_env);
@@ -140,7 +139,6 @@ void parseoptions(char *opts, boolean from_env) {
 
   /* name:string */
   if (!strncmp(opts, "name", 4)) {
-    extern char plname[PL_NSIZ];
     if (!from_env) {
       pline("The playername can be set only from HACKOPTIONS.");
       return;

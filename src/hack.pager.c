@@ -30,14 +30,9 @@
 #include <unistd.h>
 extern int CO, LI; /* usually COLNO and ROWNO+2 */
 extern char *CD;
-extern char quitchars[];
 
 /* Function prototypes for functions defined in this file */
-int dowhatis(void);
 void page_more(FILE *fp, int strip);
-void set_pager(int mode);
-int page_line(const char *s);
-int dohelp(void);
 /* MODERN: CONST-CORRECTNESS: page_file filename is read-only */
 int page_file(const char *fnam, boolean silent);
 void intruph(int sig);
@@ -53,13 +48,11 @@ int child(int wt);
 /* MODERN: CONST-CORRECTNESS: cgetret text is read-only */
 extern void cgetret(const char *text);
 /* MODERN: CONST-CORRECTNESS: settty message is read-only */
-extern void settty(const char *arg);
 
 int dowhatis(void) {
   FILE *fp;
   char bufr[BUFSZ + 6];
   char *buf = &bufr[6], *ep, q;
-  extern char readchar();
 
   if (!(fp = fopen(DATAFILE, "r")))
     pline("Cannot open data file!");
@@ -181,7 +174,6 @@ void set_pager(int mode) /* 0: open  1: wait+close  2: close */
 
 int page_line(const char *s) /* returns 1 if we should quit */
 {
-  extern char morc;
 
   if (cury == LI - 1) {
     if (!*s)
@@ -251,7 +243,7 @@ void cornline(int mode, const char *text) {
                    1)); /* MODERN: cast to size_t for calculation */
     tl->next_line = 0;
     tl->line_text = (char *)(tl + 1);
-    (void)strcpy(tl->line_text, text);
+    memcpy(tl->line_text, text, (size_t)len + 1);
     if (!texthead)
       texthead = tl;
     else
@@ -342,7 +334,6 @@ int page_file(const char *fnam,
       return (0);
     }
     if (child(1)) {
-      extern char *catmore;
 
       /* Now that child() does a setuid(getuid()) and a chdir(),
          we may not be able to open file fnam anymore, so make

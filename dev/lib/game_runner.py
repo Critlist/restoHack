@@ -23,6 +23,11 @@ RESIZE_CHANCE = 0.002
 
 class HackGameRunner:
     """Reliable 1984 Hack game automation with enhanced inventory and save/resume testing"""
+
+    # Quit retry budget: each attempt clears a pending prompt and asks to quit.
+    # Lanes that slow the game down (valgrind) raise these.
+    QUIT_ATTEMPTS = 8
+    QUIT_WAIT = 2
     
     def __init__(self, binary_path: str, debug: bool = False, enhanced_mode: bool = False,
                  seed: Optional[int] = None):
@@ -138,12 +143,13 @@ class HackGameRunner:
             # Return ends text-entry prompts (getlin echoes ESC) and the
             # "Hit return to continue" after escaping the dungeon.
             try:
-                for attempt in range(8):
+                for attempt in range(self.QUIT_ATTEMPTS):
                     self.child.send(' \x1b\r')
                     time.sleep(0.3)
                     self.child.send('Q')
                     try:
-                        self.child.expect(['Really quit', 'quit'], timeout=2)
+                        self.child.expect(['Really quit', 'quit'],
+                                          timeout=self.QUIT_WAIT)
                         break
                     except pexpect.TIMEOUT:
                         self.log(f"No quit prompt (attempt {attempt + 1}); retrying")

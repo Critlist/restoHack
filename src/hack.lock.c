@@ -28,6 +28,14 @@ static int record_lock_fd = -1;
 #define GAME_LOCK_FILE "game.lock"
 #define RECORD_LOCK_FILE "record.lock"
 
+/* EWOULDBLOCK and EAGAIN are equal on many systems; keep both checks where
+ * they differ without a redundant-comparison warning where they don't. */
+#if EWOULDBLOCK == EAGAIN
+#define WOULD_BLOCK(e) ((e) == EAGAIN)
+#else
+#define WOULD_BLOCK(e) ((e) == EWOULDBLOCK || (e) == EAGAIN)
+#endif
+
 /* Lock timeout in seconds */
 #define LOCK_TIMEOUT 10
 
@@ -55,7 +63,7 @@ int modern_lock_game(void) {
       return 1; /* Success */
     }
 
-    if (errno != EWOULDBLOCK && errno != EAGAIN) {
+    if (!WOULD_BLOCK(errno)) {
       printf("Cannot lock game: %s\n", strerror(errno));
       close(fd);
       return 0;
@@ -116,7 +124,7 @@ int modern_lock_record(void) {
       return 1; /* Success */
     }
 
-    if (errno != EWOULDBLOCK && errno != EAGAIN) {
+    if (!WOULD_BLOCK(errno)) {
       close(fd);
       return 0;
     }

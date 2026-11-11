@@ -11,12 +11,10 @@
 
 #include "hack.h"
 
-extern const char
-    *nomovemsg; /* MODERN: const because assigned string literals */
-extern char quitchars[];
-extern char *Doname();
 
-void off_msg(struct obj *otmp) { pline("You were wearing %s.", doname(otmp)); }
+static void off_msg(struct obj *otmp) {
+  pline("You were wearing %s.", doname(otmp));
+}
 
 int doremarm(void) {
   struct obj *otmp;
@@ -340,7 +338,7 @@ void glibr(void) {
   }
 }
 
-struct obj *some_armor() {
+struct obj *some_armor(void) {
   struct obj *otmph = uarm;
   if (uarmh && (!otmph || !rn2(4)))
     otmph = uarmh;

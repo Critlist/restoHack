@@ -19,8 +19,6 @@
 #define UNDEF_TYP 0
 #define UNDEF_SPE '\177'
 /* addinv() declared in hack.h */
-extern char *eos();
-extern char plname[];
 
 struct you zerou;
 char pl_character[PL_CSIZ];
@@ -101,11 +99,10 @@ struct trobj Wizard[] = {{ELVEN_CLOAK, 0, ARMOR_SYM, 1, 1},
                          {UNDEF_TYP, UNDEF_SPE, SCROLL_SYM, 3, 0},
                          {0, 0, 0, 0, 0}};
 
-int u_init() {
+int u_init(void) {
   int i;
   char exper = 'y', pc;
-  extern char readchar();
-  if (flags.female) /* should have been set in HACKOPTIONS */
+    if (flags.female) /* should have been set in HACKOPTIONS */
     roles[4] = role_cavewoman;
   else
     roles[4] = role_caveman;
@@ -276,9 +273,7 @@ got_suffix:
   return 1; /* MODERN: Return success indicator - was missing return value */
 }
 
-int ini_inv(trop)
-struct trobj *trop;
-{
+int ini_inv(struct trobj *trop) {
   struct obj *obj;
   /* mkobj() declared in hack.h */
   while (trop->trolet) {
@@ -340,7 +335,7 @@ struct trobj *trop;
 }
 
 #ifdef WIZARD
-int wiz_inv() {
+int wiz_inv(void) {
   struct trobj *trop = &Extra_objs[0];
   char *ep = getenv("INVENT");
   int type;
@@ -370,7 +365,7 @@ int wiz_inv() {
 }
 #endif /* WIZARD */
 
-int plnamesuffix() {
+int plnamesuffix(void) {
   char *p;
   if ((p = rindex(plname, '-'))) {
     *p = 0;

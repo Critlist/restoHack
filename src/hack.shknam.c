@@ -3,6 +3,7 @@
 /* $FreeBSD$ */
 
 #include "hack.h"
+#include <stdio.h>
 
 /* MODERN: CONST-CORRECTNESS: shkliquors is a read-only array of string literals
  */
@@ -169,7 +170,7 @@ void findname(char *nampt, char let) {
       if (let)
         findname(nampt, 0);
       else
-        (void)strcpy(nampt, "Dirk");
+        (void)snprintf(nampt, PL_NSIZ, "Dirk");
       return;
     }
   /* MODERN: Bounds check - q[i] may be NULL if we've exhausted the list */
@@ -178,7 +179,7 @@ void findname(char *nampt, char let) {
     if (let)
       findname(nampt, 0);
     else
-      (void)strcpy(nampt, "Dirk");
+      (void)snprintf(nampt, PL_NSIZ, "Dirk");
     return;
   }
   (void)strncpy(nampt, q[i], PL_NSIZ);

@@ -28,14 +28,9 @@
     }                                                                          \
   } while (0)
 
-extern char plname[], pl_character[];
 
 /* Forward declarations for missing functions */
-extern void paybill(void);
-extern void savebones(void);
-extern void outrip(void);
 /* MODERN: CONST-CORRECTNESS: settty message is read-only */
-extern void settty(const char *);
 
 /* Forward declarations for functions in this file */
 void topten(void);
@@ -43,8 +38,6 @@ void outheader(void);
 void clearlocks(void);
 char *itoa(int a);
 const char *ordin(int n); /* MODERN: const because returns string literals */
-char *eos(char *s);
-void charcat(char *s, char c);
 
 xchar maxdlevel = 1;
 
@@ -72,14 +65,14 @@ void done1(int sig) {
 int done_stopprint;
 int done_hup;
 
-void done_intr(int sig) {
+static void done_intr(int sig) {
   (void)sig;
   done_stopprint++;
   (void)signal(SIGINT, SIG_IGN);
   (void)signal(SIGQUIT, SIG_IGN);
 }
 
-void done_hangup(int sig) {
+static void done_hangup(int sig) {
   done_hup++;
   (void)signal(SIGHUP, SIG_IGN);
   done_intr(sig);
@@ -177,7 +170,6 @@ void done(const char *st1) {
       u.urexp += 1000 * ((maxdlevel > 30) ? 10 : maxdlevel - 20);
   }
   if (*st1 == 'e') {
-    extern struct monst *mydogs;
     struct monst *mtmp;
     struct obj *otmp;
     int i;
@@ -286,7 +278,7 @@ static void reset_topten_arena(void) {
   memset(arena, 0, sizeof(arena));
 }
 
-struct toptenentry *newttentry(void) {
+static struct toptenentry *newttentry(void) {
   if (arena_used >= ENTRYMAX + 2) {
     panic("topten arena exhausted");
   }
@@ -313,7 +305,6 @@ void topten(void) {
                     compiled */
   FILE *rfile;
   int flg = 0;
-  extern char *getdatestr();
 #define HUP if (!done_hup)
 
   /**
@@ -523,11 +514,11 @@ unlock:
 void outheader(void) {
   char linebuf[BUFSZ];
   char *bp;
-  (void)strcpy(linebuf, "Number Points  Name");
+  (void)snprintf(linebuf, sizeof(linebuf), "Number Points  Name");
   bp = eos(linebuf);
   while (bp < linebuf + COLNO - 9)
     *bp++ = ' ';
-  (void)strcpy(bp, "Hp [max]");
+  (void)snprintf(bp, (size_t)(linebuf + BUFSZ - bp), "Hp [max]");
   puts(linebuf);
 }
 
@@ -595,7 +586,7 @@ int outentry(int rank, struct toptenentry *t1, int so) {
     if (bp <= linebuf + hppos) {
       while (bp < linebuf + hppos)
         *bp++ = ' ';
-      (void)strcpy(bp, hpbuf);
+      (void)snprintf(bp, (size_t)(linebuf + BUFSZ - bp), "%s", hpbuf);
       /* MODERN: Bounds-checked append to prevent buffer*/
       char *append_pos = eos(bp);
       size_t remaining = BUFSZ - (append_pos - linebuf);
@@ -712,7 +703,6 @@ void charcat(char *s, char c) {
  */
 void prscore(int argc, char **argv) {
   reset_topten_arena(); /* MODERN: Reset arena for fresh allocation */
-  extern char *hname;
   char **players;
   int playerct;
   int rank;

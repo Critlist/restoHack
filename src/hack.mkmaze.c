@@ -11,7 +11,6 @@
 
 #include "hack.h"
 extern struct permonst pm_wizard;
-extern coord mazexy();
 
 /* Forward declarations for local functions */
 void walkfrom(int x, int y);
@@ -147,7 +146,7 @@ int okay(int x, int y, int dir) {
     return (1);
 }
 
-coord mazexy() {
+coord mazexy(void) {
   coord mm;
   mm.x = 3 + 2 * rn2(COLNO / 2 - 2);
   mm.y = 3 + 2 * rn2(ROWNO / 2 - 2);

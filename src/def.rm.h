@@ -1,3 +1,6 @@
+#ifndef DEF_RM_H
+#define DEF_RM_H
+
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /* def.rm.h - version 1.0.2 */
 
@@ -50,3 +53,5 @@ struct rm {
   unsigned lit : 1;
 };
 extern struct rm levl[COLNO][ROWNO];
+
+#endif /* DEF_RM_H */

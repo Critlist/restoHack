@@ -13,7 +13,6 @@ void invault(void) {}
 #else
 
 /* def.mkroom.h already included in hack.h */
-extern struct monst *makemon();
 #define FCSIZ (ROWNO + COLNO)
 struct fakecorridor {
   xchar fx, fy, ftyp;

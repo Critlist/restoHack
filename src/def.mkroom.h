@@ -1,3 +1,6 @@
+#ifndef DEF_MKROOM_H
+#define DEF_MKROOM_H
+
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /* def.mkroom.h - version 1.0.3 */
 
@@ -24,3 +27,5 @@ extern coord doors[DOORMAX];
 #define SHOPBASE 8
 #define WANDSHOP 9
 #define GENERAL 15
+
+#endif /* DEF_MKROOM_H */

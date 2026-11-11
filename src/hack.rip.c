@@ -5,7 +5,6 @@
 #include "hack.h"
 #include <stdio.h>
 
-extern char plname[];
 
 /* MODERN ADDITION (2025): Made tombstone strings writable to prevent segfaults
  */
@@ -79,7 +78,6 @@ void outrip(void) {
         x++;
       curs(x, y);
       while (dpx[x] && dpx[x] != ' ') {
-        extern int done_stopprint;
         if (done_stopprint)
           return;
         curx++;

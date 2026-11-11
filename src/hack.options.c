@@ -308,13 +308,8 @@ int doset(void) {
         len += added;
         remaining -= added;
       }
-      if (flags.end_own && remaining > 0) {
-        added = snprintf(buf + len, remaining, "/own scores");
-        if (added > 0 && added < remaining) {
-          len += added;
-          remaining -= added;
-        }
-      }
+      if (flags.end_own && remaining > 0)
+        (void)snprintf(buf + len, remaining, "/own scores");
     } else {
       /* Remove trailing comma if present */
       if (len > 0 && buf[len - 1] == ',') {

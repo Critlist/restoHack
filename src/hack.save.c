@@ -3,6 +3,7 @@
 /* $FreeBSD$ */
 
 #include "hack.h"
+#include <errno.h> /* Modern: errno for the outdated-save check */
 #include <fcntl.h>
 #include <signal.h>
 #include <stdint.h>
@@ -416,6 +417,34 @@ int dosave0(int hu) {
   int fd, ofd;
   int tmp; /* not ! */
   char tmpfile[256];
+
+  /**
+   * MODERN ADDITION (2026): Never save over a kept out-of-date save
+   * WHY: If the out-of-date save found at start-up could not be moved aside
+   *      (see move_outdated_save() in hack.main.c), it is still at SAVEF and
+   *      the rename() below would replace it with this new game.
+   * HOW: Retry the move; if SAVEF has meanwhile gone (moved by the player)
+   *      there is nothing to protect. Otherwise refuse to save and let the
+   *      game continue. This runs before the signals are ignored below, so a
+   *      refused save leaves the hangup/interrupt handlers in place.
+   * PRESERVES: Normal saves are unaffected (outdated_save_stuck is 0).
+   * ADDS: The player's old save can never be overwritten by a new game.
+   */
+  if (outdated_save_stuck) {
+    struct stat st;
+
+    if (stat(SAVEF, &st) != 0 && errno == ENOENT)
+      outdated_save_stuck = 0; /* the player moved it away */
+    else if (move_outdated_save()) {
+      outdated_save_stuck = 0;
+      if (!hu)
+        pline("Old save kept as %s.", outdated_save_name);
+    } else {
+      if (!hu)
+        pline("Not saved; it would overwrite %s.", SAVEF);
+      return (0);
+    }
+  }
 
   (void)signal(SIGHUP, SIG_IGN);
   (void)signal(SIGINT, SIG_IGN);

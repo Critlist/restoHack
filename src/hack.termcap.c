@@ -22,6 +22,7 @@ static char *HO, *CL, *CE, *hack_UP, *CM, *ND, *XD, *hack_BC, *SO, *SE, *TI,
     *TE;
 static char *VS, *VE;
 static int SG;
+/* Original 1984: static char PC = '\0';  (terminfo pad character, never read) */
 char *CD;   /* tested in pri.c: docorner() */
 int CO, LI; /* used in pri.c and whatis.c */
 
@@ -47,7 +48,7 @@ void term_getsize(void) {
 void startup(void) {
   char *term;
   char *tptr;
-  char *tbufptr;
+  char *tbufptr; /* Original 1984: char *tbufptr, *pc; */
 
   tptr = (char *)alloc(1024);
 
@@ -58,7 +59,10 @@ void startup(void) {
     error("Unknown terminal type: %s.", term);
   if (tgetflag("NP") || tgetflag("nx"))
     flags.nonull = 1;
-  /* Original 1984 stored terminfo's pad character here but never used it. */
+  /* Original 1984:
+	if(pc = tgetstr("pc", &tbufptr))
+		PC = *pc;
+     Nothing ever read it, so the static and the store are gone. */
   if (!(hack_BC = tgetstr("bc", &tbufptr))) {
     if (!tgetflag("bs"))
       error("Terminal must backspace.");

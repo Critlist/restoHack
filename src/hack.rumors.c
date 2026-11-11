@@ -61,15 +61,14 @@ static void outline(FILE *rumf) {
 
 void outrumor(void) {
   int rn, i;
+  int byte_idx, bit_idx;
   FILE *rumf;
   if (n_rumors <= n_used_rumors || (rumf = fopen(RUMORFILE, "r")) == (FILE *)0)
     return;
   if (n_used_rumors < 0)
     init_rumors(rumf);
-  if (!n_rumors) {
-    (void)fclose(rumf);
-    return;
-  }
+  if (!n_rumors)
+    goto none;
   rn = rn2(n_rumors - n_used_rumors);
   i = 0;
   while (rn || used(i)) {
@@ -79,8 +78,8 @@ void outrumor(void) {
     i++;
   }
   /* MODERN: Bounds check before array access */
-  int byte_idx = i / CHARSZ;
-  int bit_idx = i % CHARSZ;
+  byte_idx = i / CHARSZ;
+  bit_idx = i % CHARSZ;
   if (byte_idx >= 0 && byte_idx < (n_rumors / CHARSZ) + 1 && bit_idx >= 0 &&
       bit_idx < CHARSZ) {
     usedbits[byte_idx] |= (1 << bit_idx);
@@ -89,6 +88,7 @@ void outrumor(void) {
     impossible("Rumor index out of bounds: i=%d byte_idx=%d", i, byte_idx);
   }
   outline(rumf);
+none:
   (void)fclose(rumf);
 }
 

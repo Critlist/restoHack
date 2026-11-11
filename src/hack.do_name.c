@@ -118,7 +118,7 @@ int do_mname(void) {
     monfree(mtmp2);
     return (1);
   }
-  (void)snprintf(NAME(mtmp2), mtmp2->mnamelth, "%s", buf);
+  (void)snprintf(NAME(mtmp2), mtmp2->mnamelth, "%.62s", buf);
   replmon(mtmp, mtmp2);
   return (1);
 }
@@ -145,7 +145,7 @@ static void do_oname(struct obj *obj) {
   otmp2 = newobj(lth);
   *otmp2 = *obj;
   otmp2->onamelth = (unsigned char)lth; /* MODERN: cast to bitfield type */
-  (void)snprintf(ONAME(otmp2), otmp2->onamelth, "%s", buf);
+  (void)snprintf(ONAME(otmp2), otmp2->onamelth, "%.62s", buf);
 
   setworn((struct obj *)0, obj->owornmask);
   setworn(otmp2, otmp2->owornmask);

@@ -3,10 +3,15 @@
 /* $FreeBSD$ */
 
 #include "hack.h"
+#include "def.edog.h" /* Modern: v3 validation */
+#include "def.eshk.h" /* Modern: v3 validation */
+#include "def.wseg.h" /* Modern: v3 validation */
 #include <errno.h> /* Modern: errno for the outdated-save check */
 #include <fcntl.h>
 #include <signal.h>
+#include <stddef.h> /* Modern: offsetof */
 #include <stdint.h>
+#include <stdlib.h> /* Modern: malloc */
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -24,14 +29,6 @@
  * ADDS: Cross-platform compatibility, backwards compatibility
  */
 
-/* Save file header for versioned format */
-typedef struct {
-  char magic[4];      /* "RHCK" */
-  uint16_t version;   /* Format version, currently 1 */
-  uint32_t endiantag; /* 0x01020304 for endian detection */
-  uint32_t reserved;  /* For future use */
-} rh_hdr_t;
-
 /* Save format version history:
  * Version 1 (2025): Initial versioned format with magic number, endianness
  *                   - Serialized: flags, dlevel, moves, ustuck (by m_id)
@@ -40,9 +37,19 @@ typedef struct {
  *                   - Added: usick_cause as object type index
  *                   - Added: p_tofn as function ID
  *                   - Struct dump now has pointers zeroed before save
+ *                   - Header written in the middle of the file, after the
+ *                     current level; monster types still raw pointers.
+ * Version 3 (2026): Header first, build fingerprint, length + CRC32, stable
+ *                   monster type IDs; the same header on bones files.
+ *                   Version 1 and 2 saves are not migrated automatically
+ *                   (see "Saved Games" in README.md); they are kept aside.
+ *
+ * Bump RH_VERSION for every deliberate change to what is written. The build
+ * fingerprint (rh_fingerprint()) catches layout and table changes, but not a
+ * field whose meaning changes while its size and place stay the same.
  */
 #define RH_MAGIC "RHCK"
-#define RH_VERSION 2
+#define RH_VERSION 3
 #define RH_ENDIANTAG 0x01020304
 
 /* Fixed-width type definitions for save format */
@@ -195,63 +202,6 @@ static void unpack_flags(int fd, struct flag *f) {
   f->end_around = sr_u32(fd);
 }
 
-/* Write versioned save file header */
-static int write_save_header(int fd) {
-  rh_hdr_t hdr;
-
-  memcpy(hdr.magic, RH_MAGIC, 4);
-  hdr.version = RH_VERSION;
-  hdr.endiantag = RH_ENDIANTAG;
-  hdr.reserved = 0;
-
-  /* Write header using our serialization functions for consistency */
-  sw_bytes(fd, hdr.magic, 4);
-  sw_u16(fd, hdr.version);
-  sw_u32(fd, hdr.endiantag);
-  sw_u32(fd, hdr.reserved);
-
-  return 1;
-}
-
-/* Check if file starts with our versioned header */
-static int check_save_header(int fd, rh_hdr_t *hdr) {
-  char test_magic[4];
-
-  /* Try to read magic - if it fails, this isn't our format */
-  if (read(fd, test_magic, 4) != 4)
-    return 0;
-  if (memcmp(test_magic, RH_MAGIC, 4) != 0)
-    return 0;
-
-  /* Copy magic to header */
-  memcpy(hdr->magic, test_magic, 4);
-
-  /* Modern: Use direct read() not sr_u16/sr_u32 — mread() panics on short read,
-   * but this function is supposed to return 0 gracefully on truncated files. */
-  {
-    unsigned char rem[10];
-    if (read(fd, rem, 10) != 10)
-      return 0;
-    hdr->version    = ((rh_u16_t)rem[0] << 8) | rem[1];
-    hdr->endiantag  = ((rh_u32_t)rem[2] << 24) | ((rh_u32_t)rem[3] << 16)
-                    | ((rh_u32_t)rem[4] << 8)  |  rem[5];
-    hdr->reserved   = ((rh_u32_t)rem[6] << 24) | ((rh_u32_t)rem[7] << 16)
-                    | ((rh_u32_t)rem[8] << 8)  |  rem[9];
-  }
-
-  /* Check endianness */
-  if (hdr->endiantag != RH_ENDIANTAG) {
-    return 0; /* Different endianness not supported yet */
-  }
-
-  /* Accept versions 1 through RH_VERSION (currently 2) */
-  if (hdr->version < 1 || hdr->version > RH_VERSION) {
-    return 0; /* Unsupported version */
-  }
-
-  return 1;
-}
-
 /* Function pointer serialization for property timeouts
  * EXHAUSTIVE SEARCH RESULT: Only float_down is assigned in codebase
  * (see src/hack.potion.c:184) */
@@ -376,6 +326,787 @@ static void rest_descr_block(int fd) {
     pline("Warning: object descriptions in save file unusable - using "
           "defaults.");
 }
+
+/**
+ * MODERN ADDITION (2026): Save format version 3
+ * WHY: A version 2 save could not survive a game update. Its header sat
+ *      after the first level, so a level was read before anything was
+ *      checked; monster types were raw pointers, which are only relocated
+ *      correctly for monsters inside mons[] (pets, ghosts, eels, guards...
+ *      broke with another binary); bones files had no header at all. The
+ *      original code coped by deleting every save older than the binary.
+ * HOW: Every save and bones file starts with a 32-byte big-endian header:
+ *         0 "RHCK"                 4 u16 RH_VERSION   6 u16 kind
+ *         8 u32 RH_ENDIANTAG      12 u32 build fingerprint, high half
+ *        16 u32 fingerprint, low  20 u32 payload length
+ *        24 u32 payload CRC-32    28 u32 reserved (0)
+ *      rh_check_file() checks the header, the length and the CRC and then
+ *      walks the whole payload with the v_*() validators, which bound every
+ *      length, count, index and map position, all before the real loader
+ *      runs. Monster types are written as stable IDs (rh_mon_id()).
+ * PRESERVES: After the header the stream is the version 2 stream without
+ *      the old mid-file header and without the monbegin pointers; levels,
+ *      objects and struct you are still raw dumps, as in 1985.
+ * ADDS: Saves and bones load in any build with the same fingerprint, and
+ *      anything else is refused before game state is touched. Refused saves
+ *      are kept (move_outdated_save()), never deleted.
+ */
+/* RH_KIND_SAVE, RH_KIND_BONES and RH_HDR_LEN are in hack.h */
+#define RH_HDR_LEN_OFF 20 /* offset of the payload length field */
+#define RH_MAX_PAYLOAD (16UL * 1024 * 1024) /* far above any real save */
+#define RH_MAX_CHAIN 10000L /* entries in any one saved chain */
+#define RH_MAX_MXL 8192     /* monster extra data + name */
+#define RH_MAX_ENGR 32767U  /* engraving text, as in rest_engravings() */
+
+/* Modern: monster types that live outside mons[] */
+extern struct permonst li_dog, dog, la_dog, hell_hound, pm_wizard;
+extern long wgrowtime[32];
+void clearlocks(void); /* Modern: hack.end.c */
+
+/**
+ * MODERN ADDITION (2026): Stable monster type IDs
+ * WHY: monst->data points either into mons[] or at one of the separate
+ *      permonst objects below; the version 2 relocation by &mons[0] only
+ *      worked for the former.
+ * HOW: ID 0 .. CMNUM+1 is the mons[] index; RH_SPECIAL_BASE + n is entry n
+ *      of rh_special_pm(). That list is APPEND ONLY: never reorder or reuse
+ *      an entry. These are every permonst object outside mons[] (all
+ *      assignments to ->data were checked: makemon(), newcham(), the dog
+ *      growth in hack.fight.c and PM_CHAMELEON in hack.mon.c).
+ * PRESERVES: The 1985 tables themselves are unchanged.
+ * ADDS: Unknown IDs are refused instead of producing wild pointers.
+ */
+#define RH_SPECIAL_BASE 1000U
+#define RH_NSPECIAL 9U
+#define RH_BAD_ID 0xFFFFFFFFU
+
+static struct permonst *rh_special_pm(unsigned n) {
+  switch (n) {
+  case 0:
+    return (&pm_ghost);
+  case 1:
+    return (&pm_wizard);
+  case 2:
+    return (&pm_eel);
+#ifdef MAIL
+  case 3:
+    return (&pm_mail_daemon);
+#endif /* MAIL */
+  case 4:
+    return (&li_dog);
+  case 5:
+    return (&dog);
+  case 6:
+    return (&la_dog);
+  case 7:
+    return (&hell_hound);
+  case 8:
+    return (vault_guard_pm());
+  default:
+    return (NULL); /* 3 without MAIL: reserved */
+  }
+}
+
+/* Modern: stable ID of a monster type, RH_BAD_ID if it is not known */
+unsigned rh_mon_id(const struct permonst *pm) {
+  unsigned i;
+
+  for (i = 0; i < CMNUM + 2; i++)
+    if (pm == &mons[i])
+      return (i);
+  for (i = 0; i < RH_NSPECIAL; i++)
+    if (pm && pm == rh_special_pm(i))
+      return (RH_SPECIAL_BASE + i);
+  return (RH_BAD_ID);
+}
+
+/* Modern: monster type for a stable ID, NULL if the ID is unknown */
+struct permonst *rh_mon_pm(unsigned id) {
+  if (id < CMNUM + 2)
+    return (&mons[id]);
+  if (id >= RH_SPECIAL_BASE && id - RH_SPECIAL_BASE < RH_NSPECIAL)
+    return (rh_special_pm(id - RH_SPECIAL_BASE));
+  return (NULL);
+}
+
+/* Modern: payload length and CRC-32, summed by bwrite() while rh_sum_on */
+int rh_sum_on = 0;
+static rh_u32_t rh_sum_len, rh_sum_crc;
+
+static rh_u32_t rh_crc32(rh_u32_t crc, const unsigned char *p,
+                         unsigned long n) {
+  int k;
+
+  while (n--) {
+    crc ^= *p++;
+    for (k = 0; k < 8; k++)
+      crc = (crc >> 1) ^ (0xEDB88320U & (0U - (crc & 1U)));
+  }
+  return (crc);
+}
+
+void rh_sum_add(const void *loc, unsigned num) {
+  rh_sum_crc = rh_crc32(rh_sum_crc, (const unsigned char *)loc, num);
+  rh_sum_len += num;
+}
+
+/**
+ * MODERN ADDITION (2026): Build fingerprint
+ * WHY: A raw struct dump is only meaningful to a build with the same layout
+ *      and the same tables; a size check alone misses reordered or renamed
+ *      table entries, other ABIs and changed constants.
+ * HOW: FNV-1a 64 over the ABI (byte order, type sizes, bit-field layout
+ *      probe), the size of every raw structure in the stream, the offsets
+ *      of the fields the loader relies on, the constants that size saved
+ *      arrays, the identity of every mons[], special monster and objects[]
+ *      entry (name, letter/class, extra size) in order, and the timeout
+ *      function table. The 1985 mons[] and objects[] tables must not be
+ *      edited, not even to fix a typo: that changes the fingerprint and
+ *      every existing save is then refused (kept aside).
+ * PRESERVES: Nothing in the game uses it except save and bones checks.
+ * ADDS: Catches layout, ABI and table changes. It cannot catch a field
+ *      whose meaning changes while its size and place stay the same: bump
+ *      RH_VERSION for those.
+ */
+static uint64_t rh_fp;
+
+static void fp_bytes(const void *p, size_t n) {
+  const unsigned char *b = (const unsigned char *)p;
+
+  while (n--) {
+    rh_fp ^= *b++;
+    rh_fp *= 0x100000001b3ULL;
+  }
+}
+
+static void fp_num(unsigned long v) {
+  unsigned char b[4];
+
+  b[0] = (unsigned char)(v >> 24);
+  b[1] = (unsigned char)(v >> 16);
+  b[2] = (unsigned char)(v >> 8);
+  b[3] = (unsigned char)v;
+  fp_bytes(b, 4);
+}
+
+static void fp_str(const char *s) {
+  if (s)
+    fp_bytes(s, strlen(s) + 1);
+  else
+    fp_num(0xFFFFFFFFUL);
+}
+
+static void fp_pm(const struct permonst *pm) {
+  if (!pm) {
+    fp_str(NULL);
+    return;
+  }
+  fp_str(pm->mname);
+  fp_num((unsigned char)pm->mlet);
+  fp_num(pm->pxlth);
+}
+
+struct rh_abi_probe {
+  unsigned a : 1; /* SysV packs c after this bit-field, MS layout does not */
+  unsigned char c;
+};
+
+static void rh_fingerprint(rh_u32_t *hi, rh_u32_t *lo) {
+  static boolean done = FALSE;
+  static uint64_t fp;
+  unsigned i;
+  int n;
+  uint32_t endian = RH_ENDIANTAG;
+
+  if (!done) {
+    rh_fp = 0xcbf29ce484222325ULL;
+    fp_str("restoHack save");
+    fp_num(RH_VERSION);
+    fp_bytes(&endian, sizeof endian); /* native byte order */
+    fp_num(sizeof(short));
+    fp_num(sizeof(int));
+    fp_num(sizeof(long));
+    fp_num(sizeof(void *));
+    fp_num(offsetof(struct rh_abi_probe, c));
+    fp_num(sizeof(struct rh_abi_probe));
+    /* raw structures and arrays in the stream */
+    fp_num(sizeof(struct you));
+    fp_num(sizeof(struct obj));
+    fp_num(sizeof(struct monst));
+    fp_num(sizeof(struct gold));
+    fp_num(sizeof(struct trap));
+    fp_num(sizeof(struct rm));
+    fp_num(sizeof(levl));
+    fp_num(sizeof(rooms));
+    fp_num(sizeof(doors));
+    fp_num(sizeof(struct permonst));
+    fp_num(sizeof(struct objclass));
+    fp_num(sizeof(struct eshk));
+    fp_num(sizeof(struct edog));
+    fp_num(engr_rec_size());
+    fp_num(names_fixed_size());
+    fp_num(sizeof(u.uprops));
+    fp_num(sizeof(pl_character));
+    fp_num(sizeof(genocided));
+    fp_num(sizeof(fut_geno));
+    fp_num(sizeof(xupstair));
+#ifndef NOWORM
+    fp_num(sizeof(struct wseg));
+    fp_num(sizeof(wsegs));
+    fp_num(offsetof(struct wseg, nseg));
+    fp_num(offsetof(struct monst, mtrapseen)); /* after wormno */
+#endif /* NOWORM */
+    /* fields the loader relies on */
+    fp_num(offsetof(struct monst, nmon));
+    fp_num(offsetof(struct monst, data));
+    fp_num(offsetof(struct monst, m_id));
+    fp_num(offsetof(struct monst, mx));
+    fp_num(offsetof(struct monst, minvent));
+    fp_num(offsetof(struct monst, mxlth));
+    fp_num(offsetof(struct monst, mextra));
+    fp_num(offsetof(struct obj, nobj));
+    fp_num(offsetof(struct obj, o_id));
+    fp_num(offsetof(struct obj, ox));
+    fp_num(offsetof(struct obj, otyp));
+    fp_num(offsetof(struct obj, olet));
+    fp_num(offsetof(struct obj, owornmask));
+    fp_num(offsetof(struct obj, oextra));
+    fp_num(offsetof(struct gold, gx));
+    fp_num(offsetof(struct trap, tx));
+    fp_num(offsetof(struct you, ux));
+    fp_num(offsetof(struct you, usick_cause));
+    fp_num(offsetof(struct you, ustuck));
+    fp_num(offsetof(struct you, uprops));
+    fp_num(offsetof(struct eshk, billct));
+    /* constants that size or index saved data */
+    fp_num(CMNUM);
+    fp_num(NROFOBJECTS);
+    fp_num(LAST_RING);
+    fp_num(MAXLEVEL);
+    fp_num(COLNO);
+    fp_num(ROWNO);
+    fp_num(PL_NSIZ);
+    fp_num(MAXNROFROOMS);
+    fp_num(DOORMAX);
+    fp_num(BILLSZ);
+    fp_num(TRAPNUM);
+    /* table identity, in order */
+    for (i = 0; i < CMNUM + 2; i++)
+      fp_pm(&mons[i]);
+    fp_num(RH_NSPECIAL);
+    for (i = 0; i < RH_NSPECIAL; i++)
+      fp_pm(rh_special_pm(i));
+    n = descr_perm_count();
+    fp_num((unsigned long)n);
+    for (i = 0; i < (unsigned)n; i++) {
+      fp_str(objects[i].oc_name);
+      fp_num((unsigned char)objects[i].oc_olet);
+    }
+    fp_num(NUM_TIMEOUT_FNS);
+    for (i = 0; i < NUM_TIMEOUT_FNS; i++)
+      fp_str(timeout_fn_table[i].name);
+#ifdef RH_TEST_FP_SALT
+    fp_str(RH_TEST_FP_SALT); /* Modern: test builds only, never defined */
+#endif
+    fp = rh_fp;
+    done = TRUE;
+  }
+  *hi = (rh_u32_t)(fp >> 32);
+  *lo = (rh_u32_t)(fp & 0xFFFFFFFFU);
+}
+
+/* Modern: start a version 3 file; bwrite() sums everything after this */
+void rh_begin_file(int fd, int kind) {
+  rh_u32_t hi, lo;
+
+  rh_fingerprint(&hi, &lo);
+  rh_sum_on = 0;
+  sw_bytes(fd, RH_MAGIC, 4);
+  sw_u16(fd, RH_VERSION);
+  sw_u16(fd, (rh_u16_t)kind);
+  sw_u32(fd, RH_ENDIANTAG);
+  sw_u32(fd, hi);
+  sw_u32(fd, lo);
+  sw_u32(fd, 0); /* length, patched by rh_end_file() */
+  sw_u32(fd, 0); /* CRC-32, patched by rh_end_file() */
+  sw_u32(fd, 0); /* reserved */
+  rh_sum_len = 0;
+  rh_sum_crc = 0xFFFFFFFFU;
+  rh_sum_on = 1;
+}
+
+/* Modern: finish a version 3 file: patch length and CRC into the header */
+int rh_end_file(int fd) {
+  unsigned char t[8];
+  rh_u32_t crc = ~rh_sum_crc;
+
+  rh_sum_on = 0;
+  t[0] = (unsigned char)(rh_sum_len >> 24);
+  t[1] = (unsigned char)(rh_sum_len >> 16);
+  t[2] = (unsigned char)(rh_sum_len >> 8);
+  t[3] = (unsigned char)rh_sum_len;
+  t[4] = (unsigned char)(crc >> 24);
+  t[5] = (unsigned char)(crc >> 16);
+  t[6] = (unsigned char)(crc >> 8);
+  t[7] = (unsigned char)crc;
+  if (lseek(fd, (off_t)RH_HDR_LEN_OFF, SEEK_SET) != (off_t)RH_HDR_LEN_OFF)
+    return (0);
+  return (write(fd, t, sizeof t) == (ssize_t)sizeof t);
+}
+
+static rh_u32_t get_u32(const unsigned char *b) {
+  return (((rh_u32_t)b[0] << 24) | ((rh_u32_t)b[1] << 16) |
+          ((rh_u32_t)b[2] << 8) | b[3]);
+}
+
+/**
+ * MODERN ADDITION (2026): Structural validation of a whole payload
+ * WHY: The loader allocates and indexes with lengths, IDs and positions
+ *      taken from the file. The CRC only detects accidental damage; a file
+ *      with a valid CRC can still hold any value.
+ * HOW: Walk a copy of the payload in memory, in exactly the order savelev()
+ *      and dosave0() write it, checking every length against sane limits
+ *      and against the bytes that remain, bounding every chain, and
+ *      checking every type ID, level number and map position the loader
+ *      will use as an index. Nothing is allocated or changed in the game.
+ * PRESERVES: The loader itself is unchanged apart from its last-resort
+ *      checks, which now keep the save instead of deleting it.
+ * ADDS: A file that would make the loader misbehave is refused while the
+ *      game is still in a known state.
+ */
+struct rh_cur {
+  const unsigned char *p;
+  unsigned long len, off;
+  const char *err;
+};
+
+static int v_bad(struct rh_cur *c, const char *why) {
+  if (!c->err)
+    c->err = why;
+  return (0);
+}
+
+static const unsigned char *v_take(struct rh_cur *c, unsigned long n) {
+  const unsigned char *r;
+
+  if (c->err)
+    return (NULL);
+  if (n > c->len - c->off) {
+    (void)v_bad(c, "it is truncated");
+    return (NULL);
+  }
+  r = c->p + c->off;
+  c->off += n;
+  return (r);
+}
+
+static int v_int(struct rh_cur *c, int *v) {
+  const unsigned char *q = v_take(c, sizeof *v);
+
+  if (!q)
+    return (0);
+  memcpy(v, q, sizeof *v);
+  return (1);
+}
+
+static int v_u32(struct rh_cur *c, rh_u32_t *v) {
+  const unsigned char *q = v_take(c, 4);
+
+  if (!q)
+    return (0);
+  *v = get_u32(q);
+  return (1);
+}
+
+static int v_onmap(int x, int y) {
+  return (x >= 0 && x < COLNO && y >= 0 && y < ROWNO);
+}
+
+/* Modern: a NUL inside the first n bytes */
+static int v_strz(const void *s, size_t n) { return (memchr(s, 0, n) != NULL); }
+
+static int v_objchn(struct rh_cur *c, int onmap) {
+  const unsigned char *q;
+  struct obj o;
+  int xl;
+  long n;
+
+  for (n = 0;; n++) {
+    if (n > RH_MAX_CHAIN)
+      return (v_bad(c, "an object list is too long"));
+    if (!v_int(c, &xl))
+      return (0);
+    if (xl == -1)
+      return (1);
+    if (xl < 0 || xl > 63)
+      return (v_bad(c, "an object name length is invalid"));
+    if (!(q = v_take(c, sizeof(struct obj) + (unsigned)xl)))
+      return (0);
+    memcpy(&o, q, sizeof o);
+    if ((int)o.otyp >= descr_perm_count())
+      return (v_bad(c, "an object type is invalid"));
+    if (onmap && !v_onmap(o.ox, o.oy))
+      return (v_bad(c, "an object is off the map"));
+  }
+}
+
+static int v_eshk(const unsigned char *x) {
+  struct eshk e;
+
+  memcpy(&e, x, sizeof e);
+  return (e.billct >= 0 && e.billct <= BILLSZ && e.shoproom >= 0 &&
+          e.shoproom < MAXNROFROOMS && v_onmap(e.shk.x, e.shk.y) &&
+          v_onmap(e.shd.x, e.shd.y) && v_strz(e.customer, PL_NSIZ) &&
+          v_strz(e.shknam, PL_NSIZ));
+}
+
+static int v_monchn(struct rh_cur *c, int onmap, unsigned long *worms) {
+  const unsigned char *q, *x;
+  struct permonst *pm;
+  struct monst m;
+  rh_u32_t id;
+  int xl;
+  long n;
+
+  for (n = 0;; n++) {
+    if (n > RH_MAX_CHAIN)
+      return (v_bad(c, "a monster list is too long"));
+    if (!v_int(c, &xl))
+      return (0);
+    if (xl == -1)
+      return (1);
+    if (xl < 0 || xl > RH_MAX_MXL)
+      return (v_bad(c, "a monster record length is invalid"));
+    if (!v_u32(c, &id))
+      return (0);
+    if (!(pm = rh_mon_pm(id)))
+      return (v_bad(c, "it contains an unknown monster type"));
+    if (!(q = v_take(c, sizeof(struct monst) + (unsigned)xl)))
+      return (0);
+    memcpy(&m, q, sizeof m);
+    x = q + offsetof(struct monst, mextra);
+    if ((unsigned)xl != m.mxlth + m.mnamelth || m.mxlth < pm->pxlth ||
+        (m.mtame && m.mxlth < sizeof(struct edog)) ||
+        (m.isshk && (m.mxlth < sizeof(struct eshk) || !v_eshk(x))) ||
+        (m.isgd && (m.mxlth < vault_guard_pm()->pxlth || !egd_ok(x))) ||
+        (pm == &pm_ghost && !v_strz(x, PL_NSIZ)) ||
+        (m.mnamelth && x[m.mxlth + m.mnamelth - 1] != 0))
+      return (v_bad(c, "a monster record is invalid"));
+    if (onmap) {
+      if (!v_onmap(m.mx, m.my) || (m.mdispl && !v_onmap(m.mdx, m.mdy)))
+        return (v_bad(c, "a monster is off the map"));
+#ifndef NOWORM
+      if (m.wormno)
+        *worms |= 1UL << m.wormno;
+#endif /* NOWORM */
+    }
+    if (m.minvent && !v_objchn(c, 0))
+      return (0);
+  }
+}
+
+/* Modern: one level as written by savelev(); returns its number or 0 */
+static int v_level(struct rh_cur *c, int lev) {
+  const unsigned char *q;
+  struct mkroom r[MAXNROFROOMS + 1];
+  coord d[DOORMAX];
+  struct gold g;
+  struct trap t;
+  unsigned char st[4];
+  unsigned lth;
+  unsigned long worms = 0;
+  int hpid, i, thislev;
+  long n;
+
+  if (!v_int(c, &hpid) || !(q = v_take(c, 1)))
+    return (0);
+  thislev = q[0];
+  if (thislev < 1 || thislev > MAXLEVEL || (lev && thislev != lev))
+    return (v_bad(c, "a level number is invalid"));
+  if (!v_take(c, sizeof(levl)) || !v_take(c, sizeof(long)))
+    return (0);
+  for (i = 0; i < 4; i++) {
+    if (!(q = v_take(c, sizeof(xupstair))))
+      return (0);
+    memcpy(&st[i], q, 1);
+  }
+  if (!v_onmap(st[0], st[1]) || !v_onmap(st[2], st[3]))
+    return (v_bad(c, "a staircase is off the map"));
+  if (!v_monchn(c, 1, &worms))
+    return (0);
+  for (n = 0;; n++) {
+    if (n > RH_MAX_CHAIN || !(q = v_take(c, sizeof g)))
+      return (v_bad(c, "the gold list is invalid"));
+    memcpy(&g, q, sizeof g);
+    if (!g.gx)
+      break;
+    if (!v_onmap(g.gx, g.gy))
+      return (v_bad(c, "gold is off the map"));
+  }
+  for (n = 0;; n++) {
+    if (n > RH_MAX_CHAIN || !(q = v_take(c, sizeof t)))
+      return (v_bad(c, "the trap list is invalid"));
+    memcpy(&t, q, sizeof t);
+    if (!t.tx)
+      break;
+    if (!v_onmap(t.tx, t.ty) || t.ttyp >= TRAPNUM)
+      return (v_bad(c, "a trap is invalid"));
+  }
+  if (!v_objchn(c, 1) || !v_objchn(c, 0))
+    return (0);
+  for (n = 0;; n++) {
+    if (n > RH_MAX_CHAIN || !(q = v_take(c, sizeof lth)))
+      return (v_bad(c, "the engraving list is invalid"));
+    memcpy(&lth, q, sizeof lth);
+    if (!lth)
+      break;
+    if (lth > RH_MAX_ENGR)
+      return (v_bad(c, "an engraving is too long"));
+    if (!(q = v_take(c, engr_rec_size() + lth)))
+      return (0);
+    if (!engr_rec_ok(q, lth))
+      return (v_bad(c, "an engraving is invalid"));
+  }
+#ifndef QUEST
+  if (!(q = v_take(c, sizeof(rooms))))
+    return (0);
+  memcpy(r, q, sizeof r);
+  for (i = 0; i <= MAXNROFROOMS && r[i].hx >= 0; i++)
+    if (r[i].lx < 0 || r[i].lx > r[i].hx || r[i].hx >= COLNO ||
+        r[i].ly < 0 || r[i].ly > r[i].hy || r[i].hy >= ROWNO ||
+        r[i].fdoor < 0 || r[i].doorct < 0 ||
+        r[i].fdoor + r[i].doorct > DOORMAX)
+      return (v_bad(c, "a room is invalid"));
+  if (!(q = v_take(c, sizeof(doors))))
+    return (0);
+  memcpy(d, q, sizeof d);
+  for (i = 0; i < DOORMAX; i++)
+    if (!v_onmap(d[i].x, d[i].y))
+      return (v_bad(c, "a door is off the map"));
+#endif /* QUEST */
+#ifndef NOWORM
+  {
+    struct wseg *ws[32];
+    struct wseg s;
+    unsigned long present = 0;
+
+    if (!(q = v_take(c, sizeof(wsegs))))
+      return (0);
+    memcpy(ws, q, sizeof ws);
+    for (i = 1; i < 32; i++) {
+      if (!ws[i])
+        continue;
+      present |= 1UL << i;
+      for (n = 0;; n++) {
+        if (n > RH_MAX_CHAIN || !(q = v_take(c, sizeof s)))
+          return (v_bad(c, "a worm is invalid"));
+        memcpy(&s, q, sizeof s);
+        if (!v_onmap(s.wx, s.wy))
+          return (v_bad(c, "a worm is off the map"));
+        if (!s.nseg)
+          break;
+      }
+    }
+    if (worms & ~present)
+      return (v_bad(c, "a worm has no tail"));
+    if (!v_take(c, sizeof(wgrowtime)))
+      return (0);
+  }
+#endif /* NOWORM */
+  return (thislev);
+}
+
+/* Modern: a whole save as written by dosave0() */
+static int v_save(struct rh_cur *c) {
+  const unsigned char *q;
+  struct you yu;
+  rh_u32_t v, dl, mdl, i, nprops;
+  unsigned long dummy = 0, used = 0;
+  int lev0, t, prev = 0, n = descr_perm_count();
+
+  if (!(lev0 = v_level(c, 0)) || !v_objchn(c, 0) || !v_objchn(c, 0) ||
+      !v_monchn(c, 0, &dummy))
+    return (0);
+  if (!v_u32(c, &v))
+    return (0);
+  if (v != (rh_u32_t)getuid())
+    return (v_bad(c, "it belongs to another user"));
+  if (!v_take(c, 16) || !v_u32(c, &dl) || !v_u32(c, &mdl) || !v_u32(c, &v))
+    return (0);
+  if (dl < 1 || dl > MAXLEVEL || mdl < dl || mdl > MAXLEVEL ||
+      dl != (rh_u32_t)lev0)
+    return (v_bad(c, "the dungeon level is invalid"));
+  if (!v_u32(c, &v))
+    return (0);
+  if (v != sizeof(struct you))
+    return (v_bad(c, "the player record has the wrong size"));
+  if (!(q = v_take(c, sizeof(struct you))))
+    return (0);
+  memcpy(&yu, q, sizeof yu);
+  if (!v_onmap(yu.ux, yu.uy) || (yu.udispl && !v_onmap(yu.udisx, yu.udisy)) ||
+      yu.ulevel < 1 || yu.ulevel > 14)
+    return (v_bad(c, "the player record is invalid"));
+  if (!v_u32(c, &v) || v > 1 || (v && !v_u32(c, &v)))
+    return (v_bad(c, "the engulfing monster is invalid"));
+  if (!v_u32(c, &v) ||
+      (v != 0xFFFFFFFFU && v != 0xFFFFFFFEU && v >= NROFOBJECTS))
+    return (v_bad(c, "the cause of sickness is invalid"));
+  nprops = sizeof(u.uprops) / sizeof(u.uprops[0]);
+  for (i = 0; i < nprops; i++)
+    if (!v_u32(c, &v) || v >= NUM_TIMEOUT_FNS)
+      return (v_bad(c, "a timeout is invalid"));
+  if (!(q = v_take(c, sizeof pl_character)) || !v_strz(q, sizeof pl_character) ||
+      !(q = v_take(c, sizeof genocided)) || !v_strz(q, sizeof genocided) ||
+      !(q = v_take(c, sizeof fut_geno)) || !v_strz(q, sizeof fut_geno))
+    return (v_bad(c, "the character data is invalid"));
+  if (c->err || !names_check(c->p + c->off, c->len - c->off, &used))
+    return (v_bad(c, "the object names are invalid"));
+  c->off += used;
+  while (c->off < c->len) {
+    if (!v_int(c, &t))
+      return (0);
+    if (t == RH_DESCR_TAG) {
+      if (!v_u32(c, &v) || v != RH_DESCR_VERSION || !v_u32(c, &v) ||
+          v != (rh_u32_t)n || !v_take(c, 4UL * (unsigned long)n))
+        return (v_bad(c, "the object descriptions are invalid"));
+      break; /* must be last */
+    }
+    if (t < 1 || (rh_u32_t)t > mdl || (rh_u32_t)t == dl || t <= prev)
+      return (v_bad(c, "a level number is invalid"));
+    prev = t;
+    if (!v_level(c, t))
+      return (0);
+  }
+  if (c->off != c->len)
+    return (v_bad(c, "it has data after the end"));
+  return (1);
+}
+
+static int read_full(int fd, unsigned char *buf, unsigned long len) {
+  ssize_t r;
+
+  while (len) {
+    r = read(fd, buf, len);
+    if (r <= 0)
+      return (0);
+    buf += r;
+    len -= (unsigned long)r;
+  }
+  return (1);
+}
+
+/**
+ * MODERN ADDITION (2026): Check a save or bones file before loading it
+ * Returns 1 with fd positioned at the payload, or 0 with *why describing
+ * the problem. lev is the level a bones file must hold (0 for saves).
+ * Reads the file only; never changes or removes it.
+ */
+int rh_check_file(int fd, int kind, int lev, const char **why) {
+  unsigned char h[RH_HDR_LEN], *buf;
+  struct stat st;
+  rh_u32_t hi, lo, len;
+  int ok;
+
+  *why = "it cannot be read";
+  if (fstat(fd, &st) != 0 || lseek(fd, (off_t)0, SEEK_SET) != (off_t)0)
+    return (0);
+  if (!read_full(fd, h, RH_HDR_LEN)) {
+    *why = "it is truncated";
+    return (0);
+  }
+  if (memcmp(h, RH_MAGIC, 4) != 0) {
+    *why = "it is in an older save format";
+    return (0);
+  }
+  if ((((unsigned)h[4] << 8) | h[5]) != RH_VERSION) {
+    *why = "it is in another save format version";
+    return (0);
+  }
+  if ((((unsigned)h[6] << 8) | h[7]) != (unsigned)kind) {
+    *why = "it is not the right kind of file";
+    return (0);
+  }
+  rh_fingerprint(&hi, &lo);
+  if (get_u32(h + 12) != hi || get_u32(h + 16) != lo) {
+    *why = "it was made by an incompatible build of the game";
+    return (0);
+  }
+  len = get_u32(h + RH_HDR_LEN_OFF);
+  if (len > RH_MAX_PAYLOAD || st.st_size < (off_t)RH_HDR_LEN ||
+      (unsigned long)st.st_size - RH_HDR_LEN != len) {
+    *why = "it is truncated or damaged";
+    return (0);
+  }
+  if (!(buf = (unsigned char *)malloc(len ? len : 1)))
+    return (0);
+  ok = read_full(fd, buf, len);
+  if (!ok)
+    *why = "it is truncated";
+  else if ((~rh_crc32(0xFFFFFFFFU, buf, len)) != get_u32(h + 24)) {
+    ok = 0;
+    *why = "it is damaged (checksum mismatch)";
+  }
+#ifndef RH_TEST_SKIP_VALIDATE /* Modern: test builds only, never defined */
+  if (ok) {
+    struct rh_cur c;
+
+    c.p = buf;
+    c.len = len;
+    c.off = 0;
+    c.err = NULL;
+    if (kind == RH_KIND_SAVE)
+      ok = v_save(&c);
+    else
+      ok = v_level(&c, lev) && c.off == c.len;
+    if (!ok)
+      *why = c.err ? c.err : "it contains invalid data";
+  }
+#else
+  (void)lev;
+#endif
+  free(buf);
+  if (ok && lseek(fd, (off_t)RH_HDR_LEN, SEEK_SET) != (off_t)RH_HDR_LEN) {
+    ok = 0;
+    *why = "it cannot be read";
+  }
+  return (ok);
+}
+
+/**
+ * MODERN ADDITION (2026): Abandon a restore without losing the save
+ * WHY: A failure part-way through dorecover() (truncation, a bad field, an
+ *      internal error) used to unlink the save (mread() and the uid check,
+ *      both 1985 code) or left half-loaded state behind.
+ * HOW: Remove the level files made so far, move the save aside with
+ *      move_outdated_save() and exit cleanly. Game state is half loaded, so
+ *      going on with a new game in this process would not be safe.
+ * PRESERVES: Successful restores are unchanged.
+ * ADDS: The player keeps the file and is told where it is.
+ */
+void restore_failed(const char *why) {
+  static int failing = 0;
+
+  if (failing++)
+    exit(1);
+  rh_sum_on = 0;
+  clearlocks();
+  if (move_outdated_save())
+    error("Your saved game could not be restored (%s).\n"
+          "It was not deleted; it was kept as %s.",
+          why, outdated_save_name);
+  error("Your saved game could not be restored (%s).\n"
+        "It was not deleted; %s was left as it is.",
+        why, SAVEF);
+}
+
+/* Modern: a loader check failed. When restoring a save, keep the save and
+ * exit; otherwise (bones, which rh_check_file() has already validated, or
+ * our own level files) this cannot happen short of a bug. */
+void rh_load_failed(const char *why) {
+  if (restoring)
+    restore_failed(why);
+  panic("Bad level data: %s.", why);
+}
 /* MODERN: CONST-CORRECTNESS: settty message is read-only */
 
 int dosave(void) {
@@ -430,6 +1161,14 @@ int dosave0(int hu) {
    * PRESERVES: Normal saves are unaffected (outdated_save_stuck is 0).
    * ADDS: The player's old save can never be overwritten by a new game.
    */
+  /* Modern: a hangup during dorecover() must not write the half-restored
+   * game over the save being restored; leave the save as it is. */
+  if (restoring) {
+    if (hu)
+      clearlocks();
+    return (0);
+  }
+
   if (outdated_save_stuck) {
     struct stat st;
 
@@ -459,13 +1198,13 @@ int dosave0(int hu) {
   }
   if (flags.moonphase == FULL_MOON) /* ut-sally!fletcher */
     u.uluck--;                      /* and unido!ab */
+  rh_begin_file(fd, RH_KIND_SAVE); /* Modern: v3 header comes first */
   savelev(fd, dlevel);
   saveobjchn(fd, invent);
   saveobjchn(fd, fcobj);
   savemonchn(fd, fallen_down);
 
-  /* Write versioned save header */
-  write_save_header(fd);
+  /* Modern: the version 2 header was written here; see rh_begin_file() */
 
   /* Save game state using fixed-width serialization */
   tmp = getuid();
@@ -552,6 +1291,7 @@ int dosave0(int hu) {
     if ((ofd = open(lock, 0)) < 0) {
       if (!hu)
         pline("Error while saving: cannot read %s.", lock);
+      rh_sum_on = 0; /* Modern: abandon the v3 length/CRC sum */
       (void)close(fd);
       (void)unlink(tmpfile);
       if (!hu)
@@ -565,6 +1305,13 @@ int dosave0(int hu) {
     (void)unlink(lock);
   }
   save_descr_block(fd); /* Modern: must stay last, see RH_DESCR_TAG */
+  if (!rh_end_file(fd)) { /* Modern: patch length and CRC into the header */
+    if (!hu)
+      pline("Error writing save file.");
+    (void)close(fd);
+    (void)unlink(tmpfile);
+    return (0);
+  }
 
   /* Ensure data is written to disk before atomic rename */
 #ifdef HAVE_FSYNC
@@ -602,6 +1349,10 @@ int dorecover(int fd) {
   rh_u32_t has_ustuck = 0; /* Modern: Track if save file contains ustuck data */
   struct obj *otmp;
 
+  /* Modern: the caller has checked the whole file with rh_check_file()
+   * (header, fingerprint, length, CRC, validators); fd is at the payload.
+   * Any failure from here on goes through restore_failed(), which keeps
+   * the save and exits. */
   restoring = TRUE;
   getlev(fd, 0, 0);
   invent = restobjchn(fd);
@@ -611,139 +1362,68 @@ int dorecover(int fd) {
   fcobj = restobjchn(fd);
   fallen_down = restmonchn(fd);
 
-  /* Check if this is a versioned save file */
-  rh_hdr_t hdr;
-  off_t save_pos = lseek(fd, 0, SEEK_CUR); /* Modern: off_t not long; lseek returns off_t */
-  if (save_pos == (off_t)-1) {
-    perror("lseek: cannot determine save file position");
-    (void)close(fd);
-    restoring = FALSE;
-    return (0);
-  }
-
-  if (check_save_header(fd, &hdr)) {
-    /* Versioned format detected */
-
-    /* Read common fields (all versions) */
-    tmp = (int)sr_u32(fd);
-    if (tmp != (int)getuid()) {
-      (void)close(fd);
-      (void)unlink(SAVEF);
-      puts("Saved game was not yours.");
-      restoring = FALSE;
-      return (0);
-    }
-
-    unpack_flags(fd, &flags);
-    dlevel = sr_i32(fd);
-    maxdlevel = sr_i32(fd);
-    moves = (long)sr_u32(fd);
-
-    /* Read struct you */
-    rh_u32_t you_size = sr_u32(fd);
-    if (you_size != sizeof(struct you)) {
-      puts("Save file struct size mismatch.");
-      restoring = FALSE;
-      (void)close(fd); /* Modern: Fix fd leak on early return */
-      return (0);
-    }
-    sr_bytes(fd, &u, sizeof(struct you));
-
-    /* Read ustuck (all versions) */
-    has_ustuck = sr_u32(fd);
-    if (has_ustuck) {
-      mid = sr_u32(fd);
-    }
-
-    /* VERSION-SPECIFIC FIELDS */
-    if (hdr.version == 1) {
-      /* Version 1: No usick_cause or p_tofn serialization
-       * Pointers in struct dump are BOGUS - clear them */
-
-      /* MIGRATION: Clear bogus usick_cause pointer */
-      if (Sick) {
-        pline("Note: Save upgraded from Version 1 - generic sickness message.");
-        u.usick_cause = "something strange";
-      } else {
-        u.usick_cause = NULL;
-      }
-
-      /* MIGRATION: Reconstruct p_tofn based on property state */
-      {
-        int num_uprops = sizeof(u.uprops) / sizeof(u.uprops[0]);
-        for (int i = 0; i < num_uprops; i++) {
-          /* Only RIN_LEVITATION uses float_down */
-          if (i == PROP(RIN_LEVITATION) && (u.uprops[i].p_flgs & TIMEOUT)) {
-            u.uprops[i].p_tofn = float_down;
-          } else {
-            u.uprops[i].p_tofn = NULL;
-          }
-        }
-      }
-
-    } else if (hdr.version == 2) {
-      /* Version 2: Safe pointer serialization */
-
-      /* Restore usick_cause from object index */
-      {
-        rh_u32_t sick_idx = sr_u32(fd);
-        if (sick_idx == 0xFFFFFFFF) {
-          u.usick_cause = NULL;
-        } else if (sick_idx == 0xFFFFFFFE) {
-          u.usick_cause = "something strange";
-        } else if (sick_idx < NROFOBJECTS) {
-          u.usick_cause = objects[sick_idx].oc_name;
-        } else {
-          pline("Warning: Save file corruption (usick_cause), repaired.");
-          u.usick_cause = "something strange";
-        }
-      }
-
-      /* Restore p_tofn from function IDs */
-      {
-        int num_uprops = sizeof(u.uprops) / sizeof(u.uprops[0]);
-        for (int i = 0; i < num_uprops; i++) {
-          rh_u32_t fn_id = sr_u32(fd);
-          u.uprops[i].p_tofn = restore_timeout_fn(fn_id);
-        }
-      }
-
-    } else {
-      /* Unknown version (shouldn't happen due to check_save_header) */
-      impossible("Unexpected save version", hdr.version, 0);
-      restoring = FALSE;
-      (void)close(fd); /* Modern: Fix fd leak on early return */
-      return (0);
-    }
-
-    /* Read remaining common fields */
-    sr_bytes(fd, pl_character, sizeof pl_character);
-    sr_bytes(fd, genocided, sizeof genocided);
-    sr_bytes(fd, fut_geno, sizeof fut_geno);
-
-  } else {
-    /* Pre-versioned legacy format - REJECT
-     *
-     * POLICY DECISION: Pre-versioned saves are inherently unsafe:
-     * - No magic number or format metadata
-     * - Raw pointer values without any serialization
-     * - No way to validate or repair corruption
-     * - Risk of arbitrary memory access on restore
-     *
-     * For canonical hosting safety, these are intentionally rejected.
+  /* Modern: the version 1/2 header check and the version 1 migration that
+   * were here are gone; such files are refused by rh_check_file(). */
+  tmp = (int)sr_u32(fd);
+  if (tmp != (int)getuid()) {
+    /* Original 1984:
+     *   (void) close(fd);
+     *   (void) unlink(SAVEF);
+     *   puts("Saved game was not yours.");
+     *   restoring = FALSE;
+     *   return(0);
      */
-    if (lseek(fd, save_pos, SEEK_SET) == (off_t)-1) { /* Modern: Branch I/O errors separately */
-      perror("lseek on save file");
-      puts("I/O error reading save file. Cannot restore.");
-      restoring = FALSE;
-      (void)close(fd);
-      return (0);
-    }
-    puts("Save file is too old (pre-Version 1). Cannot load safely.");
-    restoring = FALSE;
-    (void)close(fd);
-    return (0);
+    restore_failed("it was not yours"); /* Modern: keep it */
   }
+
+  unpack_flags(fd, &flags);
+  dlevel = sr_i32(fd);
+  maxdlevel = sr_i32(fd);
+  moves = (long)sr_u32(fd);
+  /* Modern: last-resort check; rh_check_file() has already checked these */
+  if (dlevel < 1 || dlevel > MAXLEVEL || maxdlevel < dlevel ||
+      maxdlevel > MAXLEVEL)
+    restore_failed("the dungeon level is invalid");
+
+  /* Read struct you */
+  rh_u32_t you_size = sr_u32(fd);
+  if (you_size != sizeof(struct you))
+    restore_failed("the player record has the wrong size");
+  sr_bytes(fd, &u, sizeof(struct you));
+
+  /* Read ustuck */
+  has_ustuck = sr_u32(fd);
+  if (has_ustuck) {
+    mid = sr_u32(fd);
+  }
+
+  /* Restore usick_cause from object index */
+  {
+    rh_u32_t sick_idx = sr_u32(fd);
+    if (sick_idx == 0xFFFFFFFF) {
+      u.usick_cause = NULL;
+    } else if (sick_idx == 0xFFFFFFFE) {
+      u.usick_cause = "something strange";
+    } else if (sick_idx < NROFOBJECTS) {
+      u.usick_cause = objects[sick_idx].oc_name;
+    } else {
+      pline("Warning: Save file corruption (usick_cause), repaired.");
+      u.usick_cause = "something strange";
+    }
+  }
+
+  /* Restore p_tofn from function IDs */
+  {
+    int num_uprops = sizeof(u.uprops) / sizeof(u.uprops[0]);
+    for (int i = 0; i < num_uprops; i++) {
+      rh_u32_t fn_id = sr_u32(fd);
+      u.uprops[i].p_tofn = restore_timeout_fn(fn_id);
+    }
+  }
+
+  sr_bytes(fd, pl_character, sizeof pl_character);
+  sr_bytes(fd, genocided, sizeof genocided);
+  sr_bytes(fd, fut_geno, sizeof fut_geno);
   restnames(fd);
   /* MODERN: the current level read at the top was only needed to reach the
    * data after it; it is reread below, so free this copy (it leaked). */
@@ -756,6 +1436,9 @@ int dorecover(int fd) {
       rest_descr_block(fd);
       break;
     }
+    /* Modern: last-resort check; glo() and level_exists[] index by it */
+    if (tmp < 1 || tmp > maxdlevel || tmp == dlevel)
+      restore_failed("a level number is invalid");
     getlev(fd, 0, tmp);
     glo(tmp);
     if ((nfd = creat(lock, FMASK)) < 0)
@@ -763,10 +1446,13 @@ int dorecover(int fd) {
     savelev(nfd, tmp);
     (void)close(nfd);
   }
-  (void)lseek(fd, (off_t)0, 0);
+  /* Original 1984: (void) lseek(fd, (off_t)0, 0); */
+  (void)lseek(fd, (off_t)RH_HDR_LEN, 0); /* Modern: skip the v3 header */
   getlev(fd, 0, 0);
   (void)close(fd);
-  (void)unlink(SAVEF);
+  /* Original 1984: (void) unlink(SAVEF);
+   * Modern: moved to the end, so that a failure in the checks below (which
+   * can panic) still finds the save in place; see restore_failed(). */
   if (Punished) {
     for (otmp = fobj; otmp; otmp = otmp->nobj)
       if (otmp->olet == CHAIN_SYM)
@@ -826,6 +1512,7 @@ int dorecover(int fd) {
   setsee(); /* only to recompute seelx etc. - these weren't saved */
 #endif      /* QUEST */
   docrt();
+  (void)unlink(SAVEF); /* Modern: moved here, see above */
   restoring = FALSE;
   return (1);
 }
@@ -847,7 +1534,7 @@ struct obj *restobjchn(int fd) {
       break;
     /* MODERN: Sanity check object name length */
     if (xl < 0 || xl > MAXONAMELTH) {
-      panic("Bad object name length in save: %d", xl);
+      rh_load_failed("an object name length is invalid"); /* Modern */
     }
     /* MODERN: Allocate extra byte for NUL terminator */
     otmp = newobj(xl > 0 ? xl + 1 : xl);
@@ -878,11 +1565,16 @@ struct monst *restmonchn(int fd) {
   struct monst *first = 0;
   int xl;
 
-  struct permonst *monbegin;
-  long differ;
+  rh_u32_t id;
 
-  mread(fd, (char *)&monbegin, sizeof(monbegin));
-  differ = (char *)(&mons[0]) - (char *)(monbegin);
+  /* Original 1984: the raw &mons[0] of the saving process, used to
+   * relocate every monst->data (wrong for types outside mons[]):
+   *   struct permonst *monbegin;
+   *   long differ;
+   *
+   *   mread(fd, (char *)&monbegin, sizeof(monbegin));
+   *   differ = (char *)(&mons[0]) - (char *)(monbegin);
+   */
 
 #ifdef lint
   /* suppress "used before set" warning from lint */
@@ -892,6 +1584,10 @@ struct monst *restmonchn(int fd) {
     mread(fd, (char *)&xl, sizeof(xl));
     if (xl == -1)
       break;
+    /* Modern: stable type ID (see rh_mon_id()); checked before allocating */
+    id = sr_u32(fd);
+    if (xl < 0 || xl > RH_MAX_MXL || !rh_mon_pm(id))
+      rh_load_failed("a monster record is invalid");
     mtmp = newmonst(xl);
     if (!first)
       first = mtmp;
@@ -900,7 +1596,9 @@ struct monst *restmonchn(int fd) {
     mread(fd, (char *)mtmp, (unsigned)xl + sizeof(struct monst));
     if (!mtmp->m_id)
       mtmp->m_id = flags.ident++;
-    mtmp->data = (struct permonst *)((char *)mtmp->data + differ);
+    /* Original 1984: mtmp->data = (struct permonst *)
+     *                    ((char *) mtmp->data + differ); */
+    mtmp->data = rh_mon_pm(id);
     if (mtmp->minvent)
       mtmp->minvent = restobjchn(fd);
     mtmp2 = mtmp;

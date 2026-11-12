@@ -82,19 +82,32 @@ void savebones(void) {
   }
   if ((fd = creat(bones, FMASK)) < 0)
     return;
+  rh_begin_file(fd, RH_KIND_BONES); /* Modern: save format v3 header */
   savelev(fd, dlevel);
+  if (!rh_end_file(fd)) { /* Modern: an unfinished file is useless */
+    (void)close(fd);
+    (void)unlink(bones);
+    return;
+  }
   (void)close(fd);
 }
 
 int getbones(void) {
   int fd, x, y, ok;
+  const char *why; /* Modern: why rh_check_file() refused the file */
   if (rn2(3))
     return (0); /* only once in three times do we find bones */
   bones[6] = '0' + dlevel / 10;
   bones[7] = '0' + dlevel % 10;
   if ((fd = open(bones, 0)) < 0)
     return (0);
-  if ((ok = uptodate(fd)) != 0) {
+  /* Original 1984: if ((ok = uptodate(fd)) != 0) {
+   * Modern: bones made by any build with the same save format and build
+   * fingerprint are fine, whatever their age; anything else (older format,
+   * other build, damaged or invalid data) is discarded below, as the 1985
+   * code discarded out-of-date bones. See rh_check_file(). */
+  why = 0;
+  if ((ok = rh_check_file(fd, RH_KIND_BONES, dlevel, &why)) != 0) {
     getlev(fd, 0, dlevel);
     for (x = 0; x < COLNO; x++)
       for (y = 0; y < ROWNO; y++)
@@ -102,6 +115,8 @@ int getbones(void) {
   }
   (void)close(fd);
 #ifdef WIZARD
+  if (!ok && wizard) /* Modern: say why, in debug mode only */
+    pline("Bones file %s not used: %s.", bones, why);
   if (!wizard) /* duvel!frans: don't remove bones while debugging */
 #endif         /* WiZARD */
     if (unlink(bones) < 0) {

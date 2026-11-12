@@ -91,18 +91,26 @@ char obuf[BUFSIZ];                  /* BUFSIZ is defined in stdio.h */
 int outdated_save_stuck = 0; /* old save could not be moved aside */
 char outdated_save_name[OUTDATED_NSIZ]; /* where the old save was moved */
 
+/* Modern: the n-th name for a kept save: SAVEF.outdated, .outdated.1 ...;
+ * 0 if it does not fit */
+static int outdated_name(char *buf, size_t size, int n) {
+  int len;
+
+  if (n == 0)
+    len = snprintf(buf, size, "%s.outdated", SAVEF);
+  else
+    len = snprintf(buf, size, "%s.outdated.%d", SAVEF, n);
+  return (len >= 0 && (size_t)len < size);
+}
+
 /* Modern: rename SAVEF to a free "<SAVEF>.outdated[.N]"; 1 on success */
 int move_outdated_save(void) {
   char newname[OUTDATED_NSIZ];
   struct stat st;
-  int n, len;
+  int n;
 
   for (n = 0; n <= 999; n++) {
-    if (n == 0)
-      len = snprintf(newname, sizeof(newname), "%s.outdated", SAVEF);
-    else
-      len = snprintf(newname, sizeof(newname), "%s.outdated.%d", SAVEF, n);
-    if (len < 0 || (size_t)len >= sizeof(newname))
+    if (!outdated_name(newname, sizeof(newname), n))
       return (0); /* name would be truncated */
     if (stat(newname, &st) == 0)
       continue; /* taken: never clobber an existing file */
@@ -117,6 +125,58 @@ int move_outdated_save(void) {
   return (0); /* no free name */
 }
 
+/**
+ * MODERN ADDITION (2026): Offer to restore a kept save
+ * WHY: Saves are kept aside (never deleted) when they cannot be restored,
+ *      e.g. after an update to a build with another save fingerprint. They
+ *      must not be stranded: going back to a compatible build (or a later
+ *      one that can read them) should bring them back, and in the browser
+ *      the player has no way to rename files by hand.
+ * HOW: When there is no current save, look through the kept-save names in
+ *      move_outdated_save() order and take the first one that this build
+ *      can restore (rh_check_file()). Ask the player; on 'y' rename it back
+ *      to SAVEF (only if SAVEF still does not exist) and return it opened
+ *      and checked, ready for dorecover(). Older formats are never offered.
+ * PRESERVES: Without kept saves nothing changes.
+ * ADDS: A way back for every kept save this build can read.
+ */
+static int offer_kept_save(void) {
+  char name[OUTDATED_NSIZ];
+  const char *why;
+  struct stat st;
+  int n, fd;
+
+  if (stat(SAVEF, &st) == 0 || errno != ENOENT)
+    return (-1); /* a current save exists (or cannot tell) */
+  for (n = 0; n <= 999; n++) {
+    if (!outdated_name(name, sizeof(name), n))
+      return (-1);
+    if ((fd = open(name, O_RDONLY)) < 0)
+      continue;
+    if (!rh_check_file(fd, RH_KIND_SAVE, 0, &why)) {
+      (void)close(fd);
+      continue;
+    }
+    (void)close(fd);
+    pline("You have a saved game that was kept as %s.", name);
+    pline("Restore it? [yn] ");
+    if (readchar() != 'y')
+      return (-1);
+    if (stat(SAVEF, &st) == 0 || errno != ENOENT || rename(name, SAVEF) != 0) {
+      pline("Could not move it back; it stays %s.", name);
+      return (-1);
+    }
+    if ((fd = open(SAVEF, O_RDONLY)) < 0)
+      return (-1);
+    if (!rh_check_file(fd, RH_KIND_SAVE, 0, &why)) { /* changed meanwhile */
+      (void)close(fd);
+      return (-1);
+    }
+    return (fd);
+  }
+  return (-1);
+}
+
 extern long wailmsg;
 
 #ifdef CHDIR
@@ -127,6 +187,7 @@ static void chdirx(const char *dir,
 int main(int argc, char *argv[]) {
   int fd;
   int outdated = 0; /* Modern: 1 = old save moved aside, 2 = could not */
+  const char *outdated_why = ""; /* Modern: why it could not be restored */
 #ifdef CHDIR
   char *dir;
 #endif
@@ -361,8 +422,13 @@ int main(int argc, char *argv[]) {
    * if ((fd = open(SAVEF, 0)) >= 0 && (uptodate(fd) || unlink(SAVEF) == 666)) {
    */
   /* Modern: an out-of-date save is moved aside (or, if that fails, left
-   * alone), never deleted; see move_outdated_save() above. */
-  if ((fd = open(SAVEF, 0)) >= 0 && !uptodate(fd)) {
+   * alone), never deleted; see move_outdated_save() above.
+   * Modern (save format v3): "out of date" now means "this build cannot
+   * restore it" (rh_check_file(): older format, other build fingerprint,
+   * damaged or invalid data), not "older than the binary", so saves survive
+   * game updates. Was: if ((fd = open(SAVEF, 0)) >= 0 && !uptodate(fd)) { */
+  if ((fd = open(SAVEF, 0)) >= 0 &&
+      !rh_check_file(fd, RH_KIND_SAVE, 0, &outdated_why)) {
     (void)close(fd); /* Modern: the original leaked this fd */
     fd = -1;
     if (move_outdated_save())
@@ -372,6 +438,8 @@ int main(int argc, char *argv[]) {
       outdated_save_stuck = 1;
     }
   }
+  if (fd < 0 && !outdated) /* Modern: bring back a kept save, see above */
+    fd = offer_kept_save();
   if (fd >= 0) {
     (void)signal(SIGINT, done1);
     pline("Restoring old save file...");
@@ -415,7 +483,9 @@ int main(int argc, char *argv[]) {
 
     /* Modern: tell the player what happened to an out-of-date save */
     if (outdated) {
-      pline("Your saved game is from an older version and can't be restored yet.");
+      /* Modern: was "Your saved game is from an older version and can't
+       * be restored yet." */
+      pline("Your saved game can't be restored: %s.", outdated_why);
       if (outdated == 1)
         pline("It was kept as %s.", outdated_save_name);
       else {

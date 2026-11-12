@@ -12,6 +12,7 @@
 #include "hack.h"
 #include <stdio.h>
 #include <limits.h>
+#include <string.h> /* Modern: memcpy, memchr */
 
 extern char nul[];
 extern struct obj zeroobj;
@@ -335,7 +336,8 @@ void rest_engravings(int fd) {
       return;
     /* MODERN: Prevent integer overflow and limit engraving size */
     if (lth > 32767 || lth > UINT_MAX - sizeof(struct engr)) {
-      error("Save file corrupted: invalid engraving size");
+      /* Modern: was error(), which exited without keeping the save */
+      rh_load_failed("an engraving is too long");
     }
     ep = (struct engr *)alloc(sizeof(struct engr) + lth);
     mread(fd, (char *)ep, sizeof(struct engr) + lth);
@@ -343,6 +345,20 @@ void rest_engravings(int fd) {
     ep->engr_txt = (char *)(ep + 1); /* Andreas Bormann */
     head_engr = ep;
   }
+}
+
+/* Modern: size of one saved engraving record before its text (save v3) */
+unsigned engr_rec_size(void) { return ((unsigned)sizeof(struct engr)); }
+
+/* Modern: check a saved engraving record (struct engr + lth bytes of text)
+ * before rest_engravings() trusts it; see the validators in hack.save.c */
+int engr_rec_ok(const void *rec, unsigned lth) {
+  struct engr e;
+  const char *txt = (const char *)rec + sizeof(struct engr);
+
+  memcpy(&e, rec, sizeof e);
+  return (e.engr_x >= 0 && e.engr_x < COLNO && e.engr_y >= 0 &&
+          e.engr_y < ROWNO && lth > 0 && memchr(txt, 0, lth) != NULL);
 }
 
 void del_engr(struct engr *ep) {

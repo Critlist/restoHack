@@ -289,10 +289,52 @@ void restnames(int fd) {
   for (i = 0; i < SIZE(objects); i++)
     if (objects[i].oc_uname) {
       mread(fd, (char *)&len, sizeof len);
+      if (len == 0 || len > BUFSZ) /* Modern: checked before alloc() */
+        rh_load_failed("an object name is invalid");
       objects[i].oc_uname = (char *)alloc(len);
       mread(fd, objects[i].oc_uname,
             (int)len); /* MODERN: cast to int for mread */
+      objects[i].oc_uname[len - 1] = '\0'; /* Modern: always terminated */
     }
+}
+
+/* Modern: bytes savenames() writes before the oc_uname strings (save v3) */
+unsigned long names_fixed_size(void) {
+  return ((unsigned long)(sizeof bases + sizeof objects));
+}
+
+/* Modern: check what savenames() wrote, at p (at most len bytes), before
+ * restnames() trusts it; *used is set to its length. See the validators in
+ * hack.save.c. */
+int names_check(const unsigned char *p, unsigned long len,
+                unsigned long *used) {
+  unsigned long off = names_fixed_size();
+  struct objclass oc;
+  unsigned ulen;
+  int i, b;
+
+  if (len < off)
+    return (0);
+  for (i = 0; i < SIZE(bases); i++) {
+    memcpy(&b, p + i * sizeof(int), sizeof b);
+    if (b < 0 || b > SIZE(objects))
+      return (0);
+  }
+  for (i = 0; i < SIZE(objects); i++) {
+    memcpy(&oc, p + sizeof bases + i * sizeof(struct objclass), sizeof oc);
+    if (!oc.oc_uname)
+      continue;
+    if (len - off < sizeof ulen)
+      return (0);
+    memcpy(&ulen, p + off, sizeof ulen);
+    off += sizeof ulen;
+    if (ulen == 0 || ulen > BUFSZ || ulen > len - off ||
+        memchr(p + off, 0, ulen) == NULL)
+      return (0);
+    off += ulen;
+  }
+  *used = off;
+  return (1);
 }
 
 int dodiscovered(void) /* free after Robert Viduya */

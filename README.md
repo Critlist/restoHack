@@ -181,6 +181,34 @@ Expect monsters, magic, cursed loot, and permadeath. Controls are Vi-style (`hjk
 
 ---
 
+## Saved Games
+
+`S` saves your game to `save/<uid><name>` in the game directory (in the
+browser version: in the browser's storage). From save format 3 on, a saved
+game survives updates of the game: it is restored by any build with the
+same save format and the same build fingerprint, i.e. the same platform ABI
+(a native 64-bit build and the browser build differ) and unchanged game
+tables. Compiler, optimisation level and unrelated code changes do not
+matter.
+
+A save the running build cannot restore (an older save format, a build with
+a different layout, or a damaged file) is never deleted. It is renamed to
+`save/<uid><name>.outdated` (or `.outdated.1`, `.2`, ...), you are told,
+and a new game starts. If you later start a build that can restore such a
+file while you have no current save, the game offers to restore it.
+
+Saves from releases before save format 3 (v1.1.8 and earlier) are
+unsupported for automatic migration, but they are kept, not lost. To finish
+such a game, use the release that made it: rename the file back to
+`save/<uid><name>`, `touch` it so it is newer than that release's binary,
+and start that release. Bones files from those releases are discarded, as
+the original game always discarded out-of-date bones.
+
+Updates only go forward: an older release may not read a newer save, so do
+not run an older release on a save directory a newer one has written to.
+
+---
+
 ## Contributing
 
 Bug fixes, portability patches, packaging help—welcome.

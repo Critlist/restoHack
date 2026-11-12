@@ -44,6 +44,18 @@ __attribute__((noreturn))
 panic(const char *str, ...) {
   if (panicking++)
     exit(1); /* avoid loops - this should never happen*/
+  if (restoring) { /* Modern: keep the save, see restore_failed() */
+    char why[BUFSZ];
+    va_list rargs;
+
+    va_start(rargs, str);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+    (void)vsnprintf(why, sizeof why, str, rargs);
+#pragma GCC diagnostic pop
+    va_end(rargs);
+    restore_failed(why);
+  }
   home();
   puts(" Suddenly, the dungeon collapses.");
   fputs(" ERROR:  ", stdout);

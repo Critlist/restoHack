@@ -378,6 +378,28 @@ extern int uptodate(int fd);
 extern int move_outdated_save(void);
 extern int outdated_save_stuck;
 extern char outdated_save_name[];
+/* Modern: save format version 3, see hack.save.c */
+#define RH_KIND_SAVE 1  /* header kind of a saved game */
+#define RH_KIND_BONES 2 /* header kind of a bones file */
+#define RH_HDR_LEN 32   /* bytes before the payload */
+extern int rh_check_file(int fd, int kind, int lev, const char **why);
+extern long rh_mem_read(int fd, void *buf, unsigned long n);
+extern void rh_mem_free(void);
+extern void rh_begin_file(int fd, int kind);
+extern int rh_end_file(int fd);
+extern int rh_sum_on;
+extern void rh_sum_add(const void *loc, unsigned num);
+extern unsigned rh_mon_id(const struct permonst *pm);
+extern struct permonst *rh_mon_pm(unsigned id);
+extern void restore_failed(const char *why);
+extern void rh_load_failed(const char *why);
+extern struct permonst *vault_guard_pm(void); /* hack.vault.c */
+extern int egd_ok(const void *extra);          /* hack.vault.c */
+extern unsigned engr_rec_size(void);           /* hack.engrave.c */
+extern int engr_rec_ok(const void *rec, unsigned lth);
+extern unsigned long names_fixed_size(void); /* hack.o_init.c */
+extern int names_check(const unsigned char *p, unsigned long len,
+                       unsigned long *used);
 extern int inshop(void);
 extern void setsee(void);
 extern void makedog(void);

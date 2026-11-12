@@ -4,8 +4,8 @@
 # Saves with <first>, restores with <second> (both under ASan/UBSan in CI),
 # and checks that the final save is a v3 file still holding the pet (a
 # little dog, stable monster ID 1004; a new game always starts with one),
-# that nothing was kept aside, and that neither run printed a sanitizer
-# report.
+# that its build fingerprint is the golden one, that nothing was kept
+# aside, and that neither run printed a sanitizer report.
 #
 # Usage: save-compat.sh <first-build-dir> <second-build-dir>
 #
@@ -46,6 +46,22 @@ if [ -z "$SAVE" ]; then
 else
   if [ "$(head -c 4 "$SAVE")" != "RHCK" ]; then
     echo "FAIL: $SAVE is not a save format v3 file"
+    FAIL=1
+  fi
+  # Golden build fingerprint (header bytes 12-19) for x86_64 Linux. Every
+  # save is tied to it: a change orphans all existing saves (they are kept
+  # aside, not restored), so it must be deliberate: bump RH_VERSION in
+  # src/hack.save.c and update GOLDEN_FP here.
+  GOLDEN_FP=dd350d72655abda6
+  FP="$(od -An -tx1 -j12 -N8 "$SAVE" | tr -d ' \n')"
+  if [ "$(uname -m)" != "x86_64" ]; then
+    echo "SKIP: golden fingerprint is for x86_64 (got $FP on $(uname -m))"
+  elif [ "$FP" = "$GOLDEN_FP" ]; then
+    echo "OK: build fingerprint $FP matches the golden value"
+  else
+    echo "FAIL: build fingerprint $FP, expected $GOLDEN_FP. A fingerprint"
+    echo "  change makes every existing save unrestorable (kept aside). If"
+    echo "  it is deliberate, bump RH_VERSION and update GOLDEN_FP in $0."
     FAIL=1
   fi
   if has_pet "$SAVE"; then

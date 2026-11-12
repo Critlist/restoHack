@@ -185,8 +185,11 @@ Expect monsters, magic, cursed loot, and permadeath. Controls are Vi-style (`hjk
 
 `S` saves your game to `save/<uid><name>` in the game directory (in the
 browser version: in the browser's storage). From save format 3 on, a saved
-game survives updates of the game: any build that writes the same save
-format restores it.
+game survives updates of the game: it is restored by any build with the
+same save format and the same build fingerprint, i.e. the same platform ABI
+(a native 64-bit build and the browser build differ) and unchanged game
+tables. Compiler, optimisation level and unrelated code changes do not
+matter.
 
 A save the running build cannot restore (an older save format, a build with
 a different layout, or a damaged file) is never deleted. It is renamed to

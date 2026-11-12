@@ -135,8 +135,8 @@ int move_outdated_save(void) {
  * HOW: When there is no current save, look through the kept-save names in
  *      move_outdated_save() order and take the first one that this build
  *      can restore (rh_check_file()). Ask the player; on 'y' rename it back
- *      to SAVEF (only if SAVEF still does not exist) and return it opened
- *      and checked, ready for dorecover(). Older formats are never offered.
+ *      to SAVEF (only if SAVEF still does not exist) and return a checked
+ *      private copy of it (see rh_check_file()), ready for dorecover(). Older formats are never offered.
  * PRESERVES: Without kept saves nothing changes.
  * ADDS: A way back for every kept save this build can read.
  */
@@ -144,7 +144,7 @@ static int offer_kept_save(void) {
   char name[OUTDATED_NSIZ];
   const char *why;
   struct stat st;
-  int n, fd;
+  int n, fd, n_ok;
 
   if (stat(SAVEF, &st) == 0 || errno != ENOENT)
     return (-1); /* a current save exists (or cannot tell) */
@@ -153,11 +153,11 @@ static int offer_kept_save(void) {
       return (-1);
     if ((fd = open(name, O_RDONLY)) < 0)
       continue;
-    if (!rh_check_file(fd, RH_KIND_SAVE, 0, &why)) {
-      (void)close(fd);
-      continue;
-    }
+    n_ok = rh_check_file(fd, RH_KIND_SAVE, 0, &why);
     (void)close(fd);
+    if (n_ok < 0)
+      continue;
+    (void)close(n_ok);
     pline("You have a saved game that was kept as %s.", name);
     pline("Restore it? [yn] ");
     if (readchar() != 'y')
@@ -168,11 +168,9 @@ static int offer_kept_save(void) {
     }
     if ((fd = open(SAVEF, O_RDONLY)) < 0)
       return (-1);
-    if (!rh_check_file(fd, RH_KIND_SAVE, 0, &why)) { /* changed meanwhile */
-      (void)close(fd);
-      return (-1);
-    }
-    return (fd);
+    n_ok = rh_check_file(fd, RH_KIND_SAVE, 0, &why); /* private copy */
+    (void)close(fd);
+    return (n_ok); /* -1 if it changed meanwhile; it stays SAVEF then */
   }
   return (-1);
 }
@@ -427,10 +425,14 @@ int main(int argc, char *argv[]) {
    * restore it" (rh_check_file(): older format, other build fingerprint,
    * damaged or invalid data), not "older than the binary", so saves survive
    * game updates. Was: if ((fd = open(SAVEF, 0)) >= 0 && !uptodate(fd)) { */
-  if ((fd = open(SAVEF, 0)) >= 0 &&
-      !rh_check_file(fd, RH_KIND_SAVE, 0, &outdated_why)) {
+  if ((fd = open(SAVEF, 0)) >= 0) {
+    /* Modern: from here on fd is a private copy of the checked bytes */
+    int cfd = rh_check_file(fd, RH_KIND_SAVE, 0, &outdated_why);
+
     (void)close(fd); /* Modern: the original leaked this fd */
-    fd = -1;
+    fd = cfd;
+  }
+  if (fd < 0 && outdated_why[0]) {
     if (move_outdated_save())
       outdated = 1;
     else {

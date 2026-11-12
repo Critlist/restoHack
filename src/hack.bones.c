@@ -95,6 +95,7 @@ void savebones(void) {
 int getbones(void) {
   int fd, x, y, ok;
   const char *why; /* Modern: why rh_check_file() refused the file */
+  int cfd;         /* Modern: the checked copy that is loaded */
   if (rn2(3))
     return (0); /* only once in three times do we find bones */
   bones[6] = '0' + dlevel / 10;
@@ -107,8 +108,10 @@ int getbones(void) {
    * other build, damaged or invalid data) is discarded below, as the 1985
    * code discarded out-of-date bones. See rh_check_file(). */
   why = 0;
-  if ((ok = rh_check_file(fd, RH_KIND_BONES, dlevel, &why)) != 0) {
-    getlev(fd, 0, dlevel);
+  cfd = rh_check_file(fd, RH_KIND_BONES, dlevel, &why); /* private copy */
+  if ((ok = (cfd >= 0)) != 0) {
+    getlev(cfd, 0, dlevel);
+    (void)close(cfd);
     for (x = 0; x < COLNO; x++)
       for (y = 0; y < ROWNO; y++)
         levl[x][y].seen = levl[x][y].new = 0;

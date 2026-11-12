@@ -785,7 +785,12 @@ static int v_monchn(struct rh_cur *c, int onmap, unsigned long *worms) {
       return (0);
     memcpy(&m, q, sizeof m);
     x = q + offsetof(struct monst, mextra);
-    if ((unsigned)xl != m.mxlth + m.mnamelth || m.mxlth < pm->pxlth ||
+    /* Modern: the record length first, in a type that cannot wrap, so
+     * that every check below reads x only inside the xl bytes taken */
+    if (m.mxlth > RH_MAX_MXL ||
+        (unsigned long)m.mxlth + m.mnamelth != (unsigned long)xl)
+      return (v_bad(c, "a monster record length is invalid"));
+    if (m.mxlth < pm->pxlth ||
         (m.mtame && m.mxlth < sizeof(struct edog)) ||
         (m.isshk && (m.mxlth < sizeof(struct eshk) || !v_eshk(x))) ||
         (m.isgd && (m.mxlth < vault_guard_pm()->pxlth || !egd_ok(x))) ||
@@ -877,6 +882,8 @@ static int v_level(struct rh_cur *c, int lev) {
         r[i].fdoor < 0 || r[i].doorct < 0 ||
         r[i].fdoor + r[i].doorct > DOORMAX)
       return (v_bad(c, "a room is invalid"));
+  if (i > MAXNROFROOMS) /* the game scans rooms[] until hx < 0 */
+    return (v_bad(c, "the room list has no end"));
   if (!(q = v_take(c, sizeof(doors))))
     return (0);
   memcpy(d, q, sizeof d);
@@ -995,50 +1002,88 @@ static int read_full(int fd, unsigned char *buf, unsigned long len) {
   return (1);
 }
 
+static int write_full(int fd, const unsigned char *buf, unsigned long len) {
+  ssize_t r;
+
+  while (len) {
+    r = write(fd, buf, len);
+    if (r <= 0)
+      return (-1);
+    buf += r;
+    len -= (unsigned long)r;
+  }
+  return (1);
+}
+
+/* Modern: a private, already unlinked copy of the checked bytes, positioned
+ * at the payload; -1 on failure. See rh_check_file(). */
+static int rh_private_copy(const unsigned char *h, const unsigned char *buf,
+                           unsigned long len) {
+  FILE *f = tmpfile();
+  int nfd;
+
+  if (!f)
+    return (-1);
+  nfd = dup(fileno(f)); /* the unlinked file lives on through nfd */
+  (void)fclose(f);
+  if (nfd < 0)
+    return (-1);
+  if (!write_full(nfd, h, RH_HDR_LEN) || !write_full(nfd, buf, len) ||
+      lseek(nfd, (off_t)RH_HDR_LEN, SEEK_SET) != (off_t)RH_HDR_LEN) {
+    (void)close(nfd);
+    return (-1);
+  }
+  return (nfd);
+}
+
 /**
  * MODERN ADDITION (2026): Check a save or bones file before loading it
- * Returns 1 with fd positioned at the payload, or 0 with *why describing
- * the problem. lev is the level a bones file must hold (0 for saves).
- * Reads the file only; never changes or removes it.
+ * Returns a new file descriptor, positioned at the payload, for a private
+ * copy of exactly the bytes that were checked (an unlinked temporary
+ * file), or -1 with *why describing the problem. The loader reads only
+ * that copy, so a file changed between check and load cannot reach it.
+ * lev is the level a bones file must hold (0 for saves). fd itself is only
+ * read: the file is never changed or removed here, and the caller still
+ * owns (and closes) fd.
  */
 int rh_check_file(int fd, int kind, int lev, const char **why) {
   unsigned char h[RH_HDR_LEN], *buf;
   struct stat st;
   rh_u32_t hi, lo, len;
-  int ok;
+  int ok, nfd;
 
   *why = "it cannot be read";
   if (fstat(fd, &st) != 0 || lseek(fd, (off_t)0, SEEK_SET) != (off_t)0)
-    return (0);
+    return (-1);
   if (!read_full(fd, h, RH_HDR_LEN)) {
     *why = "it is truncated";
-    return (0);
+    return (-1);
   }
   if (memcmp(h, RH_MAGIC, 4) != 0) {
     *why = "it is in an older save format";
-    return (0);
+    return (-1);
   }
   if ((((unsigned)h[4] << 8) | h[5]) != RH_VERSION) {
     *why = "it is in another save format version";
-    return (0);
+    return (-1);
   }
   if ((((unsigned)h[6] << 8) | h[7]) != (unsigned)kind) {
     *why = "it is not the right kind of file";
-    return (0);
+    return (-1);
   }
   rh_fingerprint(&hi, &lo);
   if (get_u32(h + 12) != hi || get_u32(h + 16) != lo) {
     *why = "it was made by an incompatible build of the game";
-    return (0);
+    return (-1);
   }
   len = get_u32(h + RH_HDR_LEN_OFF);
   if (len > RH_MAX_PAYLOAD || st.st_size < (off_t)RH_HDR_LEN ||
       (unsigned long)st.st_size - RH_HDR_LEN != len) {
     *why = "it is truncated or damaged";
-    return (0);
+    return (-1);
   }
   if (!(buf = (unsigned char *)malloc(len ? len : 1)))
-    return (0);
+    return (-1);
   ok = read_full(fd, buf, len);
   if (!ok)
     *why = "it is truncated";
@@ -1064,12 +1109,11 @@ int rh_check_file(int fd, int kind, int lev, const char **why) {
 #else
   (void)lev;
 #endif
+  nfd = -1;
+  if (ok && (nfd = rh_private_copy(h, buf, len)) < 0)
+    *why = "no temporary file could be made to load it";
   free(buf);
-  if (ok && lseek(fd, (off_t)RH_HDR_LEN, SEEK_SET) != (off_t)RH_HDR_LEN) {
-    ok = 0;
-    *why = "it cannot be read";
-  }
-  return (ok);
+  return (nfd);
 }
 
 /**
@@ -1145,6 +1189,7 @@ void hangup(int sig) { modern_save_handler(sig); }
 
 /* returns 1 if save successful */
 int dosave0(int hu) {
+  unsigned ustuck_id; /* Modern: see below */
   int fd, ofd;
   int tmp; /* not ! */
   char tmpfile[256];
@@ -1198,6 +1243,10 @@ int dosave0(int hu) {
   }
   if (flags.moonphase == FULL_MOON) /* ut-sally!fletcher */
     u.uluck--;                      /* and unido!ab */
+  /* Modern: savelev() frees fmon, which holds u.ustuck; the 1985 code read
+   * u.ustuck->m_id after it (use after free whenever you were held, e.g. by
+   * an eel), so take the id first */
+  ustuck_id = u.ustuck ? u.ustuck->m_id : 0;
   rh_begin_file(fd, RH_KIND_SAVE); /* Modern: v3 header comes first */
   savelev(fd, dlevel);
   saveobjchn(fd, invent);
@@ -1232,7 +1281,7 @@ int dosave0(int hu) {
 
   if (u.ustuck) {
     sw_u32(fd, 1); /* has ustuck */
-    sw_u32(fd, (rh_u32_t)(u.ustuck->m_id));
+    sw_u32(fd, (rh_u32_t)ustuck_id); /* Modern: was u.ustuck->m_id */
   } else {
     sw_u32(fd, 0); /* no ustuck */
   }
@@ -1594,6 +1643,9 @@ struct monst *restmonchn(int fd) {
     else
       mtmp2->nmon = mtmp;
     mread(fd, (char *)mtmp, (unsigned)xl + sizeof(struct monst));
+    /* Modern: the stored lengths must describe exactly what was read */
+    if ((unsigned long)mtmp->mxlth + mtmp->mnamelth != (unsigned long)xl)
+      rh_load_failed("a monster record length is invalid");
     if (!mtmp->m_id)
       mtmp->m_id = flags.ident++;
     /* Original 1984: mtmp->data = (struct permonst *)

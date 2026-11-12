@@ -341,6 +341,8 @@ void rest_engravings(int fd) {
     }
     ep = (struct engr *)alloc(sizeof(struct engr) + lth);
     mread(fd, (char *)ep, sizeof(struct engr) + lth);
+    if (ep->engr_lth != lth) /* Modern: save_engravings() trusts it */
+      rh_load_failed("an engraving is invalid");
     ep->nxt_engr = head_engr;
     ep->engr_txt = (char *)(ep + 1); /* Andreas Bormann */
     head_engr = ep;
@@ -357,8 +359,10 @@ int engr_rec_ok(const void *rec, unsigned lth) {
   const char *txt = (const char *)rec + sizeof(struct engr);
 
   memcpy(&e, rec, sizeof e);
-  return (e.engr_x >= 0 && e.engr_x < COLNO && e.engr_y >= 0 &&
-          e.engr_y < ROWNO && lth > 0 && memchr(txt, 0, lth) != NULL);
+  /* e.engr_lth must match: save_engravings() writes that many bytes */
+  return (e.engr_lth == lth && e.engr_x >= 0 && e.engr_x < COLNO &&
+          e.engr_y >= 0 && e.engr_y < ROWNO && lth > 0 &&
+          memchr(txt, 0, lth) != NULL);
 }
 
 void del_engr(struct engr *ep) {

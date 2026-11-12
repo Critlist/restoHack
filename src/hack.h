@@ -383,6 +383,8 @@ extern char outdated_save_name[];
 #define RH_KIND_BONES 2 /* header kind of a bones file */
 #define RH_HDR_LEN 32   /* bytes before the payload */
 extern int rh_check_file(int fd, int kind, int lev, const char **why);
+extern long rh_mem_read(int fd, void *buf, unsigned long n);
+extern void rh_mem_free(void);
 extern void rh_begin_file(int fd, int kind);
 extern int rh_end_file(int fd);
 extern int rh_sum_on;

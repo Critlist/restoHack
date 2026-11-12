@@ -335,7 +335,10 @@ void getlev(int fd, int pid, xchar lev) {
 void mread(int fd, char *buf, unsigned len) {
   int rlen;
 
-  ssize_t read_result = read(fd, buf, (size_t)len); /* MODERN: proper POSIX types */
+  /* Modern: a file being loaded is read from its validated copy */
+  ssize_t read_result = rh_mem_read(fd, buf, len);
+  if (read_result < 0)
+    read_result = read(fd, buf, (size_t)len); /* MODERN: proper POSIX types */
   rlen = (int)read_result; /* MODERN: cast ssize_t to int for compatibility */
   if (rlen !=
       (int)len) { /* MODERN: Cast to int to match rlen type from read() */

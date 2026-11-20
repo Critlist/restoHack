@@ -148,6 +148,8 @@ void bwrite(int fd, const void *loc, unsigned num) {
   /* lint wants the 3rd arg of write to be an int; lint -p an unsigned */
   if (write(fd, loc, (size_t)num) != (ssize_t)num) /* MODERN: proper POSIX types */
     panic("cannot write %u bytes to file #%d", num, fd);
+  if (rh_sum_on) /* Modern: v3 payload length and CRC, see rh_begin_file() */
+    rh_sum_add(loc, num);
 }
 
 void saveobjchn(int fd, struct obj *otmp) {
@@ -170,14 +172,30 @@ void savemonchn(int fd, struct monst *mtmp) {
   struct monst *mtmp2;
   unsigned xl;
   int minusone = -1;
-  struct permonst *monbegin = &mons[0];
+  unsigned char idb[4];
+  unsigned id;
 
-  bwrite(fd, (char *)&monbegin, sizeof(monbegin));
+  /* Original 1984: the raw address of mons[0], see restmonchn():
+   *   struct permonst *monbegin = &mons[0];
+   *
+   *   bwrite(fd, (char *)&monbegin, sizeof(monbegin));
+   */
 
   while (mtmp) {
     mtmp2 = mtmp->nmon;
     xl = mtmp->mxlth + mtmp->mnamelth;
     bwrite(fd, (char *)&xl, sizeof(int));
+    /* Modern: write the monster type as a stable ID (big-endian u32) and
+     * no raw pointer; the monster is freed below, so data can be cleared. */
+    id = rh_mon_id(mtmp->data);
+    if (id == 0xFFFFFFFFU)
+      impossible("savemonchn: unknown monster type", 0, 0);
+    idb[0] = (unsigned char)(id >> 24);
+    idb[1] = (unsigned char)(id >> 16);
+    idb[2] = (unsigned char)(id >> 8);
+    idb[3] = (unsigned char)id;
+    bwrite(fd, idb, sizeof idb);
+    mtmp->data = 0;
     bwrite(fd, (char *)mtmp, xl + sizeof(struct monst));
     if (mtmp->minvent)
       saveobjchn(fd, mtmp->minvent);
@@ -224,6 +242,8 @@ void getlev(int fd, int pid, xchar lev) {
   mread(fd, (char *)&hpid, sizeof(hpid));
   mread(fd, (char *)&dlvl, sizeof(dlvl));
   if ((pid && pid != hpid) || (lev && dlvl != lev)) {
+    if (restoring) /* Modern: keep the save, see restore_failed() */
+      restore_failed("a level does not match");
     pline("Strange, this map is not as I remember it.");
     pline("Somebody is trying some trickery here ...");
     pline("This game is void ...");
@@ -315,14 +335,20 @@ void getlev(int fd, int pid, xchar lev) {
 void mread(int fd, char *buf, unsigned len) {
   int rlen;
 
-  ssize_t read_result = read(fd, buf, (size_t)len); /* MODERN: proper POSIX types */
+  /* Modern: a file being loaded is read from its validated copy */
+  ssize_t read_result = rh_mem_read(fd, buf, len);
+  if (read_result < 0)
+    read_result = read(fd, buf, (size_t)len); /* MODERN: proper POSIX types */
   rlen = (int)read_result; /* MODERN: cast ssize_t to int for compatibility */
   if (rlen !=
       (int)len) { /* MODERN: Cast to int to match rlen type from read() */
     pline("Read %d instead of %u bytes.\n", rlen, len);
     if (restoring) {
-      (void)unlink(SAVEF);
-      error("Error restoring old game.");
+      /* Original 1984:
+       *   (void) unlink(SAVEF);
+       *   error("Error restoring old game.");
+       */
+      restore_failed("it is truncated"); /* Modern: keep the save */
     }
     panic("Error reading level file.");
   }

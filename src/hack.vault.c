@@ -9,6 +9,8 @@ int gd_move(void) { return (2); }
 void gddead(struct monst *mtmp) {}
 void replgd(struct monst *mtmp, struct monst *mtmp2) {}
 void invault(void) {}
+struct permonst *vault_guard_pm(void) { return (0); } /* Modern: save v3 */
+int egd_ok(const void *extra) { return (extra == 0); } /* Modern: save v3 */
 
 #else
 
@@ -27,6 +29,27 @@ struct egd {
 
 static struct permonst pm_guard = {"guard", '@', 12, 12,
                                    -1,      4,   10, sizeof(struct egd)};
+
+/* Modern: the guard's monster type, for the stable IDs of save format v3
+ * (pm_guard stays static, as in 1985) */
+struct permonst *vault_guard_pm(void) { return (&pm_guard); }
+
+/* Modern: check a saved guard's extra data before it is trusted; see the
+ * validators in hack.save.c */
+int egd_ok(const void *extra) {
+  struct egd e;
+  int i;
+
+  memcpy(&e, extra, sizeof e);
+  if (e.fcbeg < 0 || e.fcbeg > e.fcend || e.fcend > FCSIZ ||
+      e.gdx < 0 || e.gdx >= COLNO || e.gdy < 0 || e.gdy >= ROWNO)
+    return (0);
+  for (i = 0; i < e.fcend; i++)
+    if (e.fakecorr[i].fx < 0 || e.fakecorr[i].fx >= COLNO ||
+        e.fakecorr[i].fy < 0 || e.fakecorr[i].fy >= ROWNO)
+      return (0);
+  return (1);
+}
 
 static struct monst *guard;
 static int gdlevel;

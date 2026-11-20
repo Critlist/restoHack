@@ -223,6 +223,35 @@ jobs:
         sudo apt-get install -y clang clang-tools cmake ninja-build
         sudo apt-get install -y libncurses5-dev libncursesw5-dev
 
+  # Save format v3: a game saved by a GCC build restores in a Clang build
+  # and the other way round (ASan/UBSan Debug builds)
+  save-compat:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build gcc clang expect
+        sudo apt-get install -y libncurses5-dev libncursesw5-dev
+
+    - name: Build with GCC and Clang
+      run: |
+        for cc in gcc clang; do
+          cmake -B build-$cc -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=$cc -DENABLE_SANITIZERS=ON
+          cmake --build build-$cc --parallel
+        done
+
+    - name: Save with GCC, restore with Clang
+      run: sh .github/scripts/save-compat.sh build-gcc build-clang
+
+    - name: Save with Clang, restore with GCC
+      run: sh .github/scripts/save-compat.sh build-clang build-gcc
+
   # Special RelWithDebInfo build to test production-ready builds with debug symbols
   security-hardened:
     runs-on: ubuntu-latest

@@ -1,0 +1,77 @@
+#!/usr/bin/expect -f
+#
+# Save format v3 cross-build test: save a new game with one hack binary,
+# restore it with another (e.g. GCC -> Clang), then save again.
+#
+# Usage: expect -f save-compat.exp <save-hack> <restore-hack> <hackdir>
+# Both binaries use the given HACKDIR. Writes /tmp/hack-save-compat.log.
+# Exit 0 on success; the caller checks the save files and the log.
+#
+
+set timeout 30
+log_file -noappend /tmp/hack-save-compat.log
+match_max 50000
+
+set savebin [lindex $argv 0]
+set restbin [lindex $argv 1]
+set ::env(HACKDIR) [lindex $argv 2]
+set ::env(TERM) vt100
+
+# Dismiss --More-- prompts until the game is quiet, then save with S.
+proc drain_and_save {} {
+    set timeout 3
+    while 1 {
+        expect {
+            -exact "--More--" { send " " }
+            timeout { break }
+            eof { send_log "\n>>> EOF before saving\n"; exit 3 }
+        }
+    }
+    set timeout 30
+    send "S"
+    expect {
+        "Be seeing you" { }
+        timeout { send_log "\n>>> TIMEOUT waiting for save\n"; exit 4 }
+        eof { send_log "\n>>> EOF while saving\n"; exit 5 }
+    }
+    expect eof
+}
+
+# 1. New game with the first binary, then save.
+spawn $savebin
+expect {
+    "experienced player" { send "n" }
+    timeout { exit 1 }
+    eof { exit 2 }
+}
+expect {
+    "Hit space to continue" { send " " }
+    timeout { exit 1 }
+    eof { exit 2 }
+}
+expect {
+    "Hp" { }
+    -exact "--More--" { send " "; exp_continue }
+    timeout { exit 1 }
+    eof { exit 2 }
+}
+drain_and_save
+
+# 2. Restore with the second binary, then save again.
+spawn $restbin
+expect {
+    "Restoring old save file" { }
+    "can't be restored" { send_log "\n>>> REFUSED by restoring build\n"; exit 6 }
+    "experienced player" { send_log "\n>>> no restore: new game\n"; exit 6 }
+    timeout { exit 7 }
+    eof { exit 8 }
+}
+expect {
+    "welcome to" { }
+    "could not be restored" { send_log "\n>>> restore FAILED\n"; exit 9 }
+    -exact "--More--" { send " "; exp_continue }
+    timeout { exit 7 }
+    eof { exit 8 }
+}
+drain_and_save
+exit 0
